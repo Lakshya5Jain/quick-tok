@@ -18,6 +18,8 @@ export interface GenerationProgress {
   finalVideoUrl?: string;
   scriptText?: string;
   aiVideoUrl?: string;
+  voiceId?: string;
+  voiceMedia?: string;
 }
 
 export enum ScriptOption {
