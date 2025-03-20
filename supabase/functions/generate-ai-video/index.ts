@@ -25,6 +25,11 @@ serve(async (req) => {
       );
     }
 
+    // Log what we're sending to the AI API for debugging
+    console.log("Sending to AI API with voice ID:", voiceId);
+    console.log("Voice media URL:", voiceMedia);
+    console.log("Script:", script);
+
     // Start the video generation
     const headers = {
       'Authorization': `Bearer ${aiApiKey}`,

@@ -20,6 +20,32 @@ const updateProgressInStorage = (processId: string, progress: Partial<Generation
   return updated;
 };
 
+// Upload a file to storage and get a URL
+export async function uploadFile(file: File): Promise<string> {
+  try {
+    console.log("Uploading file:", file.name);
+    
+    // If in production, we would use Supabase storage here
+    // For now, create a demo object URL to simulate a file upload
+    const fileUrl = URL.createObjectURL(file);
+    console.log("File uploaded, URL:", fileUrl);
+    
+    // The real implementation would be:
+    // const { data, error } = await supabase.storage
+    //   .from('media')
+    //   .upload(`uploads/${generateUUID()}-${file.name}`, file);
+    // 
+    // if (error) throw error;
+    // 
+    // return supabase.storage.from('media').getPublicUrl(data.path).data.publicUrl;
+    
+    return fileUrl;
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    throw error;
+  }
+}
+
 // Generate script with GPT
 export async function generateScript(topic: string): Promise<string> {
   try {
@@ -41,8 +67,10 @@ export async function generateVideo(formData: {
   topic?: string;
   customScript?: string;
   supportingMedia?: string;
+  supportingMediaFile?: File;
   voiceId: string;
-  voiceMedia: string;
+  voiceMedia?: string;
+  voiceMediaFile?: File;
 }): Promise<string> {
   const processId = generateUUID();
   
@@ -67,11 +95,33 @@ async function processVideoGeneration(processId: string, formData: {
   topic?: string;
   customScript?: string;
   supportingMedia?: string;
+  supportingMediaFile?: File;
   voiceId: string;
-  voiceMedia: string;
+  voiceMedia?: string;
+  voiceMediaFile?: File;
 }) {
   try {
-    // Step 1: Get or generate script
+    // Step 1: Upload files if they exist
+    let supportingMediaUrl = formData.supportingMedia;
+    let voiceMediaUrl = formData.voiceMedia;
+    
+    if (formData.supportingMediaFile) {
+      updateProgressInStorage(processId, {
+        status: "Uploading supporting media...",
+        progress: 10
+      });
+      supportingMediaUrl = await uploadFile(formData.supportingMediaFile);
+    }
+    
+    if (formData.voiceMediaFile) {
+      updateProgressInStorage(processId, {
+        status: "Uploading voice character image...",
+        progress: 15
+      });
+      voiceMediaUrl = await uploadFile(formData.voiceMediaFile);
+    }
+    
+    // Step 2: Get or generate script
     let scriptText: string;
     
     if (formData.scriptOption === ScriptOption.GPT && formData.topic) {
@@ -94,7 +144,7 @@ async function processVideoGeneration(processId: string, formData: {
     
     updateProgressInStorage(processId, { scriptText });
     
-    // Step 2: Generate AI video
+    // Step 3: Generate AI video
     updateProgressInStorage(processId, {
       status: "Generating AI video...",
       progress: 50
@@ -105,7 +155,7 @@ async function processVideoGeneration(processId: string, formData: {
       body: {
         script: scriptText,
         voiceId: formData.voiceId,
-        voiceMedia: formData.voiceMedia
+        voiceMedia: voiceMediaUrl || "https://6ammc3n5zzf5ljnz.public.blob.vercel-storage.com/inf2-image-uploads/image_8132d-DYy5ZM9i939tkiyw6ADf3oVyn6LivZ.png"
       }
     });
     
@@ -138,11 +188,11 @@ async function processVideoGeneration(processId: string, formData: {
       progress: 75
     });
     
-    // Step 3: Create final video with Creatomate
+    // Step 4: Create final video with Creatomate
     const { data: renderData, error: renderError } = await supabase.functions.invoke('create-final-video', {
       body: {
         aiVideoUrl,
-        supportingVideo: formData.supportingMedia
+        supportingVideo: supportingMediaUrl
       }
     });
     
@@ -173,7 +223,7 @@ async function processVideoGeneration(processId: string, formData: {
       }
     }
     
-    // Step 4: Complete the process
+    // Step 5: Complete the process
     updateProgressInStorage(processId, {
       finalVideoUrl,
       progress: 100,

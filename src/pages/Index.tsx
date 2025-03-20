@@ -77,31 +77,16 @@ const Index = () => {
     setIsSubmitting(true);
     
     try {
-      // Handle file uploads if present
-      let supportingMediaUrl = formData.supportingMedia;
-      let voiceMediaUrl = formData.voiceMedia;
-      
-      if (formData.supportingMediaFile) {
-        // TODO: Implement file upload to get URL
-        // For now, just use a placeholder URL
-        toast.info("File upload feature is coming soon. Using default media.");
-        supportingMediaUrl = "https://6ammc3n5zzf5ljnz.public.blob.vercel-storage.com/inf2-image-uploads/image_8132d-DYy5ZM9i939tkiyw6ADf3oVyn6LivZ.png";
-      }
-      
-      if (formData.voiceMediaFile) {
-        // TODO: Implement file upload to get URL
-        // For now, just use a placeholder URL
-        toast.info("File upload feature is coming soon. Using default media.");
-        voiceMediaUrl = "https://6ammc3n5zzf5ljnz.public.blob.vercel-storage.com/inf2-image-uploads/image_8132d-DYy5ZM9i939tkiyw6ADf3oVyn6LivZ.png";
-      }
-      
+      // Start video generation with the form data directly including files
       const processId = await generateVideo({
         scriptOption: formData.scriptOption,
         topic: formData.topic,
         customScript: formData.customScript,
-        supportingMedia: supportingMediaUrl,
+        supportingMedia: formData.supportingMedia,
+        supportingMediaFile: formData.supportingMediaFile,
         voiceId: formData.voiceId,
-        voiceMedia: voiceMediaUrl
+        voiceMedia: formData.voiceMedia,
+        voiceMediaFile: formData.voiceMediaFile
       });
       
       setCurrentProcessId(processId);

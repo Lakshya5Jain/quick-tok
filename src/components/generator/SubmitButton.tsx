@@ -17,11 +17,11 @@ const SubmitButton: React.FC<SubmitButtonProps> = ({
     <button
       type="submit"
       disabled={isSubmitting}
-      className="w-full py-3 bg-quicktok-orange text-white font-bold rounded-md hover:bg-quicktok-orange/90 focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50 transition-colors flex items-center justify-center"
+      className={`w-full py-3 ${isSubmitting ? 'bg-quicktok-orange/70' : 'bg-quicktok-orange'} text-white font-bold rounded-md hover:bg-quicktok-orange/90 focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50 transition-colors flex items-center justify-center`}
     >
       {isSubmitting ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
           {submittingLabel}
         </>
       ) : (

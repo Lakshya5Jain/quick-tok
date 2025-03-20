@@ -25,6 +25,8 @@ serve(async (req) => {
       );
     }
 
+    console.log("Creating final video with:", { aiVideoUrl, supportingVideo });
+
     const options = {
       'template_id': '236352ae-d17e-43ad-9aed-4f13004fe57d',
       "modifications": {

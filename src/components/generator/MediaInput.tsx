@@ -12,6 +12,7 @@ interface MediaInputProps {
   onFileChange: (file: File | null) => void;
   urlPlaceholder: string;
   fileAccept?: string;
+  selectedFile?: File | null;
 }
 
 const MediaInput: React.FC<MediaInputProps> = ({
@@ -24,6 +25,7 @@ const MediaInput: React.FC<MediaInputProps> = ({
   onFileChange,
   urlPlaceholder,
   fileAccept = "image/*",
+  selectedFile = null,
 }) => {
   return (
     <div className="space-y-2">
@@ -70,6 +72,7 @@ const MediaInput: React.FC<MediaInputProps> = ({
           label=""
           accept={fileAccept}
           onFileChange={onFileChange}
+          initialFile={selectedFile}
         />
       )}
       

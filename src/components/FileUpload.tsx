@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Upload, X } from "lucide-react";
 
 interface FileUploadProps {
@@ -8,6 +8,7 @@ interface FileUploadProps {
   label: string;
   id: string;
   className?: string;
+  initialFile?: File | null;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
@@ -16,11 +17,24 @@ const FileUpload: React.FC<FileUploadProps> = ({
   label,
   id,
   className = "",
+  initialFile = null,
 }) => {
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState<File | null>(initialFile);
   const [preview, setPreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Generate preview when file is set initially
+  useEffect(() => {
+    if (initialFile && initialFile.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setPreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(initialFile);
+      setFile(initialFile);
+    }
+  }, [initialFile]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -90,22 +104,22 @@ const FileUpload: React.FC<FileUploadProps> = ({
       
       {!file ? (
         <div
-          className={`file-drop-area ${isDragging ? "active" : ""}`}
+          className={`file-drop-area rounded-lg border-2 border-dashed border-zinc-700 p-6 text-center cursor-pointer hover:border-quicktok-orange transition-colors ${isDragging ? "border-quicktok-orange bg-zinc-800" : ""}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => inputRef.current?.click()}
         >
           <Upload className="mx-auto h-12 w-12 text-quicktok-orange mb-4" />
-          <p className="text-muted-foreground">
+          <p className="text-gray-300">
             Click or drag and drop to upload
           </p>
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-xs text-gray-400 mt-2">
             Accepts {accept.replace(/,/g, ", ")}
           </p>
         </div>
       ) : (
-        <div className="relative rounded-lg overflow-hidden border border-input">
+        <div className="relative rounded-lg overflow-hidden border border-zinc-700 hover:border-quicktok-orange transition-colors">
           {preview ? (
             <img 
               src={preview} 
@@ -113,8 +127,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
               className="w-full h-40 object-cover"
             />
           ) : (
-            <div className="w-full h-40 flex items-center justify-center bg-secondary">
-              <p className="text-center text-muted-foreground">
+            <div className="w-full h-40 flex items-center justify-center bg-zinc-800">
+              <p className="text-center text-gray-300">
                 {file.name}
               </p>
             </div>
@@ -123,7 +137,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
           <button
             type="button"
             onClick={handleClear}
-            className="absolute top-2 right-2 p-1 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+            className="absolute top-2 right-2 p-1 rounded-full bg-black/50 text-white hover:bg-quicktok-orange transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
