@@ -1,4 +1,3 @@
-
 import { delay, generateUUID } from './utils';
 import { GenerationProgress, Video, ScriptOption } from '@/types';
 import { mockVideos } from '@/data/mockData';
@@ -20,39 +19,44 @@ const updateProgressInStorage = (processId: string, progress: Partial<Generation
   return updated;
 };
 
-// Convert a blob URL to a publicly accessible URL if possible
-export async function getBlobPublicUrl(blobUrl: string): Promise<string> {
-  try {
-    // If it's not a blob URL, return it as is
-    if (!blobUrl.startsWith('blob:')) {
-      return blobUrl;
-    }
-    
-    // For blob URLs, we need to convert to a publicly accessible URL
-    // This is a placeholder - in a real app, you'd need to upload the file
-    throw new Error("Blob URLs need to be converted to public URLs");
-  } catch (error) {
-    console.error("Error getting public URL from blob:", error);
-    throw error;
-  }
-}
-
 // Upload a file to storage and get a URL
-// This function will work even if supabase storage is not set up
 export async function uploadFile(file: File): Promise<string> {
   try {
     console.log("Uploading file:", file.name);
     
-    // For demo and testing, we'll just use an object URL
-    // In production, you'd upload to Supabase storage or another provider
-    console.log("Creating object URL as fallback");
-    return URL.createObjectURL(file);
+    // Generate a unique file name based on the original name
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+    const filePath = `uploads/${fileName}`;
+    
+    // Try to upload to Supabase storage
+    try {
+      const { data, error } = await supabase.storage
+        .from('quicktok-media')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) throw error;
+      
+      // Get the public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('quicktok-media')
+        .getPublicUrl(filePath);
+      
+      console.log("Uploaded to Supabase, public URL:", publicUrlData.publicUrl);
+      return publicUrlData.publicUrl;
+    } catch (storageError) {
+      console.warn("Supabase storage upload failed, using Object URL as fallback:", storageError);
+      // Create and return an object URL as fallback
+      // Important: These URLs only work in the current browser session
+      return URL.createObjectURL(file);
+    }
   } catch (error) {
     console.error("Error uploading file:", error);
-    // Fall back to object URL if there's any error
-    const objectUrl = URL.createObjectURL(file);
-    console.log("Created object URL as fallback:", objectUrl);
-    return objectUrl;
+    // Fall back to object URL as last resort
+    return URL.createObjectURL(file);
   }
 }
 
@@ -119,6 +123,8 @@ async function processVideoGeneration(processId: string, formData: {
         status: "Uploading supporting media...",
         progress: 10
       });
+      
+      // Upload the supporting media file
       supportingMediaUrl = await uploadFile(formData.supportingMediaFile);
       console.log("Supporting media uploaded successfully:", supportingMediaUrl);
     }
@@ -128,9 +134,16 @@ async function processVideoGeneration(processId: string, formData: {
         status: "Uploading voice character image...",
         progress: 15
       });
+      
+      // Upload the voice media file
       voiceMediaUrl = await uploadFile(formData.voiceMediaFile);
       console.log("Voice media uploaded successfully:", voiceMediaUrl);
     }
+    
+    updateProgressInStorage(processId, { 
+      supportingMediaUrl,
+      voiceMediaUrl
+    });
     
     // Step 2: Get or generate script
     let scriptText: string;

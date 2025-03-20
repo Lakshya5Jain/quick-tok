@@ -29,11 +29,23 @@ serve(async (req) => {
     console.log("Sending to AI API with voice ID:", voiceId);
     console.log("Script:", script);
 
-    // Check if voiceMedia is a blob URL (client-side only)
-    // If so, use the default image instead
-    const imageUrl = voiceMedia && !voiceMedia.startsWith("blob:") 
-      ? voiceMedia 
-      : "https://6ammc3n5zzf5ljnz.public.blob.vercel-storage.com/inf2-image-uploads/image_8132d-DYy5ZM9i939tkiyw6ADf3oVyn6LivZ.png";
+    // Ensure we have a valid voiceMedia URL that the AI API can access
+    // It should be an absolute URL that's publicly accessible
+    let imageUrl;
+    
+    if (voiceMedia) {
+      // If it's a blob URL, use the default instead
+      if (voiceMedia.startsWith("blob:")) {
+        console.warn("Received blob URL which won't work with the AI API. Using default image instead.");
+        imageUrl = "https://6ammc3n5zzf5ljnz.public.blob.vercel-storage.com/inf2-image-uploads/image_8132d-DYy5ZM9i939tkiyw6ADf3oVyn6LivZ.png";
+      } else {
+        // For regular URLs, use them as provided
+        imageUrl = voiceMedia;
+      }
+    } else {
+      // Fall back to default if no voiceMedia provided
+      imageUrl = "https://6ammc3n5zzf5ljnz.public.blob.vercel-storage.com/inf2-image-uploads/image_8132d-DYy5ZM9i939tkiyw6ADf3oVyn6LivZ.png";
+    }
     
     console.log("Using voice media URL:", imageUrl);
 

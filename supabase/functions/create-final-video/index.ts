@@ -27,14 +27,21 @@ serve(async (req) => {
 
     console.log("Creating final video with:", { aiVideoUrl, supportingVideo });
 
-    // Check if supportingVideo is a blob URL (client-side only)
-    // If so, use null instead - the template should have a default fallback
-    const supportingMediaUrl = supportingVideo && !supportingVideo.startsWith("blob:") 
-      ? supportingVideo 
-      : null;
+    // Determine if supportingVideo is a valid URL that Creatomate can access
+    let supportingMediaUrl = null;
     
-    console.log("Using supporting media URL:", supportingMediaUrl);
-
+    if (supportingVideo) {
+      // Check if it's a blob URL or an actual remote URL
+      if (supportingVideo.startsWith("blob:")) {
+        console.warn("Received blob URL which won't work with Creatomate. Not using supporting video.");
+        supportingMediaUrl = null;
+      } else {
+        // For regular URLs, use them as provided
+        supportingMediaUrl = supportingVideo;
+        console.log("Using supporting media URL:", supportingMediaUrl);
+      }
+    }
+    
     // Make sure we're properly passing the supporting video URL to the template
     const options = {
       'template_id': '236352ae-d17e-43ad-9aed-4f13004fe57d',

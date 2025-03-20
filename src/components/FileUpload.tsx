@@ -24,34 +24,31 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Generate preview when file is set initially
+  // Generate preview when file is set initially or changed
   useEffect(() => {
-    if (initialFile && initialFile.type.startsWith("image/")) {
+    if (!file) {
+      setPreview(null);
+      return;
+    }
+    
+    // Create preview for images and videos
+    if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
       const reader = new FileReader();
       reader.onload = (event) => {
         setPreview(event.target?.result as string);
       };
-      reader.readAsDataURL(initialFile);
-      setFile(initialFile);
+      reader.readAsDataURL(file);
+    } else {
+      setPreview(null);
     }
-  }, [initialFile]);
+  }, [file]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
+      console.log("File selected:", selectedFile.name);
       setFile(selectedFile);
       onFileChange(selectedFile);
-      
-      // Create preview for images
-      if (selectedFile.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          setPreview(event.target?.result as string);
-        };
-        reader.readAsDataURL(selectedFile);
-      } else {
-        setPreview(null);
-      }
     }
   };
 
@@ -71,19 +68,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const droppedFile = e.dataTransfer.files[0];
+      console.log("File dropped:", droppedFile.name);
       setFile(droppedFile);
       onFileChange(droppedFile);
-      
-      // Create preview for images
-      if (droppedFile.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          setPreview(event.target?.result as string);
-        };
-        reader.readAsDataURL(droppedFile);
-      } else {
-        setPreview(null);
-      }
     }
   };
 
@@ -98,9 +85,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
   return (
     <div className={className}>
-      <label htmlFor={id} className="block text-sm font-medium mb-2">
-        {label}
-      </label>
+      {label && (
+        <label htmlFor={id} className="block text-sm font-medium mb-2">
+          {label}
+        </label>
+      )}
       
       {!file ? (
         <div
@@ -121,14 +110,23 @@ const FileUpload: React.FC<FileUploadProps> = ({
       ) : (
         <div className="relative rounded-lg overflow-hidden border border-zinc-700 hover:border-quicktok-orange transition-colors">
           {preview ? (
-            <img 
-              src={preview} 
-              alt="File preview" 
-              className="w-full h-40 object-cover"
-            />
+            file.type.startsWith("video/") ? (
+              <video 
+                src={preview} 
+                className="w-full h-40 object-cover"
+                controls
+                muted
+              />
+            ) : (
+              <img 
+                src={preview} 
+                alt="File preview" 
+                className="w-full h-40 object-cover"
+              />
+            )
           ) : (
             <div className="w-full h-40 flex items-center justify-center bg-zinc-800">
-              <p className="text-center text-gray-300">
+              <p className="text-center text-gray-300 p-4 break-all">
                 {file.name}
               </p>
             </div>

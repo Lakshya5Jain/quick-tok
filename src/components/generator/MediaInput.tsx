@@ -141,6 +141,26 @@ const MediaInput: React.FC<MediaInputProps> = ({
           {description}
         </p>
       )}
+      
+      {/* Show preview of the current media if available */}
+      {useFile && filePreviewUrl && (
+        <div className="mt-2 rounded overflow-hidden max-h-40">
+          {filePreviewUrl.includes("video") ? (
+            <video src={filePreviewUrl} className="max-h-40 w-auto" controls muted />
+          ) : (
+            <img src={filePreviewUrl} alt="Preview" className="max-h-40 w-auto" />
+          )}
+        </div>
+      )}
+      {!useFile && url && (
+        <div className="mt-2 rounded overflow-hidden max-h-40">
+          {url.match(/\.(mp4|webm|ogg)$/i) ? (
+            <video src={url} className="max-h-40 w-auto" controls muted />
+          ) : (
+            <img src={url} alt="Preview" className="max-h-40 w-auto" />
+          )}
+        </div>
+      )}
     </div>
   );
 };

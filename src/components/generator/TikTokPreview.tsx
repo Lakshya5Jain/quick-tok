@@ -21,8 +21,8 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
   return (
     <div className="rounded-xl overflow-hidden border border-zinc-700 bg-zinc-900 shadow-lg mx-auto max-w-[320px]">
       <div className="relative aspect-[9/16] bg-black flex flex-col">
-        {/* Top section - Voice Character */}
-        <div className="flex-1 overflow-hidden relative">
+        {/* Top section - Voice Character (2/3 of height) */}
+        <div className="flex-grow-0 h-2/3 overflow-hidden relative">
           {voiceMediaSrc && (
             <img 
               src={voiceMediaSrc} 
@@ -43,10 +43,10 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
           </div>
         </div>
         
-        {/* Bottom section - Supporting Media */}
-        {supportingMedia && (
-          <div className="h-1/3 overflow-hidden">
-            {supportingMedia.includes("video") ? (
+        {/* Bottom section - Supporting Media (1/3 of height) */}
+        <div className="flex-grow-0 h-1/3 overflow-hidden bg-zinc-800">
+          {supportingMedia ? (
+            supportingMedia.includes("video") ? (
               <video 
                 src={supportingMedia} 
                 className="w-full h-full object-cover"
@@ -59,9 +59,13 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
                 alt="Supporting media" 
                 className="w-full h-full object-cover"
               />
-            )}
-          </div>
-        )}
+            )
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+              Supporting media will appear here
+            </div>
+          )}
+        </div>
         
         {/* TikTok Controls Overlay */}
         <div className="absolute bottom-4 right-4 flex gap-1 text-xs text-white">

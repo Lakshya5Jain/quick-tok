@@ -10,29 +10,24 @@ interface LogoProps {
 
 const Logo: React.FC<LogoProps> = ({ 
   className = "", 
-  showText = false,
+  showText = true,
   size = "md",
   onClick
 }) => {
   const sizeClasses = {
-    sm: "h-8",
-    md: "h-12",
-    lg: "h-16",
-    xl: "h-24"
+    sm: "h-10",
+    md: "h-16",
+    lg: "h-24",
+    xl: "h-32"
   };
 
   return (
-    <div className={`flex items-center ${className} cursor-pointer`} onClick={onClick}>
+    <div className={`flex flex-col items-center ${className} cursor-pointer`} onClick={onClick}>
       <img 
-        src="/lovable-uploads/cd0f424d-1fb6-4bc5-9e9a-6e87d9f82bdb.png" 
+        src="/lovable-uploads/337fb8c9-c82c-4cec-820f-c94d6aee22da.png" 
         alt="Quick-Tok Logo" 
         className={`${sizeClasses[size]}`}
       />
-      {showText && (
-        <span className="text-quicktok-white font-display font-bold text-2xl ml-2">
-          Quick-Tok
-        </span>
-      )}
     </div>
   );
 };
