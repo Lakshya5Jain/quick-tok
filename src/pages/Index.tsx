@@ -6,11 +6,14 @@ import GeneratorForm from "@/components/GeneratorForm";
 import VideoFeed from "@/components/VideoFeed";
 import LoadingScreen from "@/components/LoadingScreen";
 import ResultScreen from "@/components/ResultScreen";
+import HomePage from "@/components/HomePage";
 import { GenerationProgress, ScriptOption, Video } from "@/types";
 import { generateVideo, checkProgress, getVideos } from "@/lib/api";
 import { toast } from "sonner";
+import { voiceOptions } from "@/data/mockData";
 
 const Index = () => {
+  const [showHome, setShowHome] = useState(true);
   const [activeTab, setActiveTab] = useState<"generate" | "videos">("generate");
   const [videos, setVideos] = useState<Video[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,13 +69,41 @@ const Index = () => {
     topic?: string;
     customScript?: string;
     supportingMedia?: string;
+    supportingMediaFile?: File;
     voiceId: string;
-    voiceMedia: string;
+    voiceMedia?: string;
+    voiceMediaFile?: File;
   }) => {
     setIsSubmitting(true);
     
     try {
-      const processId = await generateVideo(formData);
+      // Handle file uploads if present
+      let supportingMediaUrl = formData.supportingMedia;
+      let voiceMediaUrl = formData.voiceMedia;
+      
+      if (formData.supportingMediaFile) {
+        // TODO: Implement file upload to get URL
+        // For now, just use a placeholder URL
+        toast.info("File upload feature is coming soon. Using default media.");
+        supportingMediaUrl = "https://6ammc3n5zzf5ljnz.public.blob.vercel-storage.com/inf2-image-uploads/image_8132d-DYy5ZM9i939tkiyw6ADf3oVyn6LivZ.png";
+      }
+      
+      if (formData.voiceMediaFile) {
+        // TODO: Implement file upload to get URL
+        // For now, just use a placeholder URL
+        toast.info("File upload feature is coming soon. Using default media.");
+        voiceMediaUrl = "https://6ammc3n5zzf5ljnz.public.blob.vercel-storage.com/inf2-image-uploads/image_8132d-DYy5ZM9i939tkiyw6ADf3oVyn6LivZ.png";
+      }
+      
+      const processId = await generateVideo({
+        scriptOption: formData.scriptOption,
+        topic: formData.topic,
+        customScript: formData.customScript,
+        supportingMedia: supportingMediaUrl,
+        voiceId: formData.voiceId,
+        voiceMedia: voiceMediaUrl
+      });
+      
       setCurrentProcessId(processId);
       setProgress({
         progress: 0,
@@ -91,29 +122,25 @@ const Index = () => {
     getVideos().then(setVideos);
   };
 
+  const handleGetStarted = () => {
+    setShowHome(false);
+  };
+
+  const handleLogoClick = () => {
+    setShowHome(true);
+  };
+
+  if (showHome) {
+    return <HomePage onGetStarted={handleGetStarted} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-primary px-4 pb-16">
       <div className="max-w-4xl mx-auto pt-8">
-        <motion.h1 
-          className="text-4xl font-display font-semibold text-center mb-2"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          TikTok Video Generator
-        </motion.h1>
-        <motion.p 
-          className="text-muted-foreground text-center mb-8"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          Create engaging videos with AI-generated scripts and visuals
-        </motion.p>
-        
         <Navbar 
           activeTab={activeTab} 
-          onTabChange={setActiveTab} 
+          onTabChange={setActiveTab}
+          onLogoClick={handleLogoClick}
         />
         
         <AnimatePresence mode="wait">
@@ -128,6 +155,7 @@ const Index = () => {
               <GeneratorForm 
                 onSubmit={handleFormSubmit} 
                 isSubmitting={isSubmitting} 
+                voiceOptions={voiceOptions}
               />
             </motion.div>
           ) : (

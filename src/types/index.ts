@@ -26,3 +26,15 @@ export enum ScriptOption {
   GPT = "gpt",
   CUSTOM = "custom"
 }
+
+export interface Feature {
+  title: string;
+  description: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+}
+
+export interface HowItWorksStep {
+  number: number;
+  title: string;
+  description: string;
+}

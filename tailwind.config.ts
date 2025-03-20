@@ -52,6 +52,11 @@ export default {
 				card: {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
+				},
+				quicktok: {
+					orange: '#FF6B00',
+					black: '#000000',
+					white: '#FFFFFF',
 				}
 			},
 			borderRadius: {
