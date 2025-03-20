@@ -5,12 +5,14 @@ interface LogoProps {
   className?: string;
   showText?: boolean;
   size?: "sm" | "md" | "lg" | "xl";
+  onClick?: () => void;
 }
 
 const Logo: React.FC<LogoProps> = ({ 
   className = "", 
   showText = true,
-  size = "md" 
+  size = "md",
+  onClick
 }) => {
   const sizeClasses = {
     sm: "h-8",
@@ -20,7 +22,7 @@ const Logo: React.FC<LogoProps> = ({
   };
 
   return (
-    <div className={`flex items-center ${className}`}>
+    <div className={`flex items-center ${className}`} onClick={onClick}>
       <img 
         src="/lovable-uploads/a3b0fd8d-2a0b-4b7b-be7a-4353feca61c0.png" 
         alt="Quick-Tok Logo" 

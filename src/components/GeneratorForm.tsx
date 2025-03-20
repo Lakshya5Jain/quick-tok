@@ -2,9 +2,12 @@
 import React, { useState } from "react";
 import { ScriptOption, VoiceOption } from "@/types";
 import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import FileUpload from "./FileUpload";
+import ScriptOptionSelector from "./generator/ScriptOptionSelector";
+import ScriptInput from "./generator/ScriptInput";
+import MediaInput from "./generator/MediaInput";
+import VoiceSelector from "./generator/VoiceSelector";
+import SubmitButton from "./generator/SubmitButton";
 
 interface GeneratorFormProps {
   onSubmit: (formData: {
@@ -103,208 +106,59 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Script Option Selection */}
-        <div className="space-y-3">
-          <label className="block text-sm font-medium text-gray-200">Script Option</label>
-          <div className="flex gap-4">
-            <div className="flex items-center">
-              <input
-                type="radio"
-                id="gpt"
-                className="h-4 w-4 text-quicktok-orange focus:ring-quicktok-orange"
-                checked={scriptOption === ScriptOption.GPT}
-                onChange={() => setScriptOption(ScriptOption.GPT)}
-              />
-              <label htmlFor="gpt" className="ml-2 text-sm text-gray-300">Generate with AI</label>
-            </div>
-            <div className="flex items-center">
-              <input
-                type="radio"
-                id="custom"
-                className="h-4 w-4 text-quicktok-orange focus:ring-quicktok-orange"
-                checked={scriptOption === ScriptOption.CUSTOM}
-                onChange={() => setScriptOption(ScriptOption.CUSTOM)}
-              />
-              <label htmlFor="custom" className="ml-2 text-sm text-gray-300">Use my own script</label>
-            </div>
-          </div>
-        </div>
+        <ScriptOptionSelector 
+          scriptOption={scriptOption} 
+          onChange={setScriptOption}
+        />
         
-        {/* Topic Input (for GPT option) */}
-        {scriptOption === ScriptOption.GPT && (
-          <motion.div 
-            className="form-transition space-y-2"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-          >
-            <label htmlFor="topic" className="block text-sm font-medium text-gray-200">Topic/Keyword</label>
-            <input
-              type="text"
-              id="topic"
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              placeholder="E.g., Benefits of meditation"
-              className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50"
-            />
-          </motion.div>
-        )}
+        {/* Script Input based on selection */}
+        <ScriptInput 
+          scriptOption={scriptOption}
+          topic={topic}
+          onTopicChange={setTopic}
+          customScript={customScript}
+          onCustomScriptChange={setCustomScript}
+        />
         
-        {/* Custom Script Textarea (for custom option) */}
-        {scriptOption === ScriptOption.CUSTOM && (
-          <motion.div 
-            className="form-transition space-y-2"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-          >
-            <label htmlFor="customScript" className="block text-sm font-medium text-gray-200">Your Script</label>
-            <textarea
-              id="customScript"
-              value={customScript}
-              onChange={(e) => setCustomScript(e.target.value)}
-              rows={4}
-              placeholder="Enter your script here..."
-              className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50"
-            />
-          </motion.div>
-        )}
-        
-        {/* Supporting Media Toggle */}
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-200">
-            Supporting Media
-          </label>
-          <div className="flex items-center space-x-4 mb-3">
-            <div className="flex items-center">
-              <input
-                type="radio"
-                id="mediaUrl"
-                name="mediaSource"
-                checked={!useMediaFile}
-                onChange={() => setUseMediaFile(false)}
-                className="h-4 w-4 text-quicktok-orange focus:ring-quicktok-orange"
-              />
-              <label htmlFor="mediaUrl" className="ml-2 text-sm text-gray-300">Use URL</label>
-            </div>
-            <div className="flex items-center">
-              <input
-                type="radio"
-                id="mediaFile"
-                name="mediaSource"
-                checked={useMediaFile}
-                onChange={() => setUseMediaFile(true)}
-                className="h-4 w-4 text-quicktok-orange focus:ring-quicktok-orange"
-              />
-              <label htmlFor="mediaFile" className="ml-2 text-sm text-gray-300">Upload File</label>
-            </div>
-          </div>
-
-          {!useMediaFile ? (
-            <input
-              type="url"
-              id="supportingMedia"
-              value={supportingMedia}
-              onChange={(e) => setSupportingMedia(e.target.value)}
-              placeholder="Enter URL for supporting media"
-              className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50"
-            />
-          ) : (
-            <FileUpload
-              id="supportingMediaFile"
-              label=""
-              accept="image/*,video/*"
-              onFileChange={setSupportingMediaFile}
-            />
-          )}
-          <p className="text-xs text-gray-400">
-            Upload or link to a video or image that will be shown in your TikTok video
-          </p>
-        </div>
+        {/* Supporting Media Input */}
+        <MediaInput 
+          title="Supporting Media"
+          description="Upload or link to a video or image that will be shown in your TikTok video"
+          useFile={useMediaFile}
+          onToggleUseFile={setUseMediaFile}
+          url={supportingMedia}
+          onUrlChange={setSupportingMedia}
+          onFileChange={setSupportingMediaFile}
+          urlPlaceholder="Enter URL for supporting media"
+          fileAccept="image/*,video/*"
+        />
         
         {/* Voice Selection */}
-        <div className="space-y-2">
-          <label htmlFor="voiceId" className="block text-sm font-medium text-gray-200">Select Voice</label>
-          <select
-            id="voiceId"
-            value={voiceId}
-            onChange={(e) => setVoiceId(e.target.value)}
-            className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50"
-          >
-            {voiceOptions.map((voice) => (
-              <option key={voice.id} value={voice.id}>
-                {voice.name}{voice.description ? ` - ${voice.description}` : ''}
-              </option>
-            ))}
-          </select>
-        </div>
+        <VoiceSelector 
+          voiceId={voiceId}
+          onChange={setVoiceId}
+          voiceOptions={voiceOptions}
+        />
         
-        {/* Voice Character Media Toggle */}
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-200">
-            Voice Character Media
-          </label>
-          <div className="flex items-center space-x-4 mb-3">
-            <div className="flex items-center">
-              <input
-                type="radio"
-                id="voiceMediaUrl"
-                name="voiceMediaSource"
-                checked={!useVoiceMediaFile}
-                onChange={() => setUseVoiceMediaFile(false)}
-                className="h-4 w-4 text-quicktok-orange focus:ring-quicktok-orange"
-              />
-              <label htmlFor="voiceMediaUrl" className="ml-2 text-sm text-gray-300">Use URL</label>
-            </div>
-            <div className="flex items-center">
-              <input
-                type="radio"
-                id="voiceMediaFile"
-                name="voiceMediaSource"
-                checked={useVoiceMediaFile}
-                onChange={() => setUseVoiceMediaFile(true)}
-                className="h-4 w-4 text-quicktok-orange focus:ring-quicktok-orange"
-              />
-              <label htmlFor="voiceMediaFile" className="ml-2 text-sm text-gray-300">Upload File</label>
-            </div>
-          </div>
-
-          {!useVoiceMediaFile ? (
-            <input
-              type="url"
-              id="voiceMedia"
-              value={voiceMedia}
-              onChange={(e) => setVoiceMedia(e.target.value)}
-              placeholder="Enter URL for voice character image"
-              className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50"
-            />
-          ) : (
-            <FileUpload
-              id="voiceMediaFile"
-              label=""
-              accept="image/*"
-              onFileChange={setVoiceMediaFile}
-            />
-          )}
-          <p className="text-xs text-gray-400">
-            Default will be used if left empty
-          </p>
-        </div>
+        {/* Voice Character Media Input */}
+        <MediaInput 
+          title="Voice Character Media"
+          description="Default will be used if left empty"
+          useFile={useVoiceMediaFile}
+          onToggleUseFile={setUseVoiceMediaFile}
+          url={voiceMedia}
+          onUrlChange={setVoiceMedia}
+          onFileChange={setVoiceMediaFile}
+          urlPlaceholder="Enter URL for voice character image"
+          fileAccept="image/*"
+        />
         
         {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full py-3 bg-quicktok-orange text-white font-bold rounded-md hover:bg-quicktok-orange/90 focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50 transition-colors flex items-center justify-center"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            "Generate Video"
-          )}
-        </button>
+        <SubmitButton 
+          isSubmitting={isSubmitting} 
+          label="Generate Video"
+          submittingLabel="Generating..."
+        />
       </form>
     </motion.div>
   );
