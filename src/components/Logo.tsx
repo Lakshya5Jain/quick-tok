@@ -10,7 +10,7 @@ interface LogoProps {
 
 const Logo: React.FC<LogoProps> = ({ 
   className = "", 
-  showText = true,
+  showText = false, // Changed default to false
   size = "md",
   onClick
 }) => {
@@ -26,7 +26,7 @@ const Logo: React.FC<LogoProps> = ({
       <img 
         src="/lovable-uploads/a3b0fd8d-2a0b-4b7b-be7a-4353feca61c0.png" 
         alt="Quick-Tok Logo" 
-        className={`${sizeClasses[size]} orange-glow`}
+        className={`${sizeClasses[size]}`} // Removed orange-glow class
       />
       {showText && (
         <span className="text-quicktok-white font-display font-bold text-2xl ml-2">

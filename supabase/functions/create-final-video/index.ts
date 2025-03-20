@@ -27,13 +27,16 @@ serve(async (req) => {
 
     console.log("Creating final video with:", { aiVideoUrl, supportingVideo });
 
+    // Make sure we're properly passing the supporting video URL to the template
     const options = {
       'template_id': '236352ae-d17e-43ad-9aed-4f13004fe57d',
       "modifications": {
         "anchor": aiVideoUrl,
-        "supporting_video": supportingVideo || ""
+        "supporting_video": supportingVideo || null // Ensuring we send null instead of empty string
       },
     };
+    
+    console.log("Sending to Creatomate with options:", JSON.stringify(options));
     
     const headers = {
       'Authorization': `Bearer ${creatomateApiKey}`,

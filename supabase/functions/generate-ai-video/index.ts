@@ -37,6 +37,7 @@ serve(async (req) => {
       'Accept': 'application/json'
     };
     
+    // Make sure we're properly using the provided voiceMedia URL or image
     const data = {
       'img_url': voiceMedia || "https://6ammc3n5zzf5ljnz.public.blob.vercel-storage.com/inf2-image-uploads/image_8132d-DYy5ZM9i939tkiyw6ADf3oVyn6LivZ.png",
       'text': script,
@@ -45,6 +46,8 @@ serve(async (req) => {
       'crop_head': false,
       'expressiveness': 0.7
     };
+
+    console.log("Sending request to AI API with data:", JSON.stringify(data));
 
     // This is just to start the job and get the job ID
     // We'll return the job ID to the client, which will poll for progress

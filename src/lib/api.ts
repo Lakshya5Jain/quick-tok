@@ -1,4 +1,3 @@
-
 import { delay, generateUUID } from './utils';
 import { GenerationProgress, Video, ScriptOption } from '@/types';
 import { mockVideos } from '@/data/mockData';
@@ -25,24 +24,34 @@ export async function uploadFile(file: File): Promise<string> {
   try {
     console.log("Uploading file:", file.name);
     
-    // If in production, we would use Supabase storage here
-    // For now, create a demo object URL to simulate a file upload
-    const fileUrl = URL.createObjectURL(file);
-    console.log("File uploaded, URL:", fileUrl);
+    // For real uploads to Supabase storage:
+    // First generate a unique path to avoid name collisions
+    const filePath = `uploads/${generateUUID()}-${file.name}`;
     
-    // The real implementation would be:
-    // const { data, error } = await supabase.storage
-    //   .from('media')
-    //   .upload(`uploads/${generateUUID()}-${file.name}`, file);
-    // 
-    // if (error) throw error;
-    // 
-    // return supabase.storage.from('media').getPublicUrl(data.path).data.publicUrl;
+    const { data, error } = await supabase.storage
+      .from('media')
+      .upload(filePath, file);
     
-    return fileUrl;
+    if (error) {
+      console.error("Error uploading to Supabase:", error);
+      // Fall back to object URL if Supabase upload fails
+      console.log("Falling back to object URL");
+      return URL.createObjectURL(file);
+    }
+    
+    // Get the public URL for the uploaded file
+    const { data: urlData } = supabase.storage
+      .from('media')
+      .getPublicUrl(filePath);
+    
+    console.log("File uploaded successfully to Supabase, URL:", urlData.publicUrl);
+    return urlData.publicUrl;
   } catch (error) {
     console.error("Error uploading file:", error);
-    throw error;
+    // Fall back to object URL if there's any error
+    const objectUrl = URL.createObjectURL(file);
+    console.log("Created object URL as fallback:", objectUrl);
+    return objectUrl;
   }
 }
 
@@ -83,7 +92,6 @@ export async function generateVideo(formData: {
   });
   
   // Start the process in the background
-  // We'll use setTimeout to make it non-blocking
   setTimeout(() => processVideoGeneration(processId, formData), 0);
   
   return processId;
@@ -111,6 +119,7 @@ async function processVideoGeneration(processId: string, formData: {
         progress: 10
       });
       supportingMediaUrl = await uploadFile(formData.supportingMediaFile);
+      console.log("Supporting media uploaded successfully:", supportingMediaUrl);
     }
     
     if (formData.voiceMediaFile) {
@@ -119,6 +128,7 @@ async function processVideoGeneration(processId: string, formData: {
         progress: 15
       });
       voiceMediaUrl = await uploadFile(formData.voiceMediaFile);
+      console.log("Voice media uploaded successfully:", voiceMediaUrl);
     }
     
     // Step 2: Get or generate script
@@ -155,7 +165,7 @@ async function processVideoGeneration(processId: string, formData: {
       body: {
         script: scriptText,
         voiceId: formData.voiceId,
-        voiceMedia: voiceMediaUrl || "https://6ammc3n5zzf5ljnz.public.blob.vercel-storage.com/inf2-image-uploads/image_8132d-DYy5ZM9i939tkiyw6ADf3oVyn6LivZ.png"
+        voiceMedia: voiceMediaUrl // No default value here, let the function handle it
       }
     });
     
@@ -192,7 +202,7 @@ async function processVideoGeneration(processId: string, formData: {
     const { data: renderData, error: renderError } = await supabase.functions.invoke('create-final-video', {
       body: {
         aiVideoUrl,
-        supportingVideo: supportingMediaUrl
+        supportingVideo: supportingMediaUrl // Pass the URL directly
       }
     });
     
