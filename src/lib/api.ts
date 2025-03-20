@@ -2,28 +2,40 @@
 import { delay, generateUUID } from './utils';
 import { GenerationProgress, Video, ScriptOption } from '@/types';
 import { mockVideos } from '@/data/mockData';
+import { supabase } from "@/integrations/supabase/client";
 
-// Simulated API for generating scripts
+// We'll use localStorage to store progress for demo purposes
+const getProgressFromStorage = (processId: string): GenerationProgress | null => {
+  const stored = localStorage.getItem(`progress_${processId}`);
+  return stored ? JSON.parse(stored) : null;
+};
+
+const updateProgressInStorage = (processId: string, progress: Partial<GenerationProgress>) => {
+  const current = getProgressFromStorage(processId) || {
+    progress: 0,
+    status: "Starting...",
+  };
+  const updated = { ...current, ...progress };
+  localStorage.setItem(`progress_${processId}`, JSON.stringify(updated));
+  return updated;
+};
+
+// Generate script with GPT
 export async function generateScript(topic: string): Promise<string> {
-  // In a real implementation, this would call an API endpoint
-  await delay(1500);
-  
-  return `Here's an engaging script about ${topic}: 
-  
-Did you know that ${topic} is becoming increasingly important in our daily lives? Studies show that understanding ${topic} can lead to improved wellbeing and productivity. 
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-script', {
+      body: { topic }
+    });
 
-Let me share 3 key insights about ${topic} that might surprise you.
-
-First, regular engagement with ${topic} has been linked to reduced stress levels and better sleep quality.
-
-Second, experts recommend incorporating ${topic} into your routine at least 3 times per week for optimal benefits.
-
-Finally, ${topic} has been shown to improve cognitive function and memory retention in people of all ages.
-
-Try implementing these tips today and see the difference for yourself!`;
+    if (error) throw new Error(error.message);
+    return data.scriptText;
+  } catch (error) {
+    console.error('Error generating script:', error);
+    throw error;
+  }
 }
 
-// Simulated API for video generation process
+// Main function to start the video generation process
 export async function generateVideo(formData: {
   scriptOption: ScriptOption;
   topic?: string;
@@ -32,92 +44,182 @@ export async function generateVideo(formData: {
   voiceId: string;
   voiceMedia: string;
 }): Promise<string> {
-  // Generate process ID
   const processId = generateUUID();
+  
+  // Initialize progress in localStorage
+  updateProgressInStorage(processId, {
+    progress: 0,
+    status: "Starting...",
+    voiceId: formData.voiceId,
+    voiceMedia: formData.voiceMedia
+  });
+  
+  // Start the process in the background
+  // We'll use setTimeout to make it non-blocking
+  setTimeout(() => processVideoGeneration(processId, formData), 0);
+  
   return processId;
 }
 
-// Simulated API to check progress
-export async function checkProgress(processId: string): Promise<GenerationProgress> {
-  // This would be a real API call in production
-  // For demo purposes, we'll simulate the progress
-  
-  const progressData = localStorage.getItem(`progress_${processId}`);
-  if (!progressData) {
-    // Initialize progress
-    const initial: GenerationProgress = {
-      progress: 0,
-      status: "Starting...",
-    };
-    localStorage.setItem(`progress_${processId}`, JSON.stringify(initial));
-    return initial;
-  }
-  
-  const current: GenerationProgress = JSON.parse(progressData);
-  
-  // If already complete, return as is
-  if (current.progress >= 100) {
-    return current;
-  }
-  
-  // Simulate progress update
-  let updated: GenerationProgress;
-  
-  if (current.progress < 25) {
-    updated = {
-      ...current,
-      progress: 25,
-      status: "Generating script...",
-    };
-  } else if (current.progress < 50) {
-    updated = {
-      ...current,
-      progress: 50,
-      status: "Creating AI video...",
-    };
-  } else if (current.progress < 75) {
-    updated = {
-      ...current,
-      progress: 75,
-      status: "Finalizing video...",
-    };
-  } else {
-    // Complete the process
-    updated = {
+// Background process to generate the video
+async function processVideoGeneration(processId: string, formData: {
+  scriptOption: ScriptOption;
+  topic?: string;
+  customScript?: string;
+  supportingMedia?: string;
+  voiceId: string;
+  voiceMedia: string;
+}) {
+  try {
+    // Step 1: Get or generate script
+    let scriptText: string;
+    
+    if (formData.scriptOption === ScriptOption.GPT && formData.topic) {
+      updateProgressInStorage(processId, {
+        status: "Generating script...",
+        progress: 25
+      });
+      
+      scriptText = await generateScript(formData.topic);
+    } else if (formData.scriptOption === ScriptOption.CUSTOM && formData.customScript) {
+      updateProgressInStorage(processId, {
+        status: "Using custom script...",
+        progress: 25
+      });
+      
+      scriptText = formData.customScript;
+    } else {
+      throw new Error("Invalid script option or missing required data");
+    }
+    
+    updateProgressInStorage(processId, { scriptText });
+    
+    // Step 2: Generate AI video
+    updateProgressInStorage(processId, {
+      status: "Generating AI video...",
+      progress: 50
+    });
+    
+    // Start AI video generation
+    const { data: startData, error: startError } = await supabase.functions.invoke('generate-ai-video', {
+      body: {
+        script: scriptText,
+        voiceId: formData.voiceId,
+        voiceMedia: formData.voiceMedia
+      }
+    });
+    
+    if (startError) throw new Error(`Error starting AI video: ${startError.message}`);
+    
+    const jobId = startData.jobId;
+    
+    // Poll for AI video status
+    let aiVideoUrl: string | null = null;
+    while (!aiVideoUrl) {
+      // Wait a bit before checking status
+      await delay(5000);
+      
+      const { data: statusData, error: statusError } = await supabase.functions.invoke('check-ai-video-status', {
+        body: { jobId }
+      });
+      
+      if (statusError) throw new Error(`Error checking AI video status: ${statusError.message}`);
+      
+      if (statusData.completed) {
+        aiVideoUrl = statusData.videoUrl;
+      } else {
+        console.log(`AI video status: ${statusData.status}`);
+      }
+    }
+    
+    updateProgressInStorage(processId, { 
+      aiVideoUrl,
+      status: "Creating final video...",
+      progress: 75
+    });
+    
+    // Step 3: Create final video with Creatomate
+    const { data: renderData, error: renderError } = await supabase.functions.invoke('create-final-video', {
+      body: {
+        aiVideoUrl,
+        supportingVideo: formData.supportingMedia
+      }
+    });
+    
+    if (renderError) throw new Error(`Error creating final video: ${renderError.message}`);
+    
+    const renderId = renderData.renderId;
+    
+    // Poll for final video status
+    let finalVideoUrl: string | null = null;
+    while (!finalVideoUrl) {
+      // Wait a bit before checking status
+      await delay(5000);
+      
+      const { data: finalStatusData, error: finalStatusError } = await supabase.functions.invoke('check-final-video-status', {
+        body: { 
+          renderId,
+          scriptText,
+          aiVideoUrl
+        }
+      });
+      
+      if (finalStatusError) throw new Error(`Error checking final video status: ${finalStatusError.message}`);
+      
+      if (finalStatusData.completed) {
+        finalVideoUrl = finalStatusData.url;
+      } else {
+        console.log(`Final video status: ${finalStatusData.status}`);
+      }
+    }
+    
+    // Step 4: Complete the process
+    updateProgressInStorage(processId, {
+      finalVideoUrl,
       progress: 100,
-      status: "Complete!",
-      finalVideoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-      scriptText: "This is a sample generated script that would have been created based on your topic. It demonstrates how the video generator works, using AI to create engaging content for TikTok and other social media platforms. The script is optimized for text-to-speech conversion, ensuring clear and natural-sounding narration.",
-      aiVideoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    };
+      status: "Complete!"
+    });
     
-    // Add to videos list
-    const newVideo: Video = {
-      id: generateUUID(),
-      finalVideoUrl: updated.finalVideoUrl!,
-      scriptText: updated.scriptText!,
-      timestamp: Date.now(),
-    };
-    
-    const savedVideos = localStorage.getItem('videos');
-    const videos = savedVideos ? JSON.parse(savedVideos) : [];
-    videos.unshift(newVideo);
-    localStorage.setItem('videos', JSON.stringify(videos));
+  } catch (error) {
+    console.error("Error in video generation process:", error);
+    updateProgressInStorage(processId, {
+      status: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      progress: 100
+    });
   }
-  
-  localStorage.setItem(`progress_${processId}`, JSON.stringify(updated));
-  return updated;
 }
 
-// Get saved videos
-export async function getVideos(): Promise<Video[]> {
-  const savedVideos = localStorage.getItem('videos');
+// Check progress of video generation
+export async function checkProgress(processId: string): Promise<GenerationProgress> {
+  const progress = getProgressFromStorage(processId);
   
-  if (!savedVideos) {
-    // Initialize with mock data on first run
-    localStorage.setItem('videos', JSON.stringify(mockVideos));
-    return mockVideos;
+  if (!progress) {
+    throw new Error("Process not found");
   }
   
-  return JSON.parse(savedVideos);
+  return progress;
+}
+
+// Get saved videos from database
+export async function getVideos(): Promise<Video[]> {
+  try {
+    const { data, error } = await supabase.functions.invoke('get-videos', {});
+    
+    if (error) {
+      console.error("Error fetching videos:", error);
+      // Fall back to mock videos if there's an error
+      return mockVideos;
+    }
+    
+    return data.videos.map((video: any) => ({
+      id: video.id,
+      finalVideoUrl: video.final_video_url,
+      scriptText: video.script_text,
+      timestamp: new Date(video.timestamp).getTime()
+    }));
+  } catch (error) {
+    console.error("Error in getVideos:", error);
+    // Fall back to mock videos if there's an error
+    return mockVideos;
+  }
 }
