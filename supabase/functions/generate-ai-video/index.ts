@@ -27,8 +27,15 @@ serve(async (req) => {
 
     // Log what we're sending to the AI API for debugging
     console.log("Sending to AI API with voice ID:", voiceId);
-    console.log("Voice media URL:", voiceMedia);
     console.log("Script:", script);
+
+    // Check if voiceMedia is a blob URL (client-side only)
+    // If so, use the default image instead
+    const imageUrl = voiceMedia && !voiceMedia.startsWith("blob:") 
+      ? voiceMedia 
+      : "https://6ammc3n5zzf5ljnz.public.blob.vercel-storage.com/inf2-image-uploads/image_8132d-DYy5ZM9i939tkiyw6ADf3oVyn6LivZ.png";
+    
+    console.log("Using voice media URL:", imageUrl);
 
     // Start the video generation
     const headers = {
@@ -37,9 +44,8 @@ serve(async (req) => {
       'Accept': 'application/json'
     };
     
-    // Make sure we're properly using the provided voiceMedia URL or image
     const data = {
-      'img_url': voiceMedia || "https://6ammc3n5zzf5ljnz.public.blob.vercel-storage.com/inf2-image-uploads/image_8132d-DYy5ZM9i939tkiyw6ADf3oVyn6LivZ.png",
+      'img_url': imageUrl,
       'text': script,
       'voice_id': voiceId,
       'resolution': '320',

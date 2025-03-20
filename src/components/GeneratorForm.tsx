@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ScriptOption, VoiceOption } from "@/types";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import ScriptInput from "./generator/ScriptInput";
 import MediaInput from "./generator/MediaInput";
 import VoiceSelector from "./generator/VoiceSelector";
 import SubmitButton from "./generator/SubmitButton";
+import TikTokPreview from "./generator/TikTokPreview";
 
 interface GeneratorFormProps {
   onSubmit: (formData: {
@@ -39,6 +40,17 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
   const [voiceMedia, setVoiceMedia] = useState("");
   const [voiceMediaFile, setVoiceMediaFile] = useState<File | null>(null);
   const [useVoiceMediaFile, setUseVoiceMediaFile] = useState(false);
+
+  // Preview state
+  const [previewVoiceMedia, setPreviewVoiceMedia] = useState<string | null>(null);
+  const [previewSupportingMedia, setPreviewSupportingMedia] = useState<string | null>(null);
+  
+  // Get current script based on selected option
+  const currentScript = scriptOption === ScriptOption.GPT 
+    ? topic 
+    : scriptOption === ScriptOption.CUSTOM 
+      ? customScript 
+      : "";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +93,7 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
       supportingMedia: !useMediaFile ? supportingMedia : undefined,
       supportingMediaFile: useMediaFile ? supportingMediaFile || undefined : undefined,
       voiceId,
-      voiceMedia: !useVoiceMediaFile ? voiceMedia || "https://6ammc3n5zzf5ljnz.public.blob.vercel-storage.com/inf2-image-uploads/image_8132d-DYy5ZM9i939tkiyw6ADf3oVyn6LivZ.png" : undefined,
+      voiceMedia: !useVoiceMediaFile ? voiceMedia : undefined,
       voiceMediaFile: useVoiceMediaFile ? voiceMediaFile || undefined : undefined,
     });
   };
@@ -96,71 +108,98 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
   };
 
   return (
-    <motion.div 
-      className="max-w-2xl mx-auto bg-zinc-900 p-8 rounded-xl shadow-xl border border-zinc-800"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-    >
-      <h2 className="text-2xl font-bold mb-6 text-center text-white">Create TikTok Video</h2>
+    <div className="flex flex-col md:flex-row gap-8 w-full">
+      {/* Form Section */}
+      <motion.div 
+        className="flex-1 bg-zinc-900 p-8 rounded-xl shadow-xl border border-zinc-800"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <h2 className="text-2xl font-bold mb-6 text-center text-white">Create TikTok Video</h2>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Script Option Selection */}
+          <ScriptOptionSelector 
+            scriptOption={scriptOption} 
+            onChange={setScriptOption}
+          />
+          
+          {/* Script Input based on selection */}
+          <ScriptInput 
+            scriptOption={scriptOption}
+            topic={topic}
+            onTopicChange={setTopic}
+            customScript={customScript}
+            onCustomScriptChange={setCustomScript}
+          />
+          
+          {/* Voice Selection */}
+          <VoiceSelector 
+            voiceId={voiceId}
+            onChange={setVoiceId}
+            voiceOptions={voiceOptions}
+          />
+          
+          {/* Voice Character Media Input */}
+          <MediaInput 
+            title="Voice Character Media"
+            description="Image shown at the top of your TikTok"
+            useFile={useVoiceMediaFile}
+            onToggleUseFile={setUseVoiceMediaFile}
+            url={voiceMedia}
+            onUrlChange={setVoiceMedia}
+            onFileChange={setVoiceMediaFile}
+            urlPlaceholder="Enter URL for voice character image"
+            fileAccept="image/*"
+            selectedFile={voiceMediaFile}
+            onMediaAvailable={(isAvailable, mediaUrl) => setPreviewVoiceMedia(mediaUrl)}
+          />
+          
+          {/* Supporting Media Input */}
+          <MediaInput 
+            title="Supporting Media"
+            description="Video/image shown at the bottom of your TikTok"
+            useFile={useMediaFile}
+            onToggleUseFile={setUseMediaFile}
+            url={supportingMedia}
+            onUrlChange={setSupportingMedia}
+            onFileChange={setSupportingMediaFile}
+            urlPlaceholder="Enter URL for supporting media"
+            fileAccept="image/*,video/*"
+            selectedFile={supportingMediaFile}
+            onMediaAvailable={(isAvailable, mediaUrl) => setPreviewSupportingMedia(mediaUrl)}
+          />
+          
+          {/* Submit Button */}
+          <SubmitButton 
+            isSubmitting={isSubmitting} 
+            label="Generate Video"
+            submittingLabel="Generating..."
+          />
+        </form>
+      </motion.div>
       
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Script Option Selection */}
-        <ScriptOptionSelector 
-          scriptOption={scriptOption} 
-          onChange={setScriptOption}
+      {/* Preview Section */}
+      <motion.div
+        className="w-full md:w-96 p-8 bg-zinc-900 rounded-xl shadow-xl border border-zinc-800 flex flex-col items-center"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+      >
+        <h2 className="text-2xl font-bold mb-6 text-center text-white">Preview</h2>
+        
+        <TikTokPreview
+          voiceMedia={previewVoiceMedia}
+          supportingMedia={previewSupportingMedia}
+          script={currentScript}
         />
         
-        {/* Script Input based on selection */}
-        <ScriptInput 
-          scriptOption={scriptOption}
-          topic={topic}
-          onTopicChange={setTopic}
-          customScript={customScript}
-          onCustomScriptChange={setCustomScript}
-        />
-        
-        {/* Supporting Media Input */}
-        <MediaInput 
-          title="Supporting Media"
-          description="Upload or link to a video or image that will be shown in your TikTok video"
-          useFile={useMediaFile}
-          onToggleUseFile={setUseMediaFile}
-          url={supportingMedia}
-          onUrlChange={setSupportingMedia}
-          onFileChange={setSupportingMediaFile}
-          urlPlaceholder="Enter URL for supporting media"
-          fileAccept="image/*,video/*"
-        />
-        
-        {/* Voice Selection */}
-        <VoiceSelector 
-          voiceId={voiceId}
-          onChange={setVoiceId}
-          voiceOptions={voiceOptions}
-        />
-        
-        {/* Voice Character Media Input */}
-        <MediaInput 
-          title="Voice Character Media"
-          description="Default will be used if left empty"
-          useFile={useVoiceMediaFile}
-          onToggleUseFile={setUseVoiceMediaFile}
-          url={voiceMedia}
-          onUrlChange={setVoiceMedia}
-          onFileChange={setVoiceMediaFile}
-          urlPlaceholder="Enter URL for voice character image"
-          fileAccept="image/*"
-        />
-        
-        {/* Submit Button */}
-        <SubmitButton 
-          isSubmitting={isSubmitting} 
-          label="Generate Video"
-          submittingLabel="Generating..."
-        />
-      </form>
-    </motion.div>
+        <p className="text-gray-400 text-sm mt-6 text-center">
+          This is a preview of how your TikTok will look. The actual generated video will include animation and narration.
+        </p>
+      </motion.div>
+    </div>
   );
 };
 

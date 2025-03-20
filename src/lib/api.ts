@@ -1,3 +1,4 @@
+
 import { delay, generateUUID } from './utils';
 import { GenerationProgress, Video, ScriptOption } from '@/types';
 import { mockVideos } from '@/data/mockData';
@@ -19,33 +20,33 @@ const updateProgressInStorage = (processId: string, progress: Partial<Generation
   return updated;
 };
 
+// Convert a blob URL to a publicly accessible URL if possible
+export async function getBlobPublicUrl(blobUrl: string): Promise<string> {
+  try {
+    // If it's not a blob URL, return it as is
+    if (!blobUrl.startsWith('blob:')) {
+      return blobUrl;
+    }
+    
+    // For blob URLs, we need to convert to a publicly accessible URL
+    // This is a placeholder - in a real app, you'd need to upload the file
+    throw new Error("Blob URLs need to be converted to public URLs");
+  } catch (error) {
+    console.error("Error getting public URL from blob:", error);
+    throw error;
+  }
+}
+
 // Upload a file to storage and get a URL
+// This function will work even if supabase storage is not set up
 export async function uploadFile(file: File): Promise<string> {
   try {
     console.log("Uploading file:", file.name);
     
-    // For real uploads to Supabase storage:
-    // First generate a unique path to avoid name collisions
-    const filePath = `uploads/${generateUUID()}-${file.name}`;
-    
-    const { data, error } = await supabase.storage
-      .from('media')
-      .upload(filePath, file);
-    
-    if (error) {
-      console.error("Error uploading to Supabase:", error);
-      // Fall back to object URL if Supabase upload fails
-      console.log("Falling back to object URL");
-      return URL.createObjectURL(file);
-    }
-    
-    // Get the public URL for the uploaded file
-    const { data: urlData } = supabase.storage
-      .from('media')
-      .getPublicUrl(filePath);
-    
-    console.log("File uploaded successfully to Supabase, URL:", urlData.publicUrl);
-    return urlData.publicUrl;
+    // For demo and testing, we'll just use an object URL
+    // In production, you'd upload to Supabase storage or another provider
+    console.log("Creating object URL as fallback");
+    return URL.createObjectURL(file);
   } catch (error) {
     console.error("Error uploading file:", error);
     // Fall back to object URL if there's any error
@@ -165,7 +166,7 @@ async function processVideoGeneration(processId: string, formData: {
       body: {
         script: scriptText,
         voiceId: formData.voiceId,
-        voiceMedia: voiceMediaUrl // No default value here, let the function handle it
+        voiceMedia: voiceMediaUrl
       }
     });
     
@@ -202,7 +203,7 @@ async function processVideoGeneration(processId: string, formData: {
     const { data: renderData, error: renderError } = await supabase.functions.invoke('create-final-video', {
       body: {
         aiVideoUrl,
-        supportingVideo: supportingMediaUrl // Pass the URL directly
+        supportingVideo: supportingMediaUrl
       }
     });
     

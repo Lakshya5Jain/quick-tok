@@ -121,7 +121,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-primary px-4 pb-16">
-      <div className="max-w-4xl mx-auto pt-8">
+      <div className="max-w-6xl mx-auto pt-8">
         <Navbar 
           activeTab={activeTab} 
           onTabChange={setActiveTab}
@@ -136,6 +136,7 @@ const Index = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
+              className="w-full"
             >
               <GeneratorForm 
                 onSubmit={handleFormSubmit} 

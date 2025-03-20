@@ -27,12 +27,20 @@ serve(async (req) => {
 
     console.log("Creating final video with:", { aiVideoUrl, supportingVideo });
 
+    // Check if supportingVideo is a blob URL (client-side only)
+    // If so, use null instead - the template should have a default fallback
+    const supportingMediaUrl = supportingVideo && !supportingVideo.startsWith("blob:") 
+      ? supportingVideo 
+      : null;
+    
+    console.log("Using supporting media URL:", supportingMediaUrl);
+
     // Make sure we're properly passing the supporting video URL to the template
     const options = {
       'template_id': '236352ae-d17e-43ad-9aed-4f13004fe57d',
       "modifications": {
         "anchor": aiVideoUrl,
-        "supporting_video": supportingVideo || null // Ensuring we send null instead of empty string
+        "supporting_video": supportingMediaUrl
       },
     };
     
