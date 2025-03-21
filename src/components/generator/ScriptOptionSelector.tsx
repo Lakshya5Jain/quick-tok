@@ -1,7 +1,7 @@
 
 import React from "react";
 import { ScriptOption } from "@/types";
-import { Toggle, ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface ScriptOptionSelectorProps {
   scriptOption: ScriptOption;

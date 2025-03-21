@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import FileUpload from "@/components/FileUpload";
-import { Toggle, ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface MediaInputProps {
   title: string;
