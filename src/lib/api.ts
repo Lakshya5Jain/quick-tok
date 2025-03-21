@@ -142,7 +142,7 @@ async function processVideoGeneration(processId: string, formData: {
     
     updateProgressInStorage(processId, { 
       supportingMediaUrl,
-      voiceMediaUrl
+      voiceMedia: voiceMediaUrl // Changed from voiceMediaUrl to voiceMedia to match the interface
     });
     
     // Step 2: Get or generate script
