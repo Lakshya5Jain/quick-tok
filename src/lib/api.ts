@@ -84,6 +84,7 @@ export async function generateVideo(formData: {
   voiceId: string;
   voiceMedia?: string;
   voiceMediaFile?: File;
+  highResolution: boolean;
 }): Promise<string> {
   const processId = generateUUID();
   
@@ -111,6 +112,7 @@ async function processVideoGeneration(processId: string, formData: {
   voiceId: string;
   voiceMedia?: string;
   voiceMediaFile?: File;
+  highResolution: boolean;
 }) {
   try {
     // Step 1: Upload files if they exist
@@ -192,7 +194,8 @@ async function processVideoGeneration(processId: string, formData: {
       body: {
         script: scriptText,
         voiceId: formData.voiceId,
-        voiceMedia: voiceMediaUrl
+        voiceMedia: voiceMediaUrl,
+        highResolution: formData.highResolution
       }
     });
     
@@ -310,4 +313,3 @@ export async function getVideos(): Promise<Video[]> {
     return mockVideos;
   }
 }
-
