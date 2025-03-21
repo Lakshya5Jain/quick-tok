@@ -21,8 +21,8 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
   return (
     <div className="rounded-xl overflow-hidden border border-zinc-700 bg-zinc-900 shadow-lg mx-auto max-w-[320px]">
       <div className="relative aspect-[9/16] bg-black flex flex-col">
-        {/* Top section - Voice Character (2/3 of height) */}
-        <div className="flex-grow-0 h-2/3 overflow-hidden relative">
+        {/* Top section - Voice Character (1/2 of height) */}
+        <div className="flex-grow-0 h-1/2 overflow-hidden relative">
           {voiceMediaSrc && (
             <img 
               src={voiceMediaSrc} 
@@ -30,21 +30,10 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
               className="w-full h-full object-cover"
             />
           )}
-          
-          {/* Caption overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-white text-sm font-medium"
-            >
-              {script ? script.substring(0, 80) + (script.length > 80 ? "..." : "") : "Your script will appear here..."}
-            </motion.div>
-          </div>
         </div>
         
-        {/* Bottom section - Supporting Media (1/3 of height) */}
-        <div className="flex-grow-0 h-1/3 overflow-hidden bg-zinc-800">
+        {/* Bottom section - Supporting Media (1/2 of height) */}
+        <div className="flex-grow-0 h-1/2 overflow-hidden bg-zinc-800">
           {supportingMedia ? (
             supportingMedia.includes("video") ? (
               <video 
@@ -67,11 +56,17 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
           )}
         </div>
         
-        {/* TikTok Controls Overlay */}
-        <div className="absolute bottom-4 right-4 flex gap-1 text-xs text-white">
-          <div className="flex items-center">
-            <span className="bg-black/50 px-2 py-1 rounded-full">0:16</span>
-          </div>
+        {/* Script overlay in the middle */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="bg-black/50 backdrop-blur-sm px-4 py-2 rounded-lg max-w-[90%] text-center"
+          >
+            <p className="text-white text-sm font-medium">
+              {script ? script.substring(0, 80) + (script.length > 80 ? "..." : "") : "Your script will appear here..."}
+            </p>
+          </motion.div>
         </div>
       </div>
     </div>

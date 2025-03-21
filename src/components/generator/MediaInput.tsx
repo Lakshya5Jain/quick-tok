@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import FileUpload from "@/components/FileUpload";
+import { Toggle, ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface MediaInputProps {
   title: string;
@@ -88,34 +89,30 @@ const MediaInput: React.FC<MediaInputProps> = ({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <label className="block text-sm font-medium text-gray-200">
         {title}
       </label>
-      <div className="flex items-center space-x-4 mb-3">
-        <div className="flex items-center">
-          <input
-            type="radio"
-            id={`${title.replace(/\s+/g, "")}-url`}
-            name={`${title.replace(/\s+/g, "")}-source`}
-            checked={!useFile}
-            onChange={() => handleToggleUseFile(false)}
-            className="h-4 w-4 text-quicktok-orange focus:ring-quicktok-orange"
-          />
-          <label htmlFor={`${title.replace(/\s+/g, "")}-url`} className="ml-2 text-sm text-gray-300">Use URL</label>
-        </div>
-        <div className="flex items-center">
-          <input
-            type="radio"
-            id={`${title.replace(/\s+/g, "")}-file`}
-            name={`${title.replace(/\s+/g, "")}-source`}
-            checked={useFile}
-            onChange={() => handleToggleUseFile(true)}
-            className="h-4 w-4 text-quicktok-orange focus:ring-quicktok-orange"
-          />
-          <label htmlFor={`${title.replace(/\s+/g, "")}-file`} className="ml-2 text-sm text-gray-300">Upload File</label>
-        </div>
-      </div>
+      
+      <ToggleGroup 
+        type="single"
+        value={useFile ? "file" : "url"}
+        onValueChange={(value) => value && handleToggleUseFile(value === "file")}
+        className="bg-zinc-800 p-1 rounded-lg w-full flex mb-3"
+      >
+        <ToggleGroupItem 
+          value="url"
+          className="flex-1 rounded-md data-[state=on]:bg-quicktok-orange data-[state=on]:text-white"
+        >
+          Use URL
+        </ToggleGroupItem>
+        <ToggleGroupItem 
+          value="file"
+          className="flex-1 rounded-md data-[state=on]:bg-quicktok-orange data-[state=on]:text-white"
+        >
+          Upload File
+        </ToggleGroupItem>
+      </ToggleGroup>
 
       {!useFile ? (
         <input
@@ -124,7 +121,7 @@ const MediaInput: React.FC<MediaInputProps> = ({
           value={url}
           onChange={(e) => onUrlChange(e.target.value)}
           placeholder={urlPlaceholder}
-          className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50"
+          className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50 focus:border-quicktok-orange"
         />
       ) : (
         <FileUpload
@@ -137,14 +134,14 @@ const MediaInput: React.FC<MediaInputProps> = ({
       )}
       
       {description && (
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-gray-400 mt-1">
           {description}
         </p>
       )}
       
       {/* Show preview of the current media if available */}
       {useFile && filePreviewUrl && (
-        <div className="mt-2 rounded overflow-hidden max-h-40">
+        <div className="mt-3 rounded-lg overflow-hidden max-h-40 border border-zinc-700">
           {filePreviewUrl.includes("video") ? (
             <video src={filePreviewUrl} className="max-h-40 w-auto" controls muted />
           ) : (
@@ -153,7 +150,7 @@ const MediaInput: React.FC<MediaInputProps> = ({
         </div>
       )}
       {!useFile && url && (
-        <div className="mt-2 rounded overflow-hidden max-h-40">
+        <div className="mt-3 rounded-lg overflow-hidden max-h-40 border border-zinc-700">
           {url.match(/\.(mp4|webm|ogg)$/i) ? (
             <video src={url} className="max-h-40 w-auto" controls muted />
           ) : (

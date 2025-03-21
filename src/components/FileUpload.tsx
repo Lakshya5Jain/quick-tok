@@ -1,6 +1,8 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { Upload, X } from "lucide-react";
+import { Upload, X, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface FileUploadProps {
   onFileChange: (file: File | null) => void;
@@ -22,6 +24,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const [file, setFile] = useState<File | null>(initialFile);
   const [preview, setPreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Generate preview when file is set initially or changed
@@ -43,12 +46,65 @@ const FileUpload: React.FC<FileUploadProps> = ({
     }
   }, [file]);
 
+  const uploadToSupabase = async (selectedFile: File) => {
+    try {
+      setIsUploading(true);
+      
+      // Generate a unique file name based on the original name
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `uploads/${fileName}`;
+      
+      // Create the bucket if it doesn't exist (this is handled in the API)
+      const { data, error } = await supabase.storage
+        .from('quicktok-media')
+        .upload(filePath, selectedFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error("Error uploading to Supabase:", error);
+        toast.error("Failed to upload file. Using local file instead.");
+        // Continue with the local file
+        setFile(selectedFile);
+        onFileChange(selectedFile);
+        setIsUploading(false);
+        return;
+      }
+      
+      // Get the public URL 
+      const { data: publicUrlData } = supabase.storage
+        .from('quicktok-media')
+        .getPublicUrl(filePath);
+      
+      if (publicUrlData && publicUrlData.publicUrl) {
+        console.log("File uploaded successfully to Supabase:", publicUrlData.publicUrl);
+        toast.success("File uploaded successfully!");
+      }
+      
+      // Continue with the local file for preview
+      setFile(selectedFile);
+      onFileChange(selectedFile);
+      
+    } catch (error) {
+      console.error("Unexpected error during upload:", error);
+      toast.error("An unexpected error occurred. Using local file instead.");
+      // Continue with the local file
+      setFile(selectedFile);
+      onFileChange(selectedFile);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       console.log("File selected:", selectedFile.name);
-      setFile(selectedFile);
-      onFileChange(selectedFile);
+      
+      // Upload to Supabase
+      uploadToSupabase(selectedFile);
     }
   };
 
@@ -69,8 +125,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const droppedFile = e.dataTransfer.files[0];
       console.log("File dropped:", droppedFile.name);
-      setFile(droppedFile);
-      onFileChange(droppedFile);
+      
+      // Upload to Supabase
+      uploadToSupabase(droppedFile);
     }
   };
 
@@ -109,7 +166,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
         </div>
       ) : (
         <div className="relative rounded-lg overflow-hidden border border-zinc-700 hover:border-quicktok-orange transition-colors">
-          {preview ? (
+          {isUploading ? (
+            <div className="w-full h-40 flex flex-col items-center justify-center bg-zinc-800">
+              <Loader2 className="h-8 w-8 text-quicktok-orange animate-spin mb-2" />
+              <p className="text-center text-gray-300">Uploading...</p>
+            </div>
+          ) : preview ? (
             file.type.startsWith("video/") ? (
               <video 
                 src={preview} 

@@ -41,8 +41,8 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onLogoClick }) 
             className="absolute bottom-0 h-0.5 bg-quicktok-orange rounded-full"
             initial={false}
             animate={{ 
-              left: activeTab === "generate" ? "25%" : "75%",
-              right: activeTab === "generate" ? "50%" : "25%",
+              width: '25%',
+              left: activeTab === "generate" ? "25%" : "62.5%",
             }}
             transition={{ type: "spring", stiffness: 350, damping: 35 }}
           />
