@@ -55,6 +55,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `${fileName}`;
       
+      console.log("Attempting to upload file to Supabase bucket 'uploads':", fileName);
+      
       // Upload to Supabase bucket
       const { data, error } = await supabase.storage
         .from('uploads')

@@ -28,13 +28,14 @@ serve(async (req) => {
     console.log("Creating final video with:", { aiVideoUrl, supportingVideo });
 
     // Determine if supportingVideo is a valid URL that Creatomate can access
+    const defaultSupportingMedia = "https://i.makeagif.com/media/11-27-2023/Uii6jU.mp4";
     let supportingMediaUrl = null;
     
     if (supportingVideo) {
       // Check if it's a blob URL or an actual remote URL
       if (supportingVideo.startsWith("blob:")) {
         console.warn("Received blob URL which won't work with Creatomate. Using default supporting video.");
-        supportingMediaUrl = "https://i.makeagif.com/media/11-27-2023/Uii6jU.mp4";
+        supportingMediaUrl = defaultSupportingMedia;
       } else {
         // For regular URLs, use them as provided
         supportingMediaUrl = supportingVideo;
@@ -42,7 +43,7 @@ serve(async (req) => {
       }
     } else {
       // Use the default supporting media
-      supportingMediaUrl = "https://i.makeagif.com/media/11-27-2023/Uii6jU.mp4";
+      supportingMediaUrl = defaultSupportingMedia;
       console.log("Using default supporting media URL:", supportingMediaUrl);
     }
     

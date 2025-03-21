@@ -61,7 +61,7 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
           )}
         </div>
         
-        {/* Script overlay in the middle */}
+        {/* Script overlay in the middle - improved styling */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <motion.div 
             initial={{ opacity: 0 }}

@@ -36,12 +36,15 @@ const MediaInput: React.FC<MediaInputProps> = ({
   // State to track file preview URL
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
   
-  // Initialize URL with default if provided
+  // Only initialize URL with default for voice character, not for supporting media
   useEffect(() => {
-    if (defaultUrl && !url && !useFile) {
+    if (defaultUrl && !url && !useFile && title === "Supporting Media") {
+      // Initialize supporting media with empty string (no default)
+      onUrlChange("");
+    } else if (defaultUrl && !url && !useFile) {
       onUrlChange(defaultUrl);
     }
-  }, [defaultUrl, url, useFile]);
+  }, [defaultUrl, url, useFile, title]);
   
   // Create or update preview URL when file changes
   useEffect(() => {
