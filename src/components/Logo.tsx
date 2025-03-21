@@ -14,17 +14,18 @@ const Logo: React.FC<LogoProps> = ({
   size = "md",
   onClick
 }) => {
+  // Updated size values to make the logo larger
   const sizeClasses = {
-    sm: "h-20",
-    md: "h-36",
-    lg: "h-48",
-    xl: "h-64"
+    sm: "h-28", // Increased from h-20
+    md: "h-44", // Increased from h-36
+    lg: "h-56", // Increased from h-48
+    xl: "h-72"  // Increased from h-64
   };
 
   return (
     <div className={`flex flex-col items-center ${className} cursor-pointer`} onClick={onClick}>
       <img 
-        src="/lovable-uploads/cd0f424d-1fb6-4bc5-9e9a-6e87d9f82bdb.png" 
+        src="/lovable-uploads/641e5021-6609-45d8-9c70-8c6359ac6089.png" 
         alt="Quick-Tok Logo" 
         className={`${sizeClasses[size]}`}
       />

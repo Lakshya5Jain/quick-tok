@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import FileUpload from "@/components/FileUpload";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -15,6 +16,7 @@ interface MediaInputProps {
   selectedFile?: File | null;
   // Track when a valid URL or file is available
   onMediaAvailable?: (isAvailable: boolean, mediaUrl: string | null) => void;
+  defaultUrl?: string;
 }
 
 const MediaInput: React.FC<MediaInputProps> = ({
@@ -29,9 +31,17 @@ const MediaInput: React.FC<MediaInputProps> = ({
   fileAccept = "image/*",
   selectedFile = null,
   onMediaAvailable,
+  defaultUrl,
 }) => {
   // State to track file preview URL
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
+  
+  // Initialize URL with default if provided
+  useEffect(() => {
+    if (defaultUrl && !url && !useFile) {
+      onUrlChange(defaultUrl);
+    }
+  }, [defaultUrl, url, useFile]);
   
   // Create or update preview URL when file changes
   useEffect(() => {

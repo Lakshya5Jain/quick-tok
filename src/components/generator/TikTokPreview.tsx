@@ -14,9 +14,13 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
   script
 }) => {
   const defaultVoiceMedia = "https://6ammc3n5zzf5ljnz.public.blob.vercel-storage.com/inf2-image-uploads/image_8132d-DYy5ZM9i939tkiyw6ADf3oVyn6LivZ.png";
+  const defaultSupportingMedia = "https://i.makeagif.com/media/11-27-2023/Uii6jU.mp4";
   
   // Use the default image if no voice media provided
   const voiceMediaSrc = voiceMedia || defaultVoiceMedia;
+  
+  // Use the default supporting media if none provided
+  const supportingMediaSrc = supportingMedia || defaultSupportingMedia;
   
   return (
     <div className="rounded-xl overflow-hidden border border-zinc-700 bg-zinc-900 shadow-lg mx-auto">
@@ -34,17 +38,18 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
         
         {/* Bottom section - Supporting Media (exactly 1/2 of height) */}
         <div className="flex-grow-0 h-1/2 overflow-hidden bg-zinc-800">
-          {supportingMedia ? (
-            supportingMedia.includes("video") ? (
+          {supportingMediaSrc ? (
+            supportingMediaSrc.includes("video") || supportingMediaSrc.includes(".mp4") ? (
               <video 
-                src={supportingMedia} 
+                src={supportingMediaSrc} 
                 className="w-full h-full object-cover"
+                autoPlay
                 muted
                 loop
               />
             ) : (
               <img 
-                src={supportingMedia} 
+                src={supportingMediaSrc} 
                 alt="Supporting media" 
                 className="w-full h-full object-cover"
               />
@@ -61,7 +66,7 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-white/90 px-4 py-2 rounded-lg max-w-[85%] text-center shadow-lg"
+            className="bg-white px-4 py-2 rounded-lg max-w-[85%] text-center shadow-lg"
           >
             <p className="text-black text-sm font-bold">
               {script ? script.substring(0, 80) + (script.length > 80 ? "..." : "") : "Your script will appear here..."}

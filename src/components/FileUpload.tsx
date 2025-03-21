@@ -60,12 +60,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
         .from('uploads')
         .upload(filePath, selectedFile, {
           cacheControl: '3600',
-          upsert: false
+          upsert: true // Changed from false to true to overwrite if file exists
         });
 
       if (error) {
         console.error("Error uploading to Supabase:", error);
-        toast.error("Failed to upload file. Please try again.");
+        toast.error(`Failed to upload file: ${error.message}`);
         setIsUploading(false);
         return;
       }

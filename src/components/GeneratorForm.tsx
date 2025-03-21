@@ -30,10 +30,13 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
   isSubmitting,
   voiceOptions 
 }) => {
+  // Default supporting media URL
+  const defaultSupportingMedia = "https://i.makeagif.com/media/11-27-2023/Uii6jU.mp4";
+
   const [scriptOption, setScriptOption] = useState<ScriptOption>(ScriptOption.GPT);
   const [topic, setTopic] = useState("");
   const [customScript, setCustomScript] = useState("");
-  const [supportingMedia, setSupportingMedia] = useState("");
+  const [supportingMedia, setSupportingMedia] = useState(defaultSupportingMedia);
   const [supportingMediaFile, setSupportingMediaFile] = useState<File | null>(null);
   const [useMediaFile, setUseMediaFile] = useState(false);
   const [voiceId, setVoiceId] = useState("LXVY607YcjqxFS3mcult");
@@ -43,7 +46,7 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
 
   // Preview state
   const [previewVoiceMedia, setPreviewVoiceMedia] = useState<string | null>(null);
-  const [previewSupportingMedia, setPreviewSupportingMedia] = useState<string | null>(null);
+  const [previewSupportingMedia, setPreviewSupportingMedia] = useState<string | null>(defaultSupportingMedia);
   
   // Get current script based on selected option
   const currentScript = scriptOption === ScriptOption.GPT 
@@ -169,6 +172,7 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
             fileAccept="image/*,video/*"
             selectedFile={supportingMediaFile}
             onMediaAvailable={(isAvailable, mediaUrl) => setPreviewSupportingMedia(mediaUrl)}
+            defaultUrl={defaultSupportingMedia}
           />
           
           {/* Submit Button */}

@@ -33,13 +33,17 @@ serve(async (req) => {
     if (supportingVideo) {
       // Check if it's a blob URL or an actual remote URL
       if (supportingVideo.startsWith("blob:")) {
-        console.warn("Received blob URL which won't work with Creatomate. Not using supporting video.");
-        supportingMediaUrl = null;
+        console.warn("Received blob URL which won't work with Creatomate. Using default supporting video.");
+        supportingMediaUrl = "https://i.makeagif.com/media/11-27-2023/Uii6jU.mp4";
       } else {
         // For regular URLs, use them as provided
         supportingMediaUrl = supportingVideo;
         console.log("Using supporting media URL:", supportingMediaUrl);
       }
+    } else {
+      // Use the default supporting media
+      supportingMediaUrl = "https://i.makeagif.com/media/11-27-2023/Uii6jU.mp4";
+      console.log("Using default supporting media URL:", supportingMediaUrl);
     }
     
     // Make sure we're properly passing the supporting video URL to the template
