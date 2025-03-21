@@ -15,16 +15,16 @@ const Logo: React.FC<LogoProps> = ({
   onClick
 }) => {
   const sizeClasses = {
-    sm: "h-16",
-    md: "h-28",
-    lg: "h-36",
-    xl: "h-44"
+    sm: "h-20",
+    md: "h-36",
+    lg: "h-48",
+    xl: "h-64"
   };
 
   return (
     <div className={`flex flex-col items-center ${className} cursor-pointer`} onClick={onClick}>
       <img 
-        src="/lovable-uploads/a3b0fd8d-2a0b-4b7b-be7a-4353feca61c0.png" 
+        src="/lovable-uploads/cd0f424d-1fb6-4bc5-9e9a-6e87d9f82bdb.png" 
         alt="Quick-Tok Logo" 
         className={`${sizeClasses[size]}`}
       />

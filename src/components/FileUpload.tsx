@@ -53,11 +53,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
       // Generate a unique file name based on the original name
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-      const filePath = `uploads/${fileName}`;
+      const filePath = `${fileName}`;
       
-      // Create the bucket if it doesn't exist (this is handled in the API)
+      // Upload to Supabase bucket
       const { data, error } = await supabase.storage
-        .from('quicktok-media')
+        .from('uploads')
         .upload(filePath, selectedFile, {
           cacheControl: '3600',
           upsert: false
@@ -65,34 +65,39 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
       if (error) {
         console.error("Error uploading to Supabase:", error);
-        toast.error("Failed to upload file. Using local file instead.");
-        // Continue with the local file
-        setFile(selectedFile);
-        onFileChange(selectedFile);
+        toast.error("Failed to upload file. Please try again.");
         setIsUploading(false);
         return;
       }
       
       // Get the public URL 
       const { data: publicUrlData } = supabase.storage
-        .from('quicktok-media')
+        .from('uploads')
         .getPublicUrl(filePath);
       
       if (publicUrlData && publicUrlData.publicUrl) {
         console.log("File uploaded successfully to Supabase:", publicUrlData.publicUrl);
+        
+        // Create a new File object with the same properties but with a publicUrl attribute
+        const fileWithUrl = new File([selectedFile], selectedFile.name, {
+          type: selectedFile.type,
+        });
+        
+        // Set the publicUrl as a property on the file object (non-standard but useful)
+        Object.defineProperty(fileWithUrl, 'publicUrl', {
+          value: publicUrlData.publicUrl,
+          writable: false
+        });
+        
+        setFile(fileWithUrl);
+        onFileChange(fileWithUrl);
         toast.success("File uploaded successfully!");
+      } else {
+        toast.error("Failed to get public URL for uploaded file");
       }
-      
-      // Continue with the local file for preview
-      setFile(selectedFile);
-      onFileChange(selectedFile);
-      
     } catch (error) {
       console.error("Unexpected error during upload:", error);
-      toast.error("An unexpected error occurred. Using local file instead.");
-      // Continue with the local file
-      setFile(selectedFile);
-      onFileChange(selectedFile);
+      toast.error("An unexpected error occurred during upload");
     } finally {
       setIsUploading(false);
     }

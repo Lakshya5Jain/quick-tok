@@ -24,14 +24,14 @@ const ScriptOptionSelector: React.FC<ScriptOptionSelectorProps> = ({
         <ToggleGroupItem 
           value={ScriptOption.GPT} 
           aria-label="Generate with AI"
-          className="flex-1 rounded-md data-[state=on]:bg-quicktok-orange data-[state=on]:text-white"
+          className="flex-1 rounded-md data-[state=on]:bg-quicktok-orange data-[state=on]:text-white transition-all duration-200"
         >
           Generate with AI
         </ToggleGroupItem>
         <ToggleGroupItem 
           value={ScriptOption.CUSTOM} 
           aria-label="Use my own script"
-          className="flex-1 rounded-md data-[state=on]:bg-quicktok-orange data-[state=on]:text-white"
+          className="flex-1 rounded-md data-[state=on]:bg-quicktok-orange data-[state=on]:text-white transition-all duration-200"
         >
           Use my own script
         </ToggleGroupItem>

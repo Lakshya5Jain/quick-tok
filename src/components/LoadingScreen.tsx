@@ -1,6 +1,5 @@
 
 import React, { useEffect, useState } from "react";
-import ProgressBar from "./ProgressBar";
 import { GenerationProgress } from "@/types";
 import { motion } from "framer-motion";
 
@@ -28,7 +27,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ progress }) => {
 
   return (
     <motion.div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-md"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -43,11 +42,20 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ progress }) => {
           <h2 className="text-2xl font-bold text-center mb-2 text-quicktok-orange">Processing Your Video</h2>
           <p className="text-gray-300 text-center mb-6">{message}</p>
           
-          <ProgressBar 
-            progress={progress.progress} 
-            status={progress.status} 
-          />
+          {/* Single progress indicator */}
+          <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+            <motion.div 
+              className="h-full bg-quicktok-orange"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress.progress}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
           
+          {/* Progress percentage */}
+          <p className="text-quicktok-orange font-medium mt-2">{progress.progress}%</p>
+          
+          {/* Bouncing animation */}
           <div className="flex justify-center mt-8">
             <motion.div
               className="w-12 h-12 rounded-full bg-quicktok-orange"
@@ -62,6 +70,10 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ progress }) => {
               }}
             />
           </div>
+          
+          <p className="text-sm text-gray-400 mt-6 text-center">
+            {progress.status}
+          </p>
         </motion.div>
       </div>
     </motion.div>

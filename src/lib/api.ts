@@ -24,35 +24,34 @@ export async function uploadFile(file: File): Promise<string> {
   try {
     console.log("Uploading file:", file.name);
     
+    // Check if the file already has a publicUrl (from previous upload)
+    if ('publicUrl' in file) {
+      // @ts-ignore - custom property we added
+      return file.publicUrl;
+    }
+    
     // Generate a unique file name based on the original name
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-    const filePath = `uploads/${fileName}`;
+    const filePath = `${fileName}`;
     
     // Try to upload to Supabase storage
-    try {
-      const { data, error } = await supabase.storage
-        .from('quicktok-media')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+    const { data, error } = await supabase.storage
+      .from('uploads')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
 
-      if (error) throw error;
-      
-      // Get the public URL
-      const { data: publicUrlData } = supabase.storage
-        .from('quicktok-media')
-        .getPublicUrl(filePath);
-      
-      console.log("Uploaded to Supabase, public URL:", publicUrlData.publicUrl);
-      return publicUrlData.publicUrl;
-    } catch (storageError) {
-      console.warn("Supabase storage upload failed, using Object URL as fallback:", storageError);
-      // Create and return an object URL as fallback
-      // Important: These URLs only work in the current browser session
-      return URL.createObjectURL(file);
-    }
+    if (error) throw error;
+    
+    // Get the public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('uploads')
+      .getPublicUrl(filePath);
+    
+    console.log("Uploaded to Supabase, public URL:", publicUrlData.publicUrl);
+    return publicUrlData.publicUrl;
   } catch (error) {
     console.error("Error uploading file:", error);
     // Fall back to object URL as last resort
@@ -124,9 +123,16 @@ async function processVideoGeneration(processId: string, formData: {
         progress: 10
       });
       
-      // Upload the supporting media file
-      supportingMediaUrl = await uploadFile(formData.supportingMediaFile);
-      console.log("Supporting media uploaded successfully:", supportingMediaUrl);
+      // Check if the file already has a publicUrl from previous upload
+      if ('publicUrl' in formData.supportingMediaFile) {
+        // @ts-ignore - this property was added during file upload
+        supportingMediaUrl = formData.supportingMediaFile.publicUrl;
+        console.log("Using existing public URL for supporting media:", supportingMediaUrl);
+      } else {
+        // Upload the supporting media file
+        supportingMediaUrl = await uploadFile(formData.supportingMediaFile);
+        console.log("Supporting media uploaded successfully:", supportingMediaUrl);
+      }
     }
     
     if (formData.voiceMediaFile) {
@@ -135,14 +141,21 @@ async function processVideoGeneration(processId: string, formData: {
         progress: 15
       });
       
-      // Upload the voice media file
-      voiceMediaUrl = await uploadFile(formData.voiceMediaFile);
-      console.log("Voice media uploaded successfully:", voiceMediaUrl);
+      // Check if the file already has a publicUrl from previous upload
+      if ('publicUrl' in formData.voiceMediaFile) {
+        // @ts-ignore - this property was added during file upload
+        voiceMediaUrl = formData.voiceMediaFile.publicUrl;
+        console.log("Using existing public URL for voice media:", voiceMediaUrl);
+      } else {
+        // Upload the voice media file
+        voiceMediaUrl = await uploadFile(formData.voiceMediaFile);
+        console.log("Voice media uploaded successfully:", voiceMediaUrl);
+      }
     }
     
     updateProgressInStorage(processId, { 
       supportingMediaUrl,
-      voiceMedia: voiceMediaUrl // Changed from voiceMediaUrl to voiceMedia to match the interface
+      voiceMedia: voiceMediaUrl
     });
     
     // Step 2: Get or generate script
@@ -297,3 +310,4 @@ export async function getVideos(): Promise<Video[]> {
     return mockVideos;
   }
 }
+

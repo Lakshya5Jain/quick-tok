@@ -12,7 +12,7 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onLogoClick }) => {
   return (
-    <nav className="w-full max-w-4xl mx-auto my-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <nav className="w-full max-w-4xl mx-auto mb-6 mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div className="flex justify-center sm:justify-start">
         <Logo
           className="cursor-pointer"
@@ -41,8 +41,9 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onLogoClick }) 
             className="absolute bottom-0 h-0.5 bg-quicktok-orange rounded-full"
             initial={false}
             animate={{ 
-              width: '25%',
-              left: activeTab === "generate" ? "25%" : "62.5%",
+              width: '50%',
+              left: activeTab === "generate" ? "0%" : "50%",
+              x: 0
             }}
             transition={{ type: "spring", stiffness: 350, damping: 35 }}
           />
@@ -63,7 +64,7 @@ const TabButton: React.FC<TabButtonProps> = ({ active, onClick, children }) => {
     <button
       onClick={onClick}
       className={cn(
-        "relative py-4 px-8 text-sm font-medium transition-colors duration-300 outline-none",
+        "relative py-4 px-8 text-sm font-medium transition-colors duration-300 outline-none w-1/2",
         active ? "text-quicktok-orange" : "text-gray-400 hover:text-gray-200"
       )}
     >

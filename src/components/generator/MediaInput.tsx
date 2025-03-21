@@ -36,30 +36,37 @@ const MediaInput: React.FC<MediaInputProps> = ({
   // Create or update preview URL when file changes
   useEffect(() => {
     if (selectedFile) {
-      // Revoke previous object URL to prevent memory leaks
       if (filePreviewUrl && filePreviewUrl.startsWith('blob:')) {
         URL.revokeObjectURL(filePreviewUrl);
       }
       
-      // Create new object URL for preview
-      const newPreviewUrl = URL.createObjectURL(selectedFile);
-      setFilePreviewUrl(newPreviewUrl);
-      
-      // Notify parent about available media
-      if (onMediaAvailable) {
-        onMediaAvailable(true, newPreviewUrl);
-      }
-      
-      // Clean up object URL when component unmounts
-      return () => {
-        if (newPreviewUrl && newPreviewUrl.startsWith('blob:')) {
-          URL.revokeObjectURL(newPreviewUrl);
+      // If there's a publicUrl property from Supabase, use that
+      if ('publicUrl' in selectedFile) {
+        // @ts-ignore - we added this property in the FileUpload component
+        setFilePreviewUrl(selectedFile.publicUrl);
+        if (onMediaAvailable) {
+          // @ts-ignore - we added this property in the FileUpload component
+          onMediaAvailable(true, selectedFile.publicUrl);
         }
-      };
+      } else {
+        // Otherwise, create a blob URL for preview
+        const newPreviewUrl = URL.createObjectURL(selectedFile);
+        setFilePreviewUrl(newPreviewUrl);
+        
+        if (onMediaAvailable) {
+          onMediaAvailable(true, newPreviewUrl);
+        }
+        
+        // Clean up blob URL when component unmounts
+        return () => {
+          if (newPreviewUrl && newPreviewUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(newPreviewUrl);
+          }
+        };
+      }
     } else {
       setFilePreviewUrl(null);
       
-      // When no file is selected, notify parent if URL is not available either
       if (onMediaAvailable && !useFile) {
         onMediaAvailable(!!url, url || null);
       }
@@ -77,7 +84,6 @@ const MediaInput: React.FC<MediaInputProps> = ({
   const handleToggleUseFile = (value: boolean) => {
     onToggleUseFile(value);
     
-    // Notify parent about media availability after toggle
     if (onMediaAvailable) {
       if (value) {
         onMediaAvailable(!!selectedFile, filePreviewUrl);

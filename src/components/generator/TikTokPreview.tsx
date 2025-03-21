@@ -19,9 +19,9 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
   const voiceMediaSrc = voiceMedia || defaultVoiceMedia;
   
   return (
-    <div className="rounded-xl overflow-hidden border border-zinc-700 bg-zinc-900 shadow-lg mx-auto max-w-[320px]">
-      <div className="relative aspect-[9/16] bg-black flex flex-col">
-        {/* Top section - Voice Character (1/2 of height) */}
+    <div className="rounded-xl overflow-hidden border border-zinc-700 bg-zinc-900 shadow-lg mx-auto">
+      <div className="relative aspect-[9/16] w-full max-w-[320px] bg-black flex flex-col">
+        {/* Top section - Voice Character (exactly 1/2 of height) */}
         <div className="flex-grow-0 h-1/2 overflow-hidden relative">
           {voiceMediaSrc && (
             <img 
@@ -32,7 +32,7 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
           )}
         </div>
         
-        {/* Bottom section - Supporting Media (1/2 of height) */}
+        {/* Bottom section - Supporting Media (exactly 1/2 of height) */}
         <div className="flex-grow-0 h-1/2 overflow-hidden bg-zinc-800">
           {supportingMedia ? (
             supportingMedia.includes("video") ? (
@@ -61,9 +61,9 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-black/50 backdrop-blur-sm px-4 py-2 rounded-lg max-w-[90%] text-center"
+            className="bg-white/90 px-4 py-2 rounded-lg max-w-[85%] text-center shadow-lg"
           >
-            <p className="text-white text-sm font-medium">
+            <p className="text-black text-sm font-bold">
               {script ? script.substring(0, 80) + (script.length > 80 ? "..." : "") : "Your script will appear here..."}
             </p>
           </motion.div>
