@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { script, voiceId, voiceMedia } = await req.json();
+    const { script, voiceId, voiceMedia, highResolution } = await req.json();
     const aiApiKey = Deno.env.get('AI_API_KEY');
     const aiBaseUrl = 'https://infinity.ai/api/v2/generate';
 
@@ -28,6 +28,7 @@ serve(async (req) => {
     // Log what we're sending to the AI API for debugging
     console.log("Sending to AI API with voice ID:", voiceId);
     console.log("Script:", script);
+    console.log("High Resolution:", highResolution ? "Yes (640)" : "No (320)");
 
     // Ensure we have a valid voiceMedia URL that the AI API can access
     // It should be an absolute URL that's publicly accessible
@@ -60,7 +61,7 @@ serve(async (req) => {
       'img_url': imageUrl,
       'text': script,
       'voice_id': voiceId,
-      'resolution': '320',
+      'resolution': highResolution ? '640' : '320',
       'crop_head': false,
       'expressiveness': 0.7
     };

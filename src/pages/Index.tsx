@@ -73,6 +73,7 @@ const Index = () => {
     voiceId: string;
     voiceMedia?: string;
     voiceMediaFile?: File;
+    highResolution: boolean;
   }) => {
     setIsSubmitting(true);
     
@@ -86,7 +87,8 @@ const Index = () => {
         supportingMediaFile: formData.supportingMediaFile,
         voiceId: formData.voiceId,
         voiceMedia: formData.voiceMedia,
-        voiceMediaFile: formData.voiceMediaFile
+        voiceMediaFile: formData.voiceMediaFile,
+        highResolution: formData.highResolution
       });
       
       setCurrentProcessId(processId);

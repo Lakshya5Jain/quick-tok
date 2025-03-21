@@ -9,6 +9,8 @@ import MediaInput from "./generator/MediaInput";
 import VoiceSelector from "./generator/VoiceSelector";
 import SubmitButton from "./generator/SubmitButton";
 import TikTokPreview from "./generator/TikTokPreview";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface GeneratorFormProps {
   onSubmit: (formData: {
@@ -20,6 +22,7 @@ interface GeneratorFormProps {
     voiceId: string;
     voiceMedia?: string;
     voiceMediaFile?: File;
+    highResolution: boolean;
   }) => void;
   isSubmitting: boolean;
   voiceOptions: VoiceOption[];
@@ -36,17 +39,18 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
   const [scriptOption, setScriptOption] = useState<ScriptOption>(ScriptOption.GPT);
   const [topic, setTopic] = useState("");
   const [customScript, setCustomScript] = useState("");
-  const [supportingMedia, setSupportingMedia] = useState(defaultSupportingMedia);
+  const [supportingMedia, setSupportingMedia] = useState("");
   const [supportingMediaFile, setSupportingMediaFile] = useState<File | null>(null);
   const [useMediaFile, setUseMediaFile] = useState(false);
   const [voiceId, setVoiceId] = useState("LXVY607YcjqxFS3mcult");
   const [voiceMedia, setVoiceMedia] = useState("");
   const [voiceMediaFile, setVoiceMediaFile] = useState<File | null>(null);
   const [useVoiceMediaFile, setUseVoiceMediaFile] = useState(false);
+  const [highResolution, setHighResolution] = useState(false);
 
   // Preview state
   const [previewVoiceMedia, setPreviewVoiceMedia] = useState<string | null>(null);
-  const [previewSupportingMedia, setPreviewSupportingMedia] = useState<string | null>(defaultSupportingMedia);
+  const [previewSupportingMedia, setPreviewSupportingMedia] = useState<string | null>(null);
   
   // Get current script based on selected option
   const currentScript = scriptOption === ScriptOption.GPT 
@@ -98,6 +102,7 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
       voiceId,
       voiceMedia: !useVoiceMediaFile ? voiceMedia : undefined,
       voiceMediaFile: useVoiceMediaFile ? voiceMediaFile || undefined : undefined,
+      highResolution,
     });
   };
 
@@ -119,7 +124,7 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <h2 className="text-2xl font-bold mb-6 text-center text-white">Create TikTok Video</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center text-white whitespace-nowrap">Create TikTok Video</h2>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Script Option Selection */}
@@ -154,7 +159,7 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
             onUrlChange={setVoiceMedia}
             onFileChange={setVoiceMediaFile}
             urlPlaceholder="Enter URL for voice character image"
-            fileAccept="image/*"
+            fileAccept="image/jpeg,image/jpg,image/png"
             selectedFile={voiceMediaFile}
             onMediaAvailable={(isAvailable, mediaUrl) => setPreviewVoiceMedia(mediaUrl)}
           />
@@ -169,11 +174,27 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
             onUrlChange={setSupportingMedia}
             onFileChange={setSupportingMediaFile}
             urlPlaceholder="Enter URL for supporting media"
-            fileAccept="image/*,video/*"
+            fileAccept="image/jpeg,image/jpg,image/png,video/mp4"
             selectedFile={supportingMediaFile}
             onMediaAvailable={(isAvailable, mediaUrl) => setPreviewSupportingMedia(mediaUrl)}
             defaultUrl={defaultSupportingMedia}
           />
+          
+          {/* Resolution toggle */}
+          <div className="flex flex-row items-center justify-between space-x-2 pt-2">
+            <div>
+              <Label htmlFor="high-resolution" className="text-white">Video Resolution</Label>
+              <p className="text-xs text-gray-400 mt-1">
+                {highResolution ? "High resolution (640)" : "Standard resolution (320)"}
+              </p>
+            </div>
+            <Switch
+              id="high-resolution"
+              checked={highResolution}
+              onCheckedChange={setHighResolution}
+              className="data-[state=checked]:bg-quicktok-orange"
+            />
+          </div>
           
           {/* Submit Button */}
           <SubmitButton 

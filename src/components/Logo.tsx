@@ -25,7 +25,7 @@ const Logo: React.FC<LogoProps> = ({
   return (
     <div className={`flex flex-col items-center ${className} cursor-pointer`} onClick={onClick}>
       <img 
-        src="/lovable-uploads/a3b0fd8d-2a0b-4b7b-be7a-4353feca61c0.png" 
+        src="/lovable-uploads/e1854fe7-b207-42fc-8841-a35599adc678.png" 
         alt="Quick-Tok Logo" 
         className={`${sizeClasses[size]}`}
       />

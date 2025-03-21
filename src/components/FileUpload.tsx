@@ -27,6 +27,14 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // List of allowed MIME types
+  const allowedTypes = [
+    "image/jpeg", 
+    "image/jpg", 
+    "image/png", 
+    "video/mp4"
+  ];
+
   // Generate preview when file is set initially or changed
   useEffect(() => {
     if (!file) {
@@ -46,7 +54,20 @@ const FileUpload: React.FC<FileUploadProps> = ({
     }
   }, [file]);
 
+  const validateFileType = (selectedFile: File): boolean => {
+    if (!allowedTypes.includes(selectedFile.type)) {
+      toast.error(`File type not allowed. Please upload JPEG, JPG, PNG, or MP4 files only.`);
+      return false;
+    }
+    return true;
+  };
+
   const uploadToSupabase = async (selectedFile: File) => {
+    // First validate the file type
+    if (!validateFileType(selectedFile)) {
+      return;
+    }
+
     try {
       setIsUploading(true);
       
@@ -147,6 +168,15 @@ const FileUpload: React.FC<FileUploadProps> = ({
     }
   };
 
+  // Format accept string to show user-friendly formats
+  const getAcceptFormats = () => {
+    return accept
+      .replace(/image\/jpeg,image\/jpg,image\/png,video\/mp4/g, "JPEG, JPG, PNG, MP4")
+      .replace(/image\/jpeg,image\/jpg,image\/png/g, "JPEG, JPG, PNG")
+      .replace(/video\/mp4/g, "MP4")
+      .replace(/image\/\*/g, "Images");
+  };
+
   return (
     <div className={className}>
       {label && (
@@ -168,7 +198,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
             Click or drag and drop to upload
           </p>
           <p className="text-xs text-gray-400 mt-2">
-            Accepts {accept.replace(/,/g, ", ")}
+            Accepts {getAcceptFormats()}
           </p>
         </div>
       ) : (

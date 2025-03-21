@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import FileUpload from "@/components/FileUpload";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -35,16 +34,6 @@ const MediaInput: React.FC<MediaInputProps> = ({
 }) => {
   // State to track file preview URL
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
-  
-  // Only initialize URL with default for voice character, not for supporting media
-  useEffect(() => {
-    if (defaultUrl && !url && !useFile && title === "Supporting Media") {
-      // Initialize supporting media with empty string (no default)
-      onUrlChange("");
-    } else if (defaultUrl && !url && !useFile) {
-      onUrlChange(defaultUrl);
-    }
-  }, [defaultUrl, url, useFile, title]);
   
   // Create or update preview URL when file changes
   useEffect(() => {
@@ -106,6 +95,13 @@ const MediaInput: React.FC<MediaInputProps> = ({
     }
   };
 
+  // If this is for supporting media and there's a default, pass it to the preview
+  useEffect(() => {
+    if (title === "Supporting Media" && defaultUrl && !url && !useFile && onMediaAvailable) {
+      onMediaAvailable(true, defaultUrl);
+    }
+  }, [title, defaultUrl, url, useFile, onMediaAvailable]);
+
   return (
     <div className="space-y-3">
       <label className="block text-sm font-medium text-gray-200">
@@ -120,13 +116,13 @@ const MediaInput: React.FC<MediaInputProps> = ({
       >
         <ToggleGroupItem 
           value="url"
-          className="flex-1 rounded-md data-[state=on]:bg-quicktok-orange data-[state=on]:text-white"
+          className="flex-1 rounded-md data-[state=on]:bg-quicktok-orange data-[state=on]:text-white text-white"
         >
           Use URL
         </ToggleGroupItem>
         <ToggleGroupItem 
           value="file"
-          className="flex-1 rounded-md data-[state=on]:bg-quicktok-orange data-[state=on]:text-white"
+          className="flex-1 rounded-md data-[state=on]:bg-quicktok-orange data-[state=on]:text-white text-white"
         >
           Upload File
         </ToggleGroupItem>
