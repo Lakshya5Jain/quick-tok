@@ -6,14 +6,12 @@ import GeneratorForm from "@/components/GeneratorForm";
 import VideoFeed from "@/components/VideoFeed";
 import LoadingScreen from "@/components/LoadingScreen";
 import ResultScreen from "@/components/ResultScreen";
-import HomePage from "@/components/HomePage";
 import { GenerationProgress, ScriptOption, Video } from "@/types";
 import { generateVideo, checkProgress, getVideos } from "@/lib/api";
 import { toast } from "sonner";
 import { voiceOptions } from "@/data/mockData";
 
 const Index = () => {
-  const [showHome, setShowHome] = useState(true);
   const [activeTab, setActiveTab] = useState<"generate" | "videos">("generate");
   const [videos, setVideos] = useState<Video[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -109,25 +107,12 @@ const Index = () => {
     getVideos().then(setVideos);
   };
 
-  const handleGetStarted = () => {
-    setShowHome(false);
-  };
-
-  const handleLogoClick = () => {
-    setShowHome(true);
-  };
-
-  if (showHome) {
-    return <HomePage onGetStarted={handleGetStarted} />;
-  }
-
   return (
     <div className="min-h-screen bg-gradient-primary px-4 pb-16">
       <div className="max-w-6xl mx-auto pt-8">
         <Navbar 
           activeTab={activeTab} 
           onTabChange={setActiveTab}
-          onLogoClick={handleLogoClick}
         />
         
         <AnimatePresence mode="wait">

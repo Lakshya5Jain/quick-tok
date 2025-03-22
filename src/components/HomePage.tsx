@@ -1,3 +1,4 @@
+
 import React from "react";
 import { motion } from "framer-motion";
 import { SparklesIcon, FilmIcon, FastForwardIcon, MicIcon } from "lucide-react";
@@ -6,7 +7,7 @@ import Logo from "./Logo";
 import { Feature, HowItWorksStep } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 
-const HomePage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) => {
+const HomePage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -53,7 +54,7 @@ const HomePage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) => {
 
   const handleGetStarted = () => {
     if (user) {
-      onGetStarted();
+      navigate("/create");
     } else {
       navigate("/auth");
     }

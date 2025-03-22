@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import AuthProvider from "./context/AuthContext";
 import { RequireAuth } from "./components/auth/RequireAuth";
+import HomePage from "./components/HomePage";
 
 const queryClient = new QueryClient();
 
@@ -20,8 +21,9 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            <Route path="/" element={<HomePage />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={
+            <Route path="/create" element={
               <RequireAuth>
                 <Index />
               </RequireAuth>

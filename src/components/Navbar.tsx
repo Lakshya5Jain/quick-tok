@@ -1,23 +1,24 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { FilmIcon, VideoIcon } from "lucide-react";
+import { FilmIcon, VideoIcon, HomeIcon } from "lucide-react";
 import Logo from "./Logo";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 
 interface NavbarProps {
   activeTab: "generate" | "videos";
   onTabChange: (tab: "generate" | "videos") => void;
-  onLogoClick: () => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onLogoClick }) => {
+const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
   const { signOut, user } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-      <div onClick={onLogoClick} className="cursor-pointer">
+      <div onClick={() => navigate("/")} className="cursor-pointer">
         <Logo size="md" />
       </div>
       
@@ -47,6 +48,15 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onLogoClick }) 
             <span>My Videos</span>
           </motion.button>
         </div>
+        
+        <Button 
+          variant="ghost" 
+          className="text-gray-300 hover:text-white"
+          onClick={() => navigate("/")}
+        >
+          <HomeIcon className="w-4 h-4 mr-2" />
+          Home
+        </Button>
         
         {user && (
           <Button 

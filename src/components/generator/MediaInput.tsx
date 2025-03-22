@@ -2,10 +2,10 @@
 import React, { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface MediaInputProps {
   title: string;
@@ -36,24 +36,18 @@ const MediaInput: React.FC<MediaInputProps> = ({
   onMediaAvailable,
   defaultUrl
 }) => {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
   // When component mounts or when url/file changes, update preview and notify parent
   useEffect(() => {
     if (useFile && selectedFile) {
       const preview = URL.createObjectURL(selectedFile);
-      setPreviewUrl(preview);
       onMediaAvailable(true, preview);
       return () => URL.revokeObjectURL(preview);
     } else if (!useFile && url) {
-      setPreviewUrl(url);
       onMediaAvailable(true, url);
     } else if (!useFile && defaultUrl && !url) {
-      setPreviewUrl(defaultUrl);
       onMediaAvailable(true, defaultUrl);
       // Don't update the input value, just use the default for preview
     } else {
-      setPreviewUrl(null);
       onMediaAvailable(false, null);
     }
   }, [useFile, selectedFile, url, defaultUrl, onMediaAvailable]);
@@ -100,36 +94,36 @@ const MediaInput: React.FC<MediaInputProps> = ({
     onUrlChange('');
   };
 
-  const isImage = (url: string): boolean => {
-    const ext = url.split('.').pop()?.toLowerCase() || '';
-    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
-  };
-
-  const isVideo = (url: string): boolean => {
-    const ext = url.split('.').pop()?.toLowerCase() || '';
-    return ['mp4', 'webm', 'ogg', 'mov'].includes(ext);
-  };
-
   return (
     <div className="space-y-4">
-      <div className="flex flex-row items-center justify-between space-x-2">
-        <div>
-          <Label htmlFor={`use-${title.toLowerCase()}-file`} className="text-white">
-            {title}
-          </Label>
-          <p className="text-xs text-gray-400 mt-1">{description}</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Label htmlFor={`use-${title.toLowerCase()}-file`} className="text-xs text-gray-400">
-            {useFile ? "Upload File" : "Use URL"}
-          </Label>
-          <Switch
-            id={`use-${title.toLowerCase()}-file`}
-            checked={useFile}
-            onCheckedChange={onToggleUseFile}
-            className="data-[state=checked]:bg-quicktok-orange"
-          />
-        </div>
+      <div>
+        <Label className="text-white">
+          {title}
+        </Label>
+        <p className="text-xs text-gray-400 mt-1">{description}</p>
+      </div>
+      
+      <div className="mb-4">
+        <Tabs 
+          value={useFile ? "file" : "url"} 
+          onValueChange={(v) => onToggleUseFile(v === "file")}
+          className="w-full"
+        >
+          <TabsList className="w-full bg-zinc-800 border-zinc-700">
+            <TabsTrigger 
+              value="url" 
+              className="flex-1 data-[state=active]:bg-quicktok-orange data-[state=active]:text-white"
+            >
+              Use URL
+            </TabsTrigger>
+            <TabsTrigger 
+              value="file" 
+              className="flex-1 data-[state=active]:bg-quicktok-orange data-[state=active]:text-white"
+            >
+              Upload File
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {useFile ? (
@@ -178,28 +172,6 @@ const MediaInput: React.FC<MediaInputProps> = ({
             >
               <Trash2 className="h-5 w-5" />
             </Button>
-          )}
-        </div>
-      )}
-
-      {previewUrl && (
-        <div className="mt-3 border border-zinc-700 rounded-md p-2 bg-zinc-800">
-          <p className="text-xs text-gray-400 mb-2">Preview:</p>
-          {isImage(previewUrl) ? (
-            <img
-              src={previewUrl}
-              alt="Media preview"
-              className="max-h-32 max-w-full object-contain mx-auto rounded"
-            />
-          ) : isVideo(previewUrl) ? (
-            <video
-              src={previewUrl}
-              className="max-h-32 max-w-full mx-auto rounded"
-              controls
-              muted
-            />
-          ) : (
-            <p className="text-xs text-gray-400 text-center">Preview not available</p>
           )}
         </div>
       )}

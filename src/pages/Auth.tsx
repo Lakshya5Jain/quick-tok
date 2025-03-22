@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/Logo";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -14,6 +15,14 @@ const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/create");
+    }
+  }, [user, navigate]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +49,7 @@ const Auth = () => {
         if (error) throw error;
         
         toast.success("Successfully signed in!");
-        navigate("/");
+        navigate("/create");
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Authentication failed";
