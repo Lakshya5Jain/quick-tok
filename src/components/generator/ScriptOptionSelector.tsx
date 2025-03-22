@@ -1,7 +1,8 @@
 
 import React from "react";
 import { ScriptOption } from "@/types";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { motion } from "framer-motion";
+import { Lightbulb, Edit } from "lucide-react";
 
 interface ScriptOptionSelectorProps {
   scriptOption: ScriptOption;
@@ -13,29 +14,42 @@ const ScriptOptionSelector: React.FC<ScriptOptionSelectorProps> = ({
   onChange 
 }) => {
   return (
-    <div className="space-y-3">
-      <label className="block text-sm font-medium text-gray-200">Script Option</label>
-      <ToggleGroup 
-        type="single" 
-        value={scriptOption} 
-        onValueChange={(value) => value && onChange(value as ScriptOption)}
-        className="bg-zinc-800 p-1 rounded-lg w-full flex"
-      >
-        <ToggleGroupItem 
-          value={ScriptOption.GPT} 
-          aria-label="Generate with AI"
-          className="flex-1 rounded-md data-[state=on]:bg-quicktok-orange data-[state=on]:text-white text-white transition-all duration-200"
+    <div className="space-y-2">
+      <p className="text-sm font-medium text-gray-300">Choose your script source:</p>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <motion.button
+          type="button"
+          className={`flex flex-col items-center justify-center p-4 rounded-lg border ${
+            scriptOption === ScriptOption.GPT
+              ? "bg-quicktok-orange text-white border-quicktok-orange"
+              : "bg-zinc-800 text-gray-300 border-zinc-700 hover:bg-zinc-700"
+          }`}
+          onClick={() => onChange(ScriptOption.GPT)}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          Generate with AI
-        </ToggleGroupItem>
-        <ToggleGroupItem 
-          value={ScriptOption.CUSTOM} 
-          aria-label="Use my own script"
-          className="flex-1 rounded-md data-[state=on]:bg-quicktok-orange data-[state=on]:text-white text-white transition-all duration-200"
+          <Lightbulb className="mb-2 h-5 w-5" />
+          <span className="font-medium">AI Generated</span>
+          <span className="text-xs mt-1 text-center">Create script from a topic</span>
+        </motion.button>
+        
+        <motion.button
+          type="button"
+          className={`flex flex-col items-center justify-center p-4 rounded-lg border ${
+            scriptOption === ScriptOption.CUSTOM
+              ? "bg-quicktok-orange text-white border-quicktok-orange"
+              : "bg-zinc-800 text-gray-300 border-zinc-700 hover:bg-zinc-700"
+          }`}
+          onClick={() => onChange(ScriptOption.CUSTOM)}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          Use my own script
-        </ToggleGroupItem>
-      </ToggleGroup>
+          <Edit className="mb-2 h-5 w-5" />
+          <span className="font-medium">Custom Script</span>
+          <span className="text-xs mt-1 text-center">Write your own script</span>
+        </motion.button>
+      </div>
     </div>
   );
 };

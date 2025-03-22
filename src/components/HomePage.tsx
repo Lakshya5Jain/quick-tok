@@ -1,11 +1,15 @@
-
 import React from "react";
 import { motion } from "framer-motion";
 import { SparklesIcon, FilmIcon, FastForwardIcon, MicIcon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import Logo from "./Logo";
 import { Feature, HowItWorksStep } from "@/types";
+import { useAuth } from "@/context/AuthContext";
 
 const HomePage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
   const features: Feature[] = [
     {
       title: "AI-Powered Scripts",
@@ -47,6 +51,14 @@ const HomePage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) => {
     }
   ];
 
+  const handleGetStarted = () => {
+    if (user) {
+      onGetStarted();
+    } else {
+      navigate("/auth");
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-quicktok-black text-quicktok-white">
       {/* Hero Section */}
@@ -80,14 +92,14 @@ const HomePage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) => {
           </motion.p>
           
           <motion.button
-            onClick={onGetStarted}
+            onClick={handleGetStarted}
             className="bg-quicktok-orange hover:bg-quicktok-orange/90 text-white font-bold py-4 px-8 rounded-lg text-lg transition-all transform hover:scale-105"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
             whileHover={{ y: -5 }}
           >
-            Get Started Now
+            {user ? "Get Started Now" : "Sign In / Sign Up"}
           </motion.button>
         </div>
       </section>
@@ -146,7 +158,7 @@ const HomePage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) => {
           
           <div className="text-center mt-16">
             <motion.button
-              onClick={onGetStarted}
+              onClick={handleGetStarted}
               className="bg-quicktok-orange hover:bg-quicktok-orange/90 text-white font-bold py-3 px-8 rounded-lg transition-all transform hover:scale-105"
               whileHover={{ y: -5 }}
             >
@@ -160,9 +172,10 @@ const HomePage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) => {
       <footer className="py-8 px-4 bg-black border-t border-zinc-800">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center">
           <Logo size="sm" />
-          <p className="text-zinc-500 text-sm mt-4 md:mt-0">
-            &copy; {new Date().getFullYear()} Quick-Tok. All rights reserved.
-          </p>
+          <div className="text-zinc-500 text-sm mt-4 md:mt-0 text-center md:text-right">
+            <p>&copy; {new Date().getFullYear()} Quick-Tok. All rights reserved.</p>
+            <p className="mt-1">Powered by Creatomate API for Automated Video Generation and Lemon Slice for Talking Avatar.</p>
+          </div>
         </div>
       </footer>
     </div>

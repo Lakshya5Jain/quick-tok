@@ -1,20 +1,24 @@
+
 import React, { useState, useEffect } from "react";
-import FileUpload from "@/components/FileUpload";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface MediaInputProps {
   title: string;
-  description?: string;
+  description: string;
   useFile: boolean;
   onToggleUseFile: (useFile: boolean) => void;
   url: string;
   onUrlChange: (url: string) => void;
+  selectedFile: File | null;
   onFileChange: (file: File | null) => void;
   urlPlaceholder: string;
-  fileAccept?: string;
-  selectedFile?: File | null;
-  // Track when a valid URL or file is available
-  onMediaAvailable?: (isAvailable: boolean, mediaUrl: string | null) => void;
+  fileAccept: string;
+  onMediaAvailable: (isAvailable: boolean, mediaUrl: string | null) => void;
   defaultUrl?: string;
 }
 
@@ -25,150 +29,177 @@ const MediaInput: React.FC<MediaInputProps> = ({
   onToggleUseFile,
   url,
   onUrlChange,
+  selectedFile,
   onFileChange,
   urlPlaceholder,
-  fileAccept = "image/*",
-  selectedFile = null,
+  fileAccept,
   onMediaAvailable,
-  defaultUrl,
+  defaultUrl
 }) => {
-  // State to track file preview URL
-  const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
-  
-  // Create or update preview URL when file changes
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // When component mounts or when url/file changes, update preview and notify parent
   useEffect(() => {
-    if (selectedFile) {
-      if (filePreviewUrl && filePreviewUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(filePreviewUrl);
-      }
-      
-      // If there's a publicUrl property from Supabase, use that
-      if ('publicUrl' in selectedFile) {
-        // @ts-ignore - we added this property in the FileUpload component
-        setFilePreviewUrl(selectedFile.publicUrl);
-        if (onMediaAvailable) {
-          // @ts-ignore - we added this property in the FileUpload component
-          onMediaAvailable(true, selectedFile.publicUrl);
-        }
-      } else {
-        // Otherwise, create a blob URL for preview
-        const newPreviewUrl = URL.createObjectURL(selectedFile);
-        setFilePreviewUrl(newPreviewUrl);
-        
-        if (onMediaAvailable) {
-          onMediaAvailable(true, newPreviewUrl);
-        }
-        
-        // Clean up blob URL when component unmounts
-        return () => {
-          if (newPreviewUrl && newPreviewUrl.startsWith('blob:')) {
-            URL.revokeObjectURL(newPreviewUrl);
-          }
-        };
-      }
+    if (useFile && selectedFile) {
+      const preview = URL.createObjectURL(selectedFile);
+      setPreviewUrl(preview);
+      onMediaAvailable(true, preview);
+      return () => URL.revokeObjectURL(preview);
+    } else if (!useFile && url) {
+      setPreviewUrl(url);
+      onMediaAvailable(true, url);
+    } else if (!useFile && defaultUrl && !url) {
+      setPreviewUrl(defaultUrl);
+      onMediaAvailable(true, defaultUrl);
+      // Don't update the input value, just use the default for preview
     } else {
-      setFilePreviewUrl(null);
-      
-      if (onMediaAvailable && !useFile) {
-        onMediaAvailable(!!url, url || null);
-      }
+      setPreviewUrl(null);
+      onMediaAvailable(false, null);
     }
-  }, [selectedFile]);
-  
-  // Notify parent when URL changes
-  useEffect(() => {
-    if (!useFile && onMediaAvailable) {
-      onMediaAvailable(!!url, url || null);
+  }, [useFile, selectedFile, url, defaultUrl, onMediaAvailable]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) {
+      onFileChange(null);
+      return;
     }
-  }, [url, useFile]);
-  
-  // Handle toggling between URL and file upload
-  const handleToggleUseFile = (value: boolean) => {
-    onToggleUseFile(value);
+
+    const file = files[0];
+    const allowedTypes = fileAccept.split(',');
     
-    if (onMediaAvailable) {
-      if (value) {
-        onMediaAvailable(!!selectedFile, filePreviewUrl);
-      } else {
-        onMediaAvailable(!!url, url || null);
-      }
+    // Validate file type
+    const fileType = file.type.toLowerCase();
+    const isValidType = allowedTypes.some(type => 
+      fileType === type || 
+      (type.includes('image/') && fileType.includes('image/')) ||
+      (type.includes('video/') && fileType.includes('video/'))
+    );
+    
+    if (!isValidType) {
+      toast.error(`Invalid file type. Please upload ${fileAccept.replace(/,/g, ' or ')}`);
+      e.target.value = '';
+      return;
     }
+    
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File is too large. Maximum size is 10MB');
+      e.target.value = '';
+      return;
+    }
+    
+    onFileChange(file);
   };
 
-  // If this is for supporting media and there's a default, pass it to the preview
-  useEffect(() => {
-    if (title === "Supporting Media" && defaultUrl && !url && !useFile && onMediaAvailable) {
-      onMediaAvailable(true, defaultUrl);
-    }
-  }, [title, defaultUrl, url, useFile, onMediaAvailable]);
+  const clearFile = () => {
+    onFileChange(null);
+  };
+
+  const clearUrl = () => {
+    onUrlChange('');
+  };
+
+  const isImage = (url: string): boolean => {
+    const ext = url.split('.').pop()?.toLowerCase() || '';
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+  };
+
+  const isVideo = (url: string): boolean => {
+    const ext = url.split('.').pop()?.toLowerCase() || '';
+    return ['mp4', 'webm', 'ogg', 'mov'].includes(ext);
+  };
 
   return (
-    <div className="space-y-3">
-      <label className="block text-sm font-medium text-gray-200">
-        {title}
-      </label>
-      
-      <ToggleGroup 
-        type="single"
-        value={useFile ? "file" : "url"}
-        onValueChange={(value) => value && handleToggleUseFile(value === "file")}
-        className="bg-zinc-800 p-1 rounded-lg w-full flex mb-3"
-      >
-        <ToggleGroupItem 
-          value="url"
-          className="flex-1 rounded-md data-[state=on]:bg-quicktok-orange data-[state=on]:text-white text-white"
-        >
-          Use URL
-        </ToggleGroupItem>
-        <ToggleGroupItem 
-          value="file"
-          className="flex-1 rounded-md data-[state=on]:bg-quicktok-orange data-[state=on]:text-white text-white"
-        >
-          Upload File
-        </ToggleGroupItem>
-      </ToggleGroup>
+    <div className="space-y-4">
+      <div className="flex flex-row items-center justify-between space-x-2">
+        <div>
+          <Label htmlFor={`use-${title.toLowerCase()}-file`} className="text-white">
+            {title}
+          </Label>
+          <p className="text-xs text-gray-400 mt-1">{description}</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Label htmlFor={`use-${title.toLowerCase()}-file`} className="text-xs text-gray-400">
+            {useFile ? "Upload File" : "Use URL"}
+          </Label>
+          <Switch
+            id={`use-${title.toLowerCase()}-file`}
+            checked={useFile}
+            onCheckedChange={onToggleUseFile}
+            className="data-[state=checked]:bg-quicktok-orange"
+          />
+        </div>
+      </div>
 
-      {!useFile ? (
-        <input
-          type="url"
-          id={title.replace(/\s+/g, "")}
-          value={url}
-          onChange={(e) => onUrlChange(e.target.value)}
-          placeholder={urlPlaceholder}
-          className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50 focus:border-quicktok-orange"
-        />
+      {useFile ? (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Input
+              type="file"
+              onChange={handleFileChange}
+              accept={fileAccept}
+              className="bg-zinc-800 border-zinc-700 text-white file:bg-zinc-700 file:text-white file:border-0"
+            />
+            {selectedFile && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={clearFile}
+                className="h-10 w-10 text-gray-400 hover:text-white"
+              >
+                <Trash2 className="h-5 w-5" />
+              </Button>
+            )}
+          </div>
+          {selectedFile && (
+            <p className="text-xs text-gray-400">
+              Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
+            </p>
+          )}
+        </div>
       ) : (
-        <FileUpload
-          id={`${title.replace(/\s+/g, "")}File`}
-          label=""
-          accept={fileAccept}
-          onFileChange={onFileChange}
-          initialFile={selectedFile}
-        />
-      )}
-      
-      {description && (
-        <p className="text-xs text-gray-400 mt-1">
-          {description}
-        </p>
-      )}
-      
-      {/* Show preview of the current media if available */}
-      {useFile && filePreviewUrl && (
-        <div className="mt-3 rounded-lg overflow-hidden max-h-40 border border-zinc-700">
-          {filePreviewUrl.includes("video") ? (
-            <video src={filePreviewUrl} className="max-h-40 w-auto" controls muted />
-          ) : (
-            <img src={filePreviewUrl} alt="Preview" className="max-h-40 w-auto" />
+        <div className="flex items-center gap-2">
+          <Input
+            type="url"
+            value={url}
+            onChange={(e) => onUrlChange(e.target.value)}
+            placeholder={urlPlaceholder}
+            className="bg-zinc-800 border-zinc-700 text-white"
+          />
+          {url && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={clearUrl}
+              className="h-10 w-10 text-gray-400 hover:text-white"
+            >
+              <Trash2 className="h-5 w-5" />
+            </Button>
           )}
         </div>
       )}
-      {!useFile && url && (
-        <div className="mt-3 rounded-lg overflow-hidden max-h-40 border border-zinc-700">
-          {url.match(/\.(mp4|webm|ogg)$/i) ? (
-            <video src={url} className="max-h-40 w-auto" controls muted />
+
+      {previewUrl && (
+        <div className="mt-3 border border-zinc-700 rounded-md p-2 bg-zinc-800">
+          <p className="text-xs text-gray-400 mb-2">Preview:</p>
+          {isImage(previewUrl) ? (
+            <img
+              src={previewUrl}
+              alt="Media preview"
+              className="max-h-32 max-w-full object-contain mx-auto rounded"
+            />
+          ) : isVideo(previewUrl) ? (
+            <video
+              src={previewUrl}
+              className="max-h-32 max-w-full mx-auto rounded"
+              controls
+              muted
+            />
           ) : (
-            <img src={url} alt="Preview" className="max-h-40 w-auto" />
+            <p className="text-xs text-gray-400 text-center">Preview not available</p>
           )}
         </div>
       )}

@@ -74,6 +74,11 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ progress }) => {
           <p className="text-sm text-gray-400 mt-6 text-center">
             {progress.status}
           </p>
+          
+          <p className="text-xs text-gray-500 mt-8 text-center">
+            Powered by Creatomate API for Automated Video Generation<br />
+            and Lemon Slice for Talking Avatar
+          </p>
         </motion.div>
       </div>
     </motion.div>

@@ -124,7 +124,7 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <h2 className="text-2xl font-bold mb-6 text-center text-white whitespace-nowrap">Create TikTok Video</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center text-white">Create TikTok Video</h2>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Script Option Selection */}
@@ -222,6 +222,11 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
         
         <p className="text-gray-400 text-sm mt-6 text-center">
           This is a preview of how your TikTok will look. The actual generated video will include animation and narration.
+        </p>
+        
+        <p className="text-gray-500 text-xs mt-4 text-center">
+          Powered by Creatomate API for Automated Video Generation<br />
+          and Lemon Slice for Talking Avatar
         </p>
       </motion.div>
     </div>

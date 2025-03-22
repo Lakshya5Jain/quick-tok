@@ -1,3 +1,4 @@
+
 import { delay, generateUUID } from './utils';
 import { GenerationProgress, Video, ScriptOption } from '@/types';
 import { mockVideos } from '@/data/mockData';
@@ -115,6 +116,9 @@ async function processVideoGeneration(processId: string, formData: {
   highResolution: boolean;
 }) {
   try {
+    // Track uploaded files to clean up later
+    const filesToCleanup: string[] = [];
+    
     // Step 1: Upload files if they exist
     let supportingMediaUrl = formData.supportingMedia;
     let voiceMediaUrl = formData.voiceMedia;
@@ -133,6 +137,9 @@ async function processVideoGeneration(processId: string, formData: {
       } else {
         // Upload the supporting media file
         supportingMediaUrl = await uploadFile(formData.supportingMediaFile);
+        if (!supportingMediaUrl.startsWith('blob:')) {
+          filesToCleanup.push(supportingMediaUrl);
+        }
         console.log("Supporting media uploaded successfully:", supportingMediaUrl);
       }
     }
@@ -151,6 +158,9 @@ async function processVideoGeneration(processId: string, formData: {
       } else {
         // Upload the voice media file
         voiceMediaUrl = await uploadFile(formData.voiceMediaFile);
+        if (!voiceMediaUrl.startsWith('blob:')) {
+          filesToCleanup.push(voiceMediaUrl);
+        }
         console.log("Voice media uploaded successfully:", voiceMediaUrl);
       }
     }
@@ -269,6 +279,18 @@ async function processVideoGeneration(processId: string, formData: {
       progress: 100,
       status: "Complete!"
     });
+    
+    // Step 6: Clean up uploaded files
+    if (filesToCleanup.length > 0) {
+      try {
+        await supabase.functions.invoke('cleanup-files', {
+          body: { filePaths: filesToCleanup }
+        });
+        console.log("Cleaned up temporary files:", filesToCleanup);
+      } catch (cleanupError) {
+        console.error("Error cleaning up files (non-fatal):", cleanupError);
+      }
+    }
     
   } catch (error) {
     console.error("Error in video generation process:", error);

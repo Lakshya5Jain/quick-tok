@@ -1,75 +1,64 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { FilmIcon, VideoIcon } from "lucide-react";
 import Logo from "./Logo";
+import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
 
 interface NavbarProps {
   activeTab: "generate" | "videos";
   onTabChange: (tab: "generate" | "videos") => void;
-  onLogoClick?: () => void;
+  onLogoClick: () => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onLogoClick }) => {
+  const { signOut, user } = useAuth();
+
   return (
-    <nav className="w-full max-w-4xl mx-auto mb-6 mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div className="flex justify-center sm:justify-start">
-        <Logo
-          className="cursor-pointer"
-          size="md"
-          onClick={onLogoClick}
-        />
+    <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+      <div onClick={onLogoClick} className="cursor-pointer">
+        <Logo size="md" />
       </div>
       
-      <div className="flex justify-center relative border-b border-zinc-800">
-        <div className="w-full flex justify-center">
-          <TabButton 
-            active={activeTab === "generate"} 
+      <div className="flex items-center gap-4">
+        <div className="bg-zinc-800 p-1 rounded-lg flex">
+          <motion.button
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+              activeTab === "generate" ? "bg-quicktok-orange text-white" : "text-gray-300 hover:text-white"
+            }`}
             onClick={() => onTabChange("generate")}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
           >
-            Generate Video
-          </TabButton>
-          <TabButton 
-            active={activeTab === "videos"} 
-            onClick={() => onTabChange("videos")}
-          >
-            Past Videos
-          </TabButton>
+            <FilmIcon className="w-4 h-4" />
+            <span>Create</span>
+          </motion.button>
           
-          {/* Active tab indicator */}
-          <motion.div 
-            className="absolute bottom-0 h-0.5 bg-quicktok-orange rounded-full"
-            initial={false}
-            animate={{ 
-              width: '50%',
-              left: activeTab === "generate" ? "0%" : "50%",
-              x: 0
-            }}
-            transition={{ type: "spring", stiffness: 350, damping: 35 }}
-          />
+          <motion.button
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+              activeTab === "videos" ? "bg-quicktok-orange text-white" : "text-gray-300 hover:text-white"
+            }`}
+            onClick={() => onTabChange("videos")}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <VideoIcon className="w-4 h-4" />
+            <span>My Videos</span>
+          </motion.button>
         </div>
+        
+        {user && (
+          <Button 
+            variant="ghost" 
+            className="text-gray-300 hover:text-white"
+            onClick={() => signOut()}
+          >
+            Sign Out
+          </Button>
+        )}
       </div>
-    </nav>
-  );
-};
-
-interface TabButtonProps {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}
-
-const TabButton: React.FC<TabButtonProps> = ({ active, onClick, children }) => {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "relative py-4 px-8 text-sm font-medium transition-colors duration-300 outline-none w-1/2",
-        active ? "text-quicktok-orange" : "text-gray-400 hover:text-gray-200"
-      )}
-    >
-      {children}
-    </button>
+    </div>
   );
 };
 
