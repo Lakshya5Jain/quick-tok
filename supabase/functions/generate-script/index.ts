@@ -43,18 +43,13 @@ serve(async (req) => {
       
       ${scriptToTranslate}`;
     } else {
-      // Script generation operation
-      if (searchWeb) {
-        systemPrompt += " You search the web for the most recent and accurate information when needed.";
-      }
+      // Script generation operation - always search the web for latest information
+      systemPrompt += " You search the web for the most recent and accurate information when needed.";
       
       userPrompt = `Write a concise and clear script about the following topic: '${topic}'. 
                     The script should be suitable for text-to-speech, avoiding informal expressions, 
-                    emojis, and overly complex sentences. Use punctuation to indicate natural pauses.`;
-                    
-      if (searchWeb) {
-        userPrompt += ` Make sure to include recent and accurate information about '${topic}' that would be available online.`;
-      }
+                    emojis, and overly complex sentences. Use punctuation to indicate natural pauses.
+                    Make sure to include recent and accurate information about '${topic}' that would be available online.`;
     }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

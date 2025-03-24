@@ -1,13 +1,9 @@
 
 import React, { useState } from "react";
 import { ScriptOption } from "@/types";
-import { motion, AnimatePresence } from "framer-motion";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Globe, Languages } from "lucide-react";
-import { translateScript } from "@/lib/api";
+import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -17,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { translateScript } from "@/lib/api";
 
 interface ScriptInputProps {
   scriptOption: ScriptOption;
@@ -24,11 +21,11 @@ interface ScriptInputProps {
   onTopicChange: (topic: string) => void;
   customScript: string;
   onCustomScriptChange: (script: string) => void;
-  searchWeb?: boolean;
   onSearchWebChange?: (searchWeb: boolean) => void;
 }
 
 const commonLanguages = [
+  { value: "English", label: "English" },
   { value: "Spanish", label: "Spanish" },
   { value: "French", label: "French" },
   { value: "German", label: "German" },
@@ -47,16 +44,37 @@ const ScriptInput: React.FC<ScriptInputProps> = ({
   onTopicChange,
   customScript,
   onCustomScriptChange,
-  searchWeb = false,
   onSearchWebChange = () => {},
 }) => {
   const [isTranslating, setIsTranslating] = useState(false);
-  const [targetLanguage, setTargetLanguage] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedScript, setEditedScript] = useState("");
+  const [targetLanguage, setTargetLanguage] = useState("English");
+
+  const handleSaveEdit = () => {
+    if (scriptOption === ScriptOption.GPT) {
+      onTopicChange(editedScript);
+    } else {
+      onCustomScriptChange(editedScript);
+    }
+    setIsEditing(false);
+    toast.success("Script updated successfully");
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedScript("");
+  };
+
+  const startEditing = () => {
+    const currentScript = scriptOption === ScriptOption.GPT ? topic : customScript;
+    setEditedScript(currentScript);
+    setIsEditing(true);
+  };
 
   const handleTranslateScript = async () => {
-    if (!targetLanguage) {
-      toast.error("Please select a language to translate to");
-      return;
+    if (targetLanguage === "English") {
+      return; // No need to translate if already in English
     }
 
     const currentScript = scriptOption === ScriptOption.GPT ? topic : customScript;
@@ -84,6 +102,13 @@ const ScriptInput: React.FC<ScriptInputProps> = ({
     }
   };
 
+  // Automatically search the web for AI-generated scripts
+  React.useEffect(() => {
+    if (scriptOption === ScriptOption.GPT) {
+      onSearchWebChange(true);
+    }
+  }, [scriptOption, onSearchWebChange]);
+
   return (
     <div className="space-y-4">
       {scriptOption === ScriptOption.GPT && (
@@ -94,7 +119,28 @@ const ScriptInput: React.FC<ScriptInputProps> = ({
           exit={{ opacity: 0, height: 0 }}
         >
           <div className="space-y-2">
-            <label htmlFor="topic" className="block text-sm font-medium text-gray-200">Topic/Keyword</label>
+            <div className="flex items-center justify-between">
+              <label htmlFor="topic" className="block text-sm font-medium text-gray-200">Topic/Keyword</label>
+              <div className="flex items-center space-x-2">
+                <Select value={targetLanguage} onValueChange={(value) => {
+                  setTargetLanguage(value);
+                  if (value !== "English" && topic.trim()) {
+                    handleTranslateScript();
+                  }
+                }}>
+                  <SelectTrigger className="h-8 w-[140px] bg-zinc-800 border-zinc-700 text-white">
+                    <SelectValue placeholder="Language" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-800 border-zinc-700 text-white">
+                    {commonLanguages.map((lang) => (
+                      <SelectItem key={lang.value} value={lang.value}>
+                        {lang.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <input
               type="text"
               id="topic"
@@ -105,52 +151,73 @@ const ScriptInput: React.FC<ScriptInputProps> = ({
             />
           </div>
           
-          <div className="flex items-center justify-between space-x-2">
-            <div>
-              <Label htmlFor="search-web" className="text-white">Search the web</Label>
-              <p className="text-xs text-gray-400 mt-1">
-                Enable to include real-time information
-              </p>
+          {topic && !isEditing && (
+            <div className="p-4 bg-zinc-800 rounded-md border border-zinc-700">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-sm font-medium text-gray-200">Generated Script</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={startEditing}
+                  className="h-8 px-2 text-xs border-zinc-700 hover:bg-zinc-700"
+                >
+                  <Pencil className="h-3 w-3 mr-1" />
+                  Edit
+                </Button>
+              </div>
+              <p className="text-sm text-gray-300 whitespace-pre-wrap">{topic}</p>
             </div>
-            <Switch
-              id="search-web"
-              checked={searchWeb}
-              onCheckedChange={onSearchWebChange}
-              className="data-[state=checked]:bg-quicktok-orange"
-            />
-          </div>
+          )}
+          
+          {isEditing && (
+            <div className="space-y-3">
+              <label htmlFor="editScript" className="block text-sm font-medium text-gray-200">Edit Script</label>
+              <Textarea
+                id="editScript"
+                value={editedScript}
+                onChange={(e) => setEditedScript(e.target.value)}
+                rows={6}
+                className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50"
+              />
+              <div className="flex justify-end space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCancelEdit}
+                  className="border-zinc-700 hover:bg-zinc-700"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSaveEdit}
+                  className="bg-quicktok-orange hover:bg-quicktok-orange/90"
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          )}
         </motion.div>
       )}
       
       {scriptOption === ScriptOption.CUSTOM && (
         <motion.div 
-          className="form-transition space-y-2"
+          className="form-transition space-y-3"
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
         >
-          <label htmlFor="customScript" className="block text-sm font-medium text-gray-200">Your Script</label>
-          <Textarea
-            id="customScript"
-            value={customScript}
-            onChange={(e) => onCustomScriptChange(e.target.value)}
-            rows={4}
-            placeholder="Enter your script here..."
-            className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50"
-          />
-        </motion.div>
-      )}
-
-      {/* Translation Section */}
-      <div className="border-t border-zinc-700 pt-4 mt-4">
-        <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 items-end">
-          <div className="w-full sm:w-2/3">
-            <Label htmlFor="language-selector" className="text-sm font-medium text-gray-200 mb-2 block">
-              Translate to another language
-            </Label>
-            <Select onValueChange={setTargetLanguage} value={targetLanguage}>
-              <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
-                <SelectValue placeholder="Select language" />
+          <div className="flex items-center justify-between">
+            <label htmlFor="customScript" className="block text-sm font-medium text-gray-200">Your Script</label>
+            <Select value={targetLanguage} onValueChange={(value) => {
+              setTargetLanguage(value);
+              if (value !== "English" && customScript.trim()) {
+                handleTranslateScript();
+              }
+            }}>
+              <SelectTrigger className="h-8 w-[140px] bg-zinc-800 border-zinc-700 text-white">
+                <SelectValue placeholder="Language" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-800 border-zinc-700 text-white">
                 {commonLanguages.map((lang) => (
@@ -161,18 +228,16 @@ const ScriptInput: React.FC<ScriptInputProps> = ({
               </SelectContent>
             </Select>
           </div>
-          <Button 
-            type="button" 
-            variant="outline" 
-            className="w-full sm:w-1/3 border-zinc-700 hover:bg-quicktok-orange hover:text-white"
-            onClick={handleTranslateScript}
-            disabled={isTranslating}
-          >
-            <Languages className="w-4 h-4 mr-2" />
-            {isTranslating ? "Translating..." : "Translate"}
-          </Button>
-        </div>
-      </div>
+          <Textarea
+            id="customScript"
+            value={customScript}
+            onChange={(e) => onCustomScriptChange(e.target.value)}
+            rows={4}
+            placeholder="Enter your script here..."
+            className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50"
+          />
+        </motion.div>
+      )}
     </div>
   );
 };

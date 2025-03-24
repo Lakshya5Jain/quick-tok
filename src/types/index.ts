@@ -4,6 +4,7 @@ export interface Video {
   finalVideoUrl: string;
   scriptText: string;
   timestamp: number;
+  user_id?: string;
 }
 
 export interface VoiceOption {

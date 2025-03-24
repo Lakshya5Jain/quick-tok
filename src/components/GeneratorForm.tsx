@@ -48,7 +48,7 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
   const [voiceMediaFile, setVoiceMediaFile] = useState<File | null>(null);
   const [useVoiceMediaFile, setUseVoiceMediaFile] = useState(false);
   const [highResolution, setHighResolution] = useState(false);
-  const [searchWeb, setSearchWeb] = useState(false);
+  const [searchWeb, setSearchWeb] = useState(true); // Default to true for web search
 
   // Preview state
   const [previewVoiceMedia, setPreviewVoiceMedia] = useState<string | null>(null);
@@ -105,7 +105,7 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
       voiceMedia: !useVoiceMediaFile ? voiceMedia : undefined,
       voiceMediaFile: useVoiceMediaFile ? voiceMediaFile || undefined : undefined,
       highResolution,
-      searchWeb: scriptOption === ScriptOption.GPT ? searchWeb : undefined,
+      searchWeb: true, // Always search the web
     });
   };
 
@@ -143,7 +143,6 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
             onTopicChange={setTopic}
             customScript={customScript}
             onCustomScriptChange={setCustomScript}
-            searchWeb={searchWeb}
             onSearchWebChange={setSearchWeb}
           />
           

@@ -27,11 +27,22 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Get all videos ordered by timestamp (newest first)
-    const { data, error } = await supabase
+    // Get the user ID from the request
+    const { userId } = await req.json();
+    
+    // Define the query
+    let query = supabase
       .from('videos')
       .select('*')
       .order('timestamp', { ascending: false });
+    
+    // If userId is provided, filter by user_id
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+    
+    // Execute the query
+    const { data, error } = await query;
     
     if (error) {
       return new Response(

@@ -60,10 +60,10 @@ export async function uploadFile(file: File): Promise<string> {
 }
 
 // Generate script with GPT
-export async function generateScript(topic: string, searchWeb: boolean = false): Promise<string> {
+export async function generateScript(topic: string, searchWeb: boolean = true): Promise<string> {
   try {
     const { data, error } = await supabase.functions.invoke('generate-script', {
-      body: { topic, searchWeb }
+      body: { topic, searchWeb: true }
     });
 
     if (error) throw new Error(error.message);
@@ -132,6 +132,10 @@ async function processVideoGeneration(processId: string, formData: {
   searchWeb?: boolean;
 }) {
   try {
+    // Get current user ID
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData?.user?.id;
+    
     // Track uploaded files to clean up later
     const filesToCleanup: string[] = [];
     
@@ -195,7 +199,8 @@ async function processVideoGeneration(processId: string, formData: {
         progress: 25
       });
       
-      scriptText = await generateScript(formData.topic, formData.searchWeb);
+      // Always search the web for GPT-generated scripts
+      scriptText = await generateScript(formData.topic, true);
     } else if (formData.scriptOption === ScriptOption.CUSTOM && formData.customScript) {
       updateProgressInStorage(processId, {
         status: "Using custom script...",
@@ -276,7 +281,8 @@ async function processVideoGeneration(processId: string, formData: {
         body: { 
           renderId,
           scriptText,
-          aiVideoUrl
+          aiVideoUrl,
+          userId // Pass the user ID for saving the video
         }
       });
       
@@ -328,23 +334,41 @@ export async function checkProgress(processId: string): Promise<GenerationProgre
   return progress;
 }
 
-// Get saved videos from database
+// Get saved videos from database - now filtered by user ID
 export async function getVideos(): Promise<Video[]> {
   try {
-    const { data, error } = await supabase.functions.invoke('get-videos', {});
+    const { data: userData, error: userError } = await supabase.auth.getUser();
     
-    if (error) {
-      console.error("Error fetching videos:", error);
+    if (userError) {
+      console.error("Error getting current user:", userError);
       // Fall back to mock videos if there's an error
       return mockVideos;
     }
     
-    return data.videos.map((video: any) => ({
-      id: video.id,
-      finalVideoUrl: video.final_video_url,
-      scriptText: video.script_text,
-      timestamp: new Date(video.timestamp).getTime()
-    }));
+    const userId = userData?.user?.id;
+    
+    // If we have a user ID, fetch their videos
+    if (userId) {
+      const { data, error } = await supabase.functions.invoke('get-videos', {
+        body: { userId }
+      });
+      
+      if (error) {
+        console.error("Error fetching videos:", error);
+        // Fall back to mock videos if there's an error
+        return mockVideos;
+      }
+      
+      return data.videos.map((video: any) => ({
+        id: video.id,
+        finalVideoUrl: video.final_video_url,
+        scriptText: video.script_text,
+        timestamp: new Date(video.timestamp).getTime()
+      }));
+    } else {
+      // No user ID, return empty array
+      return [];
+    }
   } catch (error) {
     console.error("Error in getVideos:", error);
     // Fall back to mock videos if there's an error
