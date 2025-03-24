@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -59,6 +58,11 @@ const Auth = () => {
     }
   };
 
+  // Add a handler to navigate to the home page when logo is clicked
+  const handleLogoClick = () => {
+    navigate("/");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-primary flex items-center justify-center p-4">
       <motion.div
@@ -67,7 +71,7 @@ const Auth = () => {
         className="w-full max-w-md bg-zinc-900 p-8 rounded-xl shadow-xl border border-zinc-800"
       >
         <div className="flex justify-center mb-8">
-          <Logo size="lg" />
+          <Logo size="lg" onClick={handleLogoClick} />
         </div>
         
         <h1 className="text-2xl font-bold text-center mb-6 text-white">

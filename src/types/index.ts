@@ -41,3 +41,19 @@ export interface HowItWorksStep {
   title: string;
   description: string;
 }
+
+// New interface for video generation options
+export interface VideoGenerationOptions {
+  scriptOption: ScriptOption;
+  topic?: string;
+  customScript?: string;
+  supportingMedia?: string;
+  supportingMediaFile?: File;
+  voiceId: string;
+  voiceMedia?: string;
+  voiceMediaFile?: File;
+  highResolution: boolean;
+  searchWeb?: boolean;
+  scriptGenerationOnly?: boolean;
+  continueFromScript?: boolean;
+}

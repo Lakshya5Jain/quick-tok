@@ -6,6 +6,7 @@ import GeneratorForm from "@/components/GeneratorForm";
 import VideoFeed from "@/components/VideoFeed";
 import LoadingScreen from "@/components/LoadingScreen";
 import ResultScreen from "@/components/ResultScreen";
+import ScriptReviewModal from "@/components/generator/ScriptReviewModal"; // Import the new component
 import { GenerationProgress, ScriptOption, Video } from "@/types";
 import { generateVideo, checkProgress, getVideos } from "@/lib/api";
 import { toast } from "sonner";
@@ -18,6 +19,11 @@ const Index = () => {
   const [currentProcessId, setCurrentProcessId] = useState<string | null>(null);
   const [progress, setProgress] = useState<GenerationProgress | null>(null);
   const [showResult, setShowResult] = useState(false);
+  
+  // New state for script review
+  const [showScriptReview, setShowScriptReview] = useState(false);
+  const [generatedScript, setGeneratedScript] = useState("");
+  const [pendingFormData, setPendingFormData] = useState<any>(null);
 
   // Load videos on mount
   useEffect(() => {
@@ -43,7 +49,14 @@ const Index = () => {
         const progressData = await checkProgress(currentProcessId);
         setProgress(progressData);
         
-        if (progressData.progress >= 100) {
+        // If script generation is complete but video generation hasn't started yet
+        if (progressData.progress >= 30 && progressData.progress < 50 && progressData.scriptText && !showScriptReview) {
+          setIsSubmitting(false);
+          setGeneratedScript(progressData.scriptText);
+          setShowScriptReview(true);
+          setCurrentProcessId(null);
+        } else if (progressData.progress >= 100) {
+          // Video is complete
           setIsSubmitting(false);
           setShowResult(true);
           setCurrentProcessId(null);
@@ -60,7 +73,7 @@ const Index = () => {
     };
     
     pollProgress();
-  }, [currentProcessId]);
+  }, [currentProcessId, showScriptReview]);
 
   const handleFormSubmit = async (formData: {
     scriptOption: ScriptOption;
@@ -77,28 +90,71 @@ const Index = () => {
     setIsSubmitting(true);
     
     try {
-      // Start video generation with the form data directly including files
+      if (formData.scriptOption === ScriptOption.GPT && formData.topic) {
+        // Store form data to be used after script review
+        setPendingFormData(formData);
+        
+        // Start script generation only
+        const processId = await generateVideo({
+          ...formData,
+          scriptGenerationOnly: true
+        });
+        
+        setCurrentProcessId(processId);
+        setProgress({
+          progress: 0,
+          status: "Generating script...",
+        });
+      } else {
+        // Custom script, proceed directly to video generation
+        const processId = await generateVideo(formData);
+        
+        setCurrentProcessId(processId);
+        setProgress({
+          progress: 0,
+          status: "Starting...",
+        });
+      }
+    } catch (error) {
+      console.error("Error starting video generation:", error);
+      toast.error("Failed to start video generation");
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleScriptReviewClose = () => {
+    setShowScriptReview(false);
+    setGeneratedScript("");
+    setPendingFormData(null);
+  };
+
+  const handleScriptConfirm = async (finalScript: string) => {
+    if (!pendingFormData) {
+      toast.error("Missing form data. Please try again.");
+      setShowScriptReview(false);
+      return;
+    }
+
+    setShowScriptReview(false);
+    setIsSubmitting(true);
+
+    try {
+      // Continue with video generation using the reviewed script
       const processId = await generateVideo({
-        scriptOption: formData.scriptOption,
-        topic: formData.topic,
-        customScript: formData.customScript,
-        supportingMedia: formData.supportingMedia,
-        supportingMediaFile: formData.supportingMediaFile,
-        voiceId: formData.voiceId,
-        voiceMedia: formData.voiceMedia,
-        voiceMediaFile: formData.voiceMediaFile,
-        highResolution: formData.highResolution,
-        searchWeb: formData.searchWeb
+        ...pendingFormData,
+        customScript: finalScript,
+        scriptOption: ScriptOption.CUSTOM, // Override to use the reviewed script
+        continueFromScript: true
       });
       
       setCurrentProcessId(processId);
       setProgress({
-        progress: 0,
-        status: "Starting...",
+        progress: 30,
+        status: "Creating video from script...",
       });
     } catch (error) {
-      console.error("Error starting video generation:", error);
-      toast.error("Failed to start video generation");
+      console.error("Error continuing video generation:", error);
+      toast.error("Failed to continue video generation");
       setIsSubmitting(false);
     }
   };
@@ -152,6 +208,18 @@ const Index = () => {
       <AnimatePresence>
         {isSubmitting && progress && (
           <LoadingScreen progress={progress} />
+        )}
+      </AnimatePresence>
+      
+      {/* Script review modal */}
+      <AnimatePresence>
+        {showScriptReview && (
+          <ScriptReviewModal 
+            script={generatedScript}
+            onClose={handleScriptReviewClose}
+            onConfirm={handleScriptConfirm}
+            isLoading={isSubmitting}
+          />
         )}
       </AnimatePresence>
       
