@@ -42,7 +42,7 @@ export interface HowItWorksStep {
   description: string;
 }
 
-// New interface for video generation options
+// Updated interface for video generation options
 export interface VideoGenerationOptions {
   scriptOption: ScriptOption;
   topic?: string;

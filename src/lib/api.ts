@@ -378,22 +378,16 @@ export async function getVideos(): Promise<Video[]> {
 
 export const generateImprovedScript = async (script: string): Promise<string> => {
   try {
-    // Call the API to improve the script using AI
-    const response = await fetch(`${apiBaseUrl}/generate-improved-script`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${supabase.auth.getSession()}`
-      },
-      body: JSON.stringify({ script })
+    // Call the Supabase Edge Function to improve the script using AI
+    const { data, error } = await supabase.functions.invoke('generate-improved-script', {
+      body: { script }
     });
 
-    if (!response.ok) {
-      throw new Error("Failed to improve script");
+    if (error) {
+      throw new Error(`Failed to improve script: ${error.message}`);
     }
 
-    const data = await response.json();
-    return data.improvedScript || script; // Return the improved script or the original if something went wrong
+    return data?.improvedScript || script; // Return the improved script or the original if something went wrong
   } catch (error) {
     console.error("Error improving script:", error);
     throw error;
