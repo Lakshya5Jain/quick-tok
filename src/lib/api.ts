@@ -1,4 +1,3 @@
-
 import { delay, generateUUID } from './utils';
 import { GenerationProgress, Video, ScriptOption } from '@/types';
 import { mockVideos } from '@/data/mockData';
@@ -61,16 +60,31 @@ export async function uploadFile(file: File): Promise<string> {
 }
 
 // Generate script with GPT
-export async function generateScript(topic: string): Promise<string> {
+export async function generateScript(topic: string, searchWeb: boolean = false): Promise<string> {
   try {
     const { data, error } = await supabase.functions.invoke('generate-script', {
-      body: { topic }
+      body: { topic, searchWeb }
     });
 
     if (error) throw new Error(error.message);
     return data.scriptText;
   } catch (error) {
     console.error('Error generating script:', error);
+    throw error;
+  }
+}
+
+// Translate script to another language
+export async function translateScript(script: string, targetLanguage: string): Promise<string> {
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-script', {
+      body: { scriptToTranslate: script, targetLanguage }
+    });
+
+    if (error) throw new Error(error.message);
+    return data.scriptText;
+  } catch (error) {
+    console.error('Error translating script:', error);
     throw error;
   }
 }
@@ -86,6 +100,7 @@ export async function generateVideo(formData: {
   voiceMedia?: string;
   voiceMediaFile?: File;
   highResolution: boolean;
+  searchWeb?: boolean;
 }): Promise<string> {
   const processId = generateUUID();
   
@@ -114,6 +129,7 @@ async function processVideoGeneration(processId: string, formData: {
   voiceMedia?: string;
   voiceMediaFile?: File;
   highResolution: boolean;
+  searchWeb?: boolean;
 }) {
   try {
     // Track uploaded files to clean up later
@@ -179,7 +195,7 @@ async function processVideoGeneration(processId: string, formData: {
         progress: 25
       });
       
-      scriptText = await generateScript(formData.topic);
+      scriptText = await generateScript(formData.topic, formData.searchWeb);
     } else if (formData.scriptOption === ScriptOption.CUSTOM && formData.customScript) {
       updateProgressInStorage(processId, {
         status: "Using custom script...",

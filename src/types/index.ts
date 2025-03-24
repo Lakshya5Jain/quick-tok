@@ -20,7 +20,8 @@ export interface GenerationProgress {
   aiVideoUrl?: string;
   voiceId?: string;
   voiceMedia?: string;
-  supportingMediaUrl?: string; // Added this missing property
+  supportingMediaUrl?: string;
+  searchWeb?: boolean;
 }
 
 export enum ScriptOption {

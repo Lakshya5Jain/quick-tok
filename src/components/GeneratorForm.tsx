@@ -23,6 +23,7 @@ interface GeneratorFormProps {
     voiceMedia?: string;
     voiceMediaFile?: File;
     highResolution: boolean;
+    searchWeb?: boolean;
   }) => void;
   isSubmitting: boolean;
   voiceOptions: VoiceOption[];
@@ -47,6 +48,7 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
   const [voiceMediaFile, setVoiceMediaFile] = useState<File | null>(null);
   const [useVoiceMediaFile, setUseVoiceMediaFile] = useState(false);
   const [highResolution, setHighResolution] = useState(false);
+  const [searchWeb, setSearchWeb] = useState(false);
 
   // Preview state
   const [previewVoiceMedia, setPreviewVoiceMedia] = useState<string | null>(null);
@@ -103,6 +105,7 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
       voiceMedia: !useVoiceMediaFile ? voiceMedia : undefined,
       voiceMediaFile: useVoiceMediaFile ? voiceMediaFile || undefined : undefined,
       highResolution,
+      searchWeb: scriptOption === ScriptOption.GPT ? searchWeb : undefined,
     });
   };
 
@@ -140,6 +143,8 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
             onTopicChange={setTopic}
             customScript={customScript}
             onCustomScriptChange={setCustomScript}
+            searchWeb={searchWeb}
+            onSearchWebChange={setSearchWeb}
           />
           
           {/* Voice Selection */}
