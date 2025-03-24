@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { ScriptOption, VoiceOption } from "@/types";
+import { ScriptOption, VoiceOption, VideoGenerationOptions } from "@/types";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import ScriptOptionSelector from "./generator/ScriptOptionSelector";
@@ -13,18 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 interface GeneratorFormProps {
-  onSubmit: (formData: {
-    scriptOption: ScriptOption;
-    topic?: string;
-    customScript?: string;
-    supportingMedia?: string;
-    supportingMediaFile?: File;
-    voiceId: string;
-    voiceMedia?: string;
-    voiceMediaFile?: File;
-    highResolution: boolean;
-    searchWeb?: boolean;
-  }) => void;
+  onSubmit: (formData: VideoGenerationOptions) => void;
   isSubmitting: boolean;
   voiceOptions: VoiceOption[];
 }

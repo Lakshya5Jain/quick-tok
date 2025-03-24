@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
@@ -6,8 +5,8 @@ import GeneratorForm from "@/components/GeneratorForm";
 import VideoFeed from "@/components/VideoFeed";
 import LoadingScreen from "@/components/LoadingScreen";
 import ResultScreen from "@/components/ResultScreen";
-import ScriptReviewModal from "@/components/generator/ScriptReviewModal"; // Import the new component
-import { GenerationProgress, ScriptOption, Video } from "@/types";
+import ScriptReviewModal from "@/components/generator/ScriptReviewModal";
+import { GenerationProgress, ScriptOption, Video, VideoGenerationOptions } from "@/types";
 import { generateVideo, checkProgress, getVideos } from "@/lib/api";
 import { toast } from "sonner";
 import { voiceOptions } from "@/data/mockData";
@@ -19,13 +18,10 @@ const Index = () => {
   const [currentProcessId, setCurrentProcessId] = useState<string | null>(null);
   const [progress, setProgress] = useState<GenerationProgress | null>(null);
   const [showResult, setShowResult] = useState(false);
-  
-  // New state for script review
   const [showScriptReview, setShowScriptReview] = useState(false);
   const [generatedScript, setGeneratedScript] = useState("");
   const [pendingFormData, setPendingFormData] = useState<any>(null);
 
-  // Load videos on mount
   useEffect(() => {
     const loadVideos = async () => {
       try {
@@ -40,7 +36,6 @@ const Index = () => {
     loadVideos();
   }, []);
 
-  // Poll for progress updates when a process is running
   useEffect(() => {
     if (!currentProcessId) return;
     
@@ -49,19 +44,16 @@ const Index = () => {
         const progressData = await checkProgress(currentProcessId);
         setProgress(progressData);
         
-        // If script generation is complete but video generation hasn't started yet
         if (progressData.progress >= 30 && progressData.progress < 50 && progressData.scriptText && !showScriptReview) {
           setIsSubmitting(false);
           setGeneratedScript(progressData.scriptText);
           setShowScriptReview(true);
           setCurrentProcessId(null);
         } else if (progressData.progress >= 100) {
-          // Video is complete
           setIsSubmitting(false);
           setShowResult(true);
           setCurrentProcessId(null);
         } else {
-          // Continue polling
           setTimeout(pollProgress, 1000);
         }
       } catch (error) {
@@ -75,26 +67,13 @@ const Index = () => {
     pollProgress();
   }, [currentProcessId, showScriptReview]);
 
-  const handleFormSubmit = async (formData: {
-    scriptOption: ScriptOption;
-    topic?: string;
-    customScript?: string;
-    supportingMedia?: string;
-    supportingMediaFile?: File;
-    voiceId: string;
-    voiceMedia?: string;
-    voiceMediaFile?: File;
-    highResolution: boolean;
-    searchWeb?: boolean;
-  }) => {
+  const handleFormSubmit = async (formData: VideoGenerationOptions) => {
     setIsSubmitting(true);
     
     try {
       if (formData.scriptOption === ScriptOption.GPT && formData.topic) {
-        // Store form data to be used after script review
         setPendingFormData(formData);
         
-        // Start script generation only
         const processId = await generateVideo({
           ...formData,
           scriptGenerationOnly: true
@@ -106,7 +85,6 @@ const Index = () => {
           status: "Generating script...",
         });
       } else {
-        // Custom script, proceed directly to video generation
         const processId = await generateVideo(formData);
         
         setCurrentProcessId(processId);
@@ -139,11 +117,10 @@ const Index = () => {
     setIsSubmitting(true);
 
     try {
-      // Continue with video generation using the reviewed script
       const processId = await generateVideo({
         ...pendingFormData,
         customScript: finalScript,
-        scriptOption: ScriptOption.CUSTOM, // Override to use the reviewed script
+        scriptOption: ScriptOption.CUSTOM,
         continueFromScript: true
       });
       
@@ -161,7 +138,6 @@ const Index = () => {
 
   const handleResultClose = () => {
     setShowResult(false);
-    // Refresh videos list
     getVideos().then(setVideos);
   };
 
@@ -204,14 +180,12 @@ const Index = () => {
         </AnimatePresence>
       </div>
       
-      {/* Loading overlay when generating video */}
       <AnimatePresence>
         {isSubmitting && progress && (
           <LoadingScreen progress={progress} />
         )}
       </AnimatePresence>
       
-      {/* Script review modal */}
       <AnimatePresence>
         {showScriptReview && (
           <ScriptReviewModal 
@@ -223,7 +197,6 @@ const Index = () => {
         )}
       </AnimatePresence>
       
-      {/* Result modal when complete */}
       <AnimatePresence>
         {showResult && progress && progress.progress >= 100 && (
           <ResultScreen 
