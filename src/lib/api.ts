@@ -1,5 +1,6 @@
+
 import { delay, generateUUID } from './utils';
-import { GenerationProgress, Video, ScriptOption } from '@/types';
+import { GenerationProgress, Video, ScriptOption, VideoGenerationOptions } from '@/types';
 import { mockVideos } from '@/data/mockData';
 import { supabase } from "@/integrations/supabase/client";
 
