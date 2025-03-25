@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
 const corsHeaders = {
@@ -14,8 +15,9 @@ serve(async (req) => {
   }
 
   try {
-    const { renderId, scriptText, aiVideoUrl, userId } = await req.json();
+    const { renderId, scriptText, aiVideoUrl } = await req.json();
     const creatomateApiKey = Deno.env.get('CREATOMATE_API_KEY');
+    const creatomateBaseUrl = 'https://api.creatomate.com/v1/renders';
     
     if (!renderId) {
       return new Response(
@@ -23,80 +25,56 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    // Check the status of the render
-    const response = await fetch(`https://api.creatomate.com/v1/renders/${renderId}`, {
-      headers: {
-        'Authorization': `Bearer ${creatomateApiKey}`
-      }
-    });
+
+    const headers = {
+      'Authorization': `Bearer ${creatomateApiKey}`,
+      'Content-Type': 'application/json',
+    };
+
+    const response = await fetch(`${creatomateBaseUrl}/${renderId}`, { headers });
     
     if (!response.ok) {
-      const errorData = await response.json();
       return new Response(
-        JSON.stringify({ error: "Failed to check render status", details: errorData }),
+        JSON.stringify({ error: "Failed to check render status", status: response.status }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const statusData = await response.json();
+    const completed = statusData.status === 'succeeded';
     
-    const data = await response.json();
-    console.log("Render status:", data.status);
-    
-    // If the render is complete, store the video in the database
-    if (data.status === 'succeeded') {
-      // Get the URL of the rendered video
-      const url = data.outputs[0].url;
+    // If completed, save to database
+    if (completed && statusData.url && scriptText) {
+      // Create a Supabase client
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://oghwtfuquhqwtqekpsyn.supabase.co';
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY');
       
-      // Store the video in the database
-      if (scriptText && url) {
-        // Create a Supabase client
-        const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://oghwtfuquhqwtqekpsyn.supabase.co';
-        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY');
+      if (supabaseKey) {
+        const supabase = createClient(supabaseUrl, supabaseKey);
         
-        if (!supabaseKey) {
-          console.error("Supabase key not found");
-        } else {
-          try {
-            const supabase = createClient(supabaseUrl, supabaseKey);
-            
-            // Insert the video into the database
-            const { data: insertData, error: insertError } = await supabase
-              .from('videos')
-              .insert({
-                script_text: scriptText,
-                final_video_url: url,
-                ai_video_url: aiVideoUrl,
-                user_id: userId, // Include user ID when saving
-              });
-            
-            if (insertError) {
-              console.error("Error inserting video:", insertError);
-            } else {
-              console.log("Video inserted successfully");
-            }
-          } catch (dbError) {
-            console.error("Error with database operation:", dbError);
-          }
+        // Save to videos table
+        const { data, error } = await supabase
+          .from('videos')
+          .insert({
+            final_video_url: statusData.url,
+            script_text: scriptText,
+            ai_video_url: aiVideoUrl
+          });
+        
+        if (error) {
+          console.error("Error saving to database:", error);
         }
       }
-      
-      return new Response(
-        JSON.stringify({ 
-          completed: true, 
-          url: data.outputs[0].url,
-          status: data.status
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } else {
-      return new Response(
-        JSON.stringify({ 
-          completed: false, 
-          status: data.status 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
     }
+
+    return new Response(
+      JSON.stringify({
+        status: statusData.status,
+        url: statusData.url,
+        completed
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
     console.error("Error checking final video status:", error);
     return new Response(

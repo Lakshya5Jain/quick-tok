@@ -4,7 +4,6 @@ export interface Video {
   finalVideoUrl: string;
   scriptText: string;
   timestamp: number;
-  user_id?: string;
 }
 
 export interface VoiceOption {
@@ -21,8 +20,7 @@ export interface GenerationProgress {
   aiVideoUrl?: string;
   voiceId?: string;
   voiceMedia?: string;
-  supportingMediaUrl?: string;
-  searchWeb?: boolean;
+  supportingMediaUrl?: string; // Added this missing property
 }
 
 export enum ScriptOption {
@@ -40,20 +38,4 @@ export interface HowItWorksStep {
   number: number;
   title: string;
   description: string;
-}
-
-// Updated interface for video generation options
-export interface VideoGenerationOptions {
-  scriptOption: ScriptOption;
-  topic?: string;
-  customScript?: string;
-  supportingMedia?: string;
-  supportingMediaFile?: File;
-  voiceId: string;
-  voiceMedia?: string;
-  voiceMediaFile?: File;
-  highResolution: boolean;
-  searchWeb?: boolean;
-  scriptGenerationOnly?: boolean;
-  continueFromScript?: boolean;
 }

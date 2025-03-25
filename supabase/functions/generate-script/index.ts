@@ -14,42 +14,14 @@ serve(async (req) => {
   }
 
   try {
-    const { topic, searchWeb, targetLanguage, scriptToTranslate } = await req.json();
+    const { topic } = await req.json();
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
-    // Validate input based on operation type
-    if (!scriptToTranslate && !topic) {
+    if (!topic) {
       return new Response(
-        JSON.stringify({ error: "Either topic or scriptToTranslate is required" }),
+        JSON.stringify({ error: "Topic is required" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
-    }
-
-    // For translation, we need a target language
-    if (scriptToTranslate && !targetLanguage) {
-      return new Response(
-        JSON.stringify({ error: "Target language is required for translation" }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    let systemPrompt = "You are a helpful AI that writes scripts suitable for text-to-speech applications.";
-    let userPrompt = "";
-    
-    if (scriptToTranslate) {
-      // Translation operation
-      systemPrompt = `You are a skilled translator who can convert scripts into various languages while maintaining the original meaning and tone.`;
-      userPrompt = `Translate the following script into ${targetLanguage}. Ensure the translation is natural, conversational, and suitable for text-to-speech applications:
-      
-      ${scriptToTranslate}`;
-    } else {
-      // Script generation operation - always search the web for latest information
-      systemPrompt += " You search the web for the most recent and accurate information when needed.";
-      
-      userPrompt = `Write a concise and clear script about the following topic: '${topic}'. 
-                    The script should be suitable for text-to-speech, avoiding informal expressions, 
-                    emojis, and overly complex sentences. Use punctuation to indicate natural pauses.
-                    Make sure to include recent and accurate information about '${topic}' that would be available online.`;
     }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -59,32 +31,29 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini", // Using a more basic model that's still capable
+        model: "gpt-4o-mini",
         messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
+          {
+            role: "system", 
+            content: "You are a helpful AI that writes scripts suitable for text-to-speech applications."
+          },
+          {
+            role: "user", 
+            content: `Write a concise and clear script about the following topic: '${topic}'. 
+                      The script should be suitable for text-to-speech, avoiding informal expressions, 
+                      emojis, and overly complex sentences. Use punctuation to indicate natural pauses.`
+          }
         ],
-        max_tokens: 800,
+        max_tokens: 300,
         temperature: 0.7,
       }),
     });
 
     const data = await response.json();
-    
-    if (!data.choices || !data.choices[0]) {
-      console.error("Unexpected API response:", data);
-      throw new Error("Failed to generate content");
-    }
-    
     const scriptText = data.choices[0].message.content.trim();
 
     return new Response(
-      JSON.stringify({ 
-        scriptText,
-        isTranslation: !!scriptToTranslate,
-        originalLanguage: scriptToTranslate ? "Original" : null,
-        targetLanguage: targetLanguage || null
-      }),
+      JSON.stringify({ scriptText }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

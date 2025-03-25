@@ -1,6 +1,6 @@
 
 import { delay, generateUUID } from './utils';
-import { GenerationProgress, Video, ScriptOption, VideoGenerationOptions } from '@/types';
+import { GenerationProgress, Video, ScriptOption } from '@/types';
 import { mockVideos } from '@/data/mockData';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -61,10 +61,10 @@ export async function uploadFile(file: File): Promise<string> {
 }
 
 // Generate script with GPT
-export async function generateScript(topic: string, searchWeb: boolean = true): Promise<string> {
+export async function generateScript(topic: string): Promise<string> {
   try {
     const { data, error } = await supabase.functions.invoke('generate-script', {
-      body: { topic, searchWeb: true }
+      body: { topic }
     });
 
     if (error) throw new Error(error.message);
@@ -75,23 +75,18 @@ export async function generateScript(topic: string, searchWeb: boolean = true): 
   }
 }
 
-// Translate script to another language
-export async function translateScript(script: string, targetLanguage: string): Promise<string> {
-  try {
-    const { data, error } = await supabase.functions.invoke('generate-script', {
-      body: { scriptToTranslate: script, targetLanguage }
-    });
-
-    if (error) throw new Error(error.message);
-    return data.scriptText;
-  } catch (error) {
-    console.error('Error translating script:', error);
-    throw error;
-  }
-}
-
 // Main function to start the video generation process
-export async function generateVideo(formData: VideoGenerationOptions): Promise<string> {
+export async function generateVideo(formData: {
+  scriptOption: ScriptOption;
+  topic?: string;
+  customScript?: string;
+  supportingMedia?: string;
+  supportingMediaFile?: File;
+  voiceId: string;
+  voiceMedia?: string;
+  voiceMediaFile?: File;
+  highResolution: boolean;
+}): Promise<string> {
   const processId = generateUUID();
   
   // Initialize progress in localStorage
@@ -109,12 +104,18 @@ export async function generateVideo(formData: VideoGenerationOptions): Promise<s
 }
 
 // Background process to generate the video
-async function processVideoGeneration(processId: string, formData: VideoGenerationOptions) {
+async function processVideoGeneration(processId: string, formData: {
+  scriptOption: ScriptOption;
+  topic?: string;
+  customScript?: string;
+  supportingMedia?: string;
+  supportingMediaFile?: File;
+  voiceId: string;
+  voiceMedia?: string;
+  voiceMediaFile?: File;
+  highResolution: boolean;
+}) {
   try {
-    // Get current user ID
-    const { data: userData } = await supabase.auth.getUser();
-    const userId = userData?.user?.id;
-    
     // Track uploaded files to clean up later
     const filesToCleanup: string[] = [];
     
@@ -178,8 +179,7 @@ async function processVideoGeneration(processId: string, formData: VideoGenerati
         progress: 25
       });
       
-      // Always search the web for GPT-generated scripts
-      scriptText = await generateScript(formData.topic, true);
+      scriptText = await generateScript(formData.topic);
     } else if (formData.scriptOption === ScriptOption.CUSTOM && formData.customScript) {
       updateProgressInStorage(processId, {
         status: "Using custom script...",
@@ -260,8 +260,7 @@ async function processVideoGeneration(processId: string, formData: VideoGenerati
         body: { 
           renderId,
           scriptText,
-          aiVideoUrl,
-          userId // Pass the user ID for saving the video
+          aiVideoUrl
         }
       });
       
@@ -313,62 +312,26 @@ export async function checkProgress(processId: string): Promise<GenerationProgre
   return progress;
 }
 
-// Get saved videos from database - now filtered by user ID
+// Get saved videos from database
 export async function getVideos(): Promise<Video[]> {
   try {
-    const { data: userData, error: userError } = await supabase.auth.getUser();
+    const { data, error } = await supabase.functions.invoke('get-videos', {});
     
-    if (userError) {
-      console.error("Error getting current user:", userError);
+    if (error) {
+      console.error("Error fetching videos:", error);
       // Fall back to mock videos if there's an error
       return mockVideos;
     }
     
-    const userId = userData?.user?.id;
-    
-    // If we have a user ID, fetch their videos
-    if (userId) {
-      const { data, error } = await supabase.functions.invoke('get-videos', {
-        body: { userId }
-      });
-      
-      if (error) {
-        console.error("Error fetching videos:", error);
-        // Fall back to mock videos if there's an error
-        return mockVideos;
-      }
-      
-      return data.videos.map((video: any) => ({
-        id: video.id,
-        finalVideoUrl: video.final_video_url,
-        scriptText: video.script_text,
-        timestamp: new Date(video.timestamp).getTime()
-      }));
-    } else {
-      // No user ID, return empty array
-      return [];
-    }
+    return data.videos.map((video: any) => ({
+      id: video.id,
+      finalVideoUrl: video.final_video_url,
+      scriptText: video.script_text,
+      timestamp: new Date(video.timestamp).getTime()
+    }));
   } catch (error) {
     console.error("Error in getVideos:", error);
     // Fall back to mock videos if there's an error
     return mockVideos;
-  }
-}
-
-export const generateImprovedScript = async (script: string): Promise<string> => {
-  try {
-    // Call the Supabase Edge Function to improve the script using AI
-    const { data, error } = await supabase.functions.invoke('generate-improved-script', {
-      body: { script }
-    });
-
-    if (error) {
-      throw new Error(`Failed to improve script: ${error.message}`);
-    }
-
-    return data?.improvedScript || script; // Return the improved script or the original if something went wrong
-  } catch (error) {
-    console.error("Error improving script:", error);
-    throw error;
   }
 }

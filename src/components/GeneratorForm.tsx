@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from "react";
-import { ScriptOption, VoiceOption, VideoGenerationOptions } from "@/types";
+import { ScriptOption, VoiceOption } from "@/types";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import ScriptOptionSelector from "./generator/ScriptOptionSelector";
@@ -12,7 +13,17 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 interface GeneratorFormProps {
-  onSubmit: (formData: VideoGenerationOptions) => void;
+  onSubmit: (formData: {
+    scriptOption: ScriptOption;
+    topic?: string;
+    customScript?: string;
+    supportingMedia?: string;
+    supportingMediaFile?: File;
+    voiceId: string;
+    voiceMedia?: string;
+    voiceMediaFile?: File;
+    highResolution: boolean;
+  }) => void;
   isSubmitting: boolean;
   voiceOptions: VoiceOption[];
 }
@@ -36,7 +47,6 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
   const [voiceMediaFile, setVoiceMediaFile] = useState<File | null>(null);
   const [useVoiceMediaFile, setUseVoiceMediaFile] = useState(false);
   const [highResolution, setHighResolution] = useState(false);
-  const [searchWeb, setSearchWeb] = useState(true); // Default to true for web search
 
   // Preview state
   const [previewVoiceMedia, setPreviewVoiceMedia] = useState<string | null>(null);
@@ -93,7 +103,6 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
       voiceMedia: !useVoiceMediaFile ? voiceMedia : undefined,
       voiceMediaFile: useVoiceMediaFile ? voiceMediaFile || undefined : undefined,
       highResolution,
-      searchWeb: true, // Always search the web
     });
   };
 
@@ -131,7 +140,6 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
             onTopicChange={setTopic}
             customScript={customScript}
             onCustomScriptChange={setCustomScript}
-            onSearchWebChange={setSearchWeb}
           />
           
           {/* Voice Selection */}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
@@ -5,8 +6,7 @@ import GeneratorForm from "@/components/GeneratorForm";
 import VideoFeed from "@/components/VideoFeed";
 import LoadingScreen from "@/components/LoadingScreen";
 import ResultScreen from "@/components/ResultScreen";
-import ScriptReviewModal from "@/components/generator/ScriptReviewModal";
-import { GenerationProgress, ScriptOption, Video, VideoGenerationOptions } from "@/types";
+import { GenerationProgress, ScriptOption, Video } from "@/types";
 import { generateVideo, checkProgress, getVideos } from "@/lib/api";
 import { toast } from "sonner";
 import { voiceOptions } from "@/data/mockData";
@@ -18,10 +18,8 @@ const Index = () => {
   const [currentProcessId, setCurrentProcessId] = useState<string | null>(null);
   const [progress, setProgress] = useState<GenerationProgress | null>(null);
   const [showResult, setShowResult] = useState(false);
-  const [showScriptReview, setShowScriptReview] = useState(false);
-  const [generatedScript, setGeneratedScript] = useState("");
-  const [pendingFormData, setPendingFormData] = useState<any>(null);
 
+  // Load videos on mount
   useEffect(() => {
     const loadVideos = async () => {
       try {
@@ -36,6 +34,7 @@ const Index = () => {
     loadVideos();
   }, []);
 
+  // Poll for progress updates when a process is running
   useEffect(() => {
     if (!currentProcessId) return;
     
@@ -44,16 +43,12 @@ const Index = () => {
         const progressData = await checkProgress(currentProcessId);
         setProgress(progressData);
         
-        if (progressData.progress >= 30 && progressData.progress < 50 && progressData.scriptText && !showScriptReview) {
-          setIsSubmitting(false);
-          setGeneratedScript(progressData.scriptText);
-          setShowScriptReview(true);
-          setCurrentProcessId(null);
-        } else if (progressData.progress >= 100) {
+        if (progressData.progress >= 100) {
           setIsSubmitting(false);
           setShowResult(true);
           setCurrentProcessId(null);
         } else {
+          // Continue polling
           setTimeout(pollProgress, 1000);
         }
       } catch (error) {
@@ -65,34 +60,40 @@ const Index = () => {
     };
     
     pollProgress();
-  }, [currentProcessId, showScriptReview]);
+  }, [currentProcessId]);
 
-  const handleFormSubmit = async (formData: VideoGenerationOptions) => {
+  const handleFormSubmit = async (formData: {
+    scriptOption: ScriptOption;
+    topic?: string;
+    customScript?: string;
+    supportingMedia?: string;
+    supportingMediaFile?: File;
+    voiceId: string;
+    voiceMedia?: string;
+    voiceMediaFile?: File;
+    highResolution: boolean;
+  }) => {
     setIsSubmitting(true);
     
     try {
-      if (formData.scriptOption === ScriptOption.GPT && formData.topic) {
-        setPendingFormData(formData);
-        
-        const processId = await generateVideo({
-          ...formData,
-          scriptGenerationOnly: true
-        });
-        
-        setCurrentProcessId(processId);
-        setProgress({
-          progress: 0,
-          status: "Generating script...",
-        });
-      } else {
-        const processId = await generateVideo(formData);
-        
-        setCurrentProcessId(processId);
-        setProgress({
-          progress: 0,
-          status: "Starting...",
-        });
-      }
+      // Start video generation with the form data directly including files
+      const processId = await generateVideo({
+        scriptOption: formData.scriptOption,
+        topic: formData.topic,
+        customScript: formData.customScript,
+        supportingMedia: formData.supportingMedia,
+        supportingMediaFile: formData.supportingMediaFile,
+        voiceId: formData.voiceId,
+        voiceMedia: formData.voiceMedia,
+        voiceMediaFile: formData.voiceMediaFile,
+        highResolution: formData.highResolution
+      });
+      
+      setCurrentProcessId(processId);
+      setProgress({
+        progress: 0,
+        status: "Starting...",
+      });
     } catch (error) {
       console.error("Error starting video generation:", error);
       toast.error("Failed to start video generation");
@@ -100,44 +101,9 @@ const Index = () => {
     }
   };
 
-  const handleScriptReviewClose = () => {
-    setShowScriptReview(false);
-    setGeneratedScript("");
-    setPendingFormData(null);
-  };
-
-  const handleScriptConfirm = async (finalScript: string) => {
-    if (!pendingFormData) {
-      toast.error("Missing form data. Please try again.");
-      setShowScriptReview(false);
-      return;
-    }
-
-    setShowScriptReview(false);
-    setIsSubmitting(true);
-
-    try {
-      const processId = await generateVideo({
-        ...pendingFormData,
-        customScript: finalScript,
-        scriptOption: ScriptOption.CUSTOM,
-        continueFromScript: true
-      });
-      
-      setCurrentProcessId(processId);
-      setProgress({
-        progress: 30,
-        status: "Creating video from script...",
-      });
-    } catch (error) {
-      console.error("Error continuing video generation:", error);
-      toast.error("Failed to continue video generation");
-      setIsSubmitting(false);
-    }
-  };
-
   const handleResultClose = () => {
     setShowResult(false);
+    // Refresh videos list
     getVideos().then(setVideos);
   };
 
@@ -180,23 +146,14 @@ const Index = () => {
         </AnimatePresence>
       </div>
       
+      {/* Loading overlay when generating video */}
       <AnimatePresence>
         {isSubmitting && progress && (
           <LoadingScreen progress={progress} />
         )}
       </AnimatePresence>
       
-      <AnimatePresence>
-        {showScriptReview && (
-          <ScriptReviewModal 
-            script={generatedScript}
-            onClose={handleScriptReviewClose}
-            onConfirm={handleScriptConfirm}
-            isLoading={isSubmitting}
-          />
-        )}
-      </AnimatePresence>
-      
+      {/* Result modal when complete */}
       <AnimatePresence>
         {showResult && progress && progress.progress >= 100 && (
           <ResultScreen 
