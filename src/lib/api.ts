@@ -90,18 +90,7 @@ export async function translateScript(script: string, targetLanguage: string): P
 }
 
 // Main function to start the video generation process
-export async function generateVideo(formData: {
-  scriptOption: ScriptOption;
-  topic?: string;
-  customScript?: string;
-  supportingMedia?: string;
-  supportingMediaFile?: File;
-  voiceId: string;
-  voiceMedia?: string;
-  voiceMediaFile?: File;
-  highResolution: boolean;
-  searchWeb?: boolean;
-}): Promise<string> {
+export async function generateVideo(formData: VideoGenerationOptions): Promise<string> {
   const processId = generateUUID();
   
   // Initialize progress in localStorage
@@ -119,18 +108,7 @@ export async function generateVideo(formData: {
 }
 
 // Background process to generate the video
-async function processVideoGeneration(processId: string, formData: {
-  scriptOption: ScriptOption;
-  topic?: string;
-  customScript?: string;
-  supportingMedia?: string;
-  supportingMediaFile?: File;
-  voiceId: string;
-  voiceMedia?: string;
-  voiceMediaFile?: File;
-  highResolution: boolean;
-  searchWeb?: boolean;
-}) {
+async function processVideoGeneration(processId: string, formData: VideoGenerationOptions) {
   try {
     // Get current user ID
     const { data: userData } = await supabase.auth.getUser();
