@@ -1,9 +1,9 @@
-
 export interface Video {
   id: string;
   finalVideoUrl: string;
   scriptText: string;
   timestamp: number;
+  userId?: string;
 }
 
 export interface VoiceOption {

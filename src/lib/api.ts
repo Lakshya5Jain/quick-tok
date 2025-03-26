@@ -1,4 +1,3 @@
-
 import { delay, generateUUID } from './utils';
 import { GenerationProgress, Video, ScriptOption } from '@/types';
 import { mockVideos } from '@/data/mockData';
@@ -334,4 +333,18 @@ export async function getVideos(): Promise<Video[]> {
     // Fall back to mock videos if there's an error
     return mockVideos;
   }
+}
+
+// Update the function that saves to the database in check-final-video-status
+async function saveToDatabase(videoUrl: string, scriptText: string, userId: string) {
+  const { data, error } = await supabase
+    .from('videos')
+    .insert({
+      final_video_url: videoUrl,
+      script_text: scriptText,
+      user_id: userId
+    });
+
+  if (error) throw error;
+  return data;
 }
