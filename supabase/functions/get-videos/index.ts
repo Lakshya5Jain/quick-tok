@@ -30,18 +30,29 @@ serve(async (req) => {
     // Get all videos ordered by timestamp (newest first)
     const { data, error } = await supabase
       .from('videos')
-      .select('*')
+      .select('id, final_video_url, script_text, timestamp')
       .order('timestamp', { ascending: false });
     
     if (error) {
+      console.error("Error fetching videos:", error);
       return new Response(
         JSON.stringify({ error: error.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
+    // Transform data to match the Video type
+    const videos = data.map(video => ({
+      id: video.id,
+      finalVideoUrl: video.final_video_url,
+      scriptText: video.script_text,
+      timestamp: new Date(video.timestamp).getTime()
+    }));
+    
+    console.log(`Successfully fetched ${videos.length} videos`);
+    
     return new Response(
-      JSON.stringify({ videos: data }),
+      JSON.stringify({ videos }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

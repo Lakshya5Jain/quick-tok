@@ -1,5 +1,6 @@
 
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 interface LogoProps {
   className?: string;
@@ -14,6 +15,8 @@ const Logo: React.FC<LogoProps> = ({
   size = "md",
   onClick
 }) => {
+  const navigate = useNavigate();
+  
   // Significantly increased size values to make the logo larger
   const sizeClasses = {
     sm: "h-36", // Increased from h-28
@@ -22,8 +25,16 @@ const Logo: React.FC<LogoProps> = ({
     xl: "h-96"  // Increased from h-72
   };
 
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else {
+      navigate("/");
+    }
+  };
+
   return (
-    <div className={`flex flex-col items-center ${className} cursor-pointer`} onClick={onClick}>
+    <div className={`flex flex-col items-center ${className} cursor-pointer`} onClick={handleClick}>
       <img 
         src="/lovable-uploads/e1854fe7-b207-42fc-8841-a35599adc678.png" 
         alt="Quick-Tok Logo" 

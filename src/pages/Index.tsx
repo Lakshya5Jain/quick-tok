@@ -15,24 +15,31 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState<"generate" | "videos">("generate");
   const [videos, setVideos] = useState<Video[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingVideos, setIsLoadingVideos] = useState(false);
   const [currentProcessId, setCurrentProcessId] = useState<string | null>(null);
   const [progress, setProgress] = useState<GenerationProgress | null>(null);
   const [showResult, setShowResult] = useState(false);
 
-  // Load videos on mount
+  // Load videos on mount and when activeTab changes to videos
   useEffect(() => {
     const loadVideos = async () => {
-      try {
-        const loadedVideos = await getVideos();
-        setVideos(loadedVideos);
-      } catch (error) {
-        console.error("Failed to load videos:", error);
-        toast.error("Failed to load past videos");
+      if (activeTab === "videos") {
+        setIsLoadingVideos(true);
+        try {
+          const loadedVideos = await getVideos();
+          console.log("Fetched videos:", loadedVideos);
+          setVideos(loadedVideos);
+        } catch (error) {
+          console.error("Failed to load videos:", error);
+          toast.error("Failed to load past videos");
+        } finally {
+          setIsLoadingVideos(false);
+        }
       }
     };
     
     loadVideos();
-  }, []);
+  }, [activeTab]);
 
   // Poll for progress updates when a process is running
   useEffect(() => {
@@ -47,6 +54,9 @@ const Index = () => {
           setIsSubmitting(false);
           setShowResult(true);
           setCurrentProcessId(null);
+          
+          // Refresh videos list if a new video was generated
+          getVideos().then(setVideos);
         } else {
           // Continue polling
           setTimeout(pollProgress, 1000);
@@ -107,12 +117,21 @@ const Index = () => {
     getVideos().then(setVideos);
   };
 
+  const handleTabChange = (tab: "generate" | "videos") => {
+    setActiveTab(tab);
+    
+    // If switching to videos tab, refresh the video list
+    if (tab === "videos") {
+      getVideos().then(setVideos);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-primary px-4 pb-16">
       <div className="max-w-6xl mx-auto pt-8">
         <Navbar 
           activeTab={activeTab} 
-          onTabChange={setActiveTab}
+          onTabChange={handleTabChange}
         />
         
         <AnimatePresence mode="wait">
@@ -140,7 +159,7 @@ const Index = () => {
               transition={{ duration: 0.3 }}
               className="max-w-2xl mx-auto"
             >
-              <VideoFeed videos={videos} />
+              <VideoFeed videos={videos} isLoading={isLoadingVideos} />
             </motion.div>
           )}
         </AnimatePresence>
