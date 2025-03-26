@@ -1,78 +1,10 @@
-import { delay, generateUUID } from './utils';
-import { GenerationProgress, Video, ScriptOption } from '@/types';
-import { mockVideos } from '@/data/mockData';
+
+import { ScriptOption, GenerationProgress } from '@/types';
+import { delay, generateUUID } from '../utils';
+import { updateProgressInStorage } from './utils';
+import { uploadFile } from './upload';
+import { generateScript } from './script';
 import { supabase } from "@/integrations/supabase/client";
-
-// We'll use localStorage to store progress for demo purposes
-const getProgressFromStorage = (processId: string): GenerationProgress | null => {
-  const stored = localStorage.getItem(`progress_${processId}`);
-  return stored ? JSON.parse(stored) : null;
-};
-
-const updateProgressInStorage = (processId: string, progress: Partial<GenerationProgress>) => {
-  const current = getProgressFromStorage(processId) || {
-    progress: 0,
-    status: "Starting...",
-  };
-  const updated = { ...current, ...progress };
-  localStorage.setItem(`progress_${processId}`, JSON.stringify(updated));
-  return updated;
-};
-
-// Upload a file to storage and get a URL
-export async function uploadFile(file: File): Promise<string> {
-  try {
-    console.log("Uploading file:", file.name);
-    
-    // Check if the file already has a publicUrl (from previous upload)
-    if ('publicUrl' in file) {
-      // @ts-ignore - custom property we added
-      return file.publicUrl;
-    }
-    
-    // Generate a unique file name based on the original name
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-    const filePath = `${fileName}`;
-    
-    // Try to upload to Supabase storage
-    const { data, error } = await supabase.storage
-      .from('uploads')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
-
-    if (error) throw error;
-    
-    // Get the public URL
-    const { data: publicUrlData } = supabase.storage
-      .from('uploads')
-      .getPublicUrl(filePath);
-    
-    console.log("Uploaded to Supabase, public URL:", publicUrlData.publicUrl);
-    return publicUrlData.publicUrl;
-  } catch (error) {
-    console.error("Error uploading file:", error);
-    // Fall back to object URL as last resort
-    return URL.createObjectURL(file);
-  }
-}
-
-// Generate script with GPT
-export async function generateScript(topic: string): Promise<string> {
-  try {
-    const { data, error } = await supabase.functions.invoke('generate-script', {
-      body: { topic }
-    });
-
-    if (error) throw new Error(error.message);
-    return data.scriptText;
-  } catch (error) {
-    console.error('Error generating script:', error);
-    throw error;
-  }
-}
 
 // Main function to start the video generation process
 export async function generateVideo(formData: {
@@ -298,53 +230,4 @@ async function processVideoGeneration(processId: string, formData: {
       progress: 100
     });
   }
-}
-
-// Check progress of video generation
-export async function checkProgress(processId: string): Promise<GenerationProgress> {
-  const progress = getProgressFromStorage(processId);
-  
-  if (!progress) {
-    throw new Error("Process not found");
-  }
-  
-  return progress;
-}
-
-// Get saved videos from database
-export async function getVideos(): Promise<Video[]> {
-  try {
-    const { data, error } = await supabase.functions.invoke('get-videos', {});
-    
-    if (error) {
-      console.error("Error fetching videos:", error);
-      // Fall back to mock videos if there's an error
-      return mockVideos;
-    }
-    
-    return data.videos.map((video: any) => ({
-      id: video.id,
-      finalVideoUrl: video.final_video_url,
-      scriptText: video.script_text,
-      timestamp: new Date(video.timestamp).getTime()
-    }));
-  } catch (error) {
-    console.error("Error in getVideos:", error);
-    // Fall back to mock videos if there's an error
-    return mockVideos;
-  }
-}
-
-// Update the function that saves to the database in check-final-video-status
-async function saveToDatabase(videoUrl: string, scriptText: string, userId: string) {
-  const { data, error } = await supabase
-    .from('videos')
-    .insert({
-      final_video_url: videoUrl,
-      script_text: scriptText,
-      user_id: userId
-    });
-
-  if (error) throw error;
-  return data;
 }
