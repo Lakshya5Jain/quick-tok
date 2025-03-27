@@ -34,17 +34,25 @@ serve(async (req) => {
     );
 
     if (authError || !user) {
+      console.error("Auth error:", authError);
       throw new Error('Unauthorized');
     }
 
+    console.log(`Getting videos for user: ${user.id}`);
+
     // Check if user is admin to determine which videos to fetch
-    const { data: profileData } = await supabase
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('is_admin')
       .eq('id', user.id)
       .single();
 
+    if (profileError) {
+      console.error("Profile error:", profileError);
+    }
+
     const isAdmin = profileData?.is_admin || false;
+    console.log(`User is admin: ${isAdmin}`);
     
     // Admin users see all videos, regular users only see their own
     let query = supabase
@@ -59,17 +67,27 @@ serve(async (req) => {
     // Execute the query
     const { data, error } = await query.order('timestamp', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error("Database query error:", error);
+      throw error;
+    }
+    
+    console.log(`Retrieved ${data?.length || 0} videos`);
     
     // Fetch stats if user is admin
     let stats = null;
     if (isAdmin) {
-      const { data: statsData } = await supabase
+      const { data: statsData, error: statsError } = await supabase
         .from('system_stats')
         .select('*')
         .order('updated_at', { ascending: false })
         .limit(1)
         .single();
+      
+      if (statsError) {
+        console.error("Stats error:", statsError);
+      }
+      
       stats = statsData;
     }
     

@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const { renderId, scriptText, aiVideoUrl } = await req.json();
+    const { renderId, scriptText, aiVideoUrl, userId } = await req.json();
     const creatomateApiKey = Deno.env.get('CREATOMATE_API_KEY');
     const creatomateBaseUrl = 'https://api.creatomate.com/v1/renders';
     
@@ -44,7 +44,9 @@ serve(async (req) => {
     const completed = statusData.status === 'succeeded';
     
     // If completed, save to database
-    if (completed && statusData.url && scriptText) {
+    if (completed && statusData.url && scriptText && userId) {
+      console.log(`Video completed. Saving to database for user: ${userId}`);
+      
       // Create a Supabase client
       const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://oghwtfuquhqwtqekpsyn.supabase.co';
       const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY');
@@ -52,17 +54,20 @@ serve(async (req) => {
       if (supabaseKey) {
         const supabase = createClient(supabaseUrl, supabaseKey);
         
-        // Save to videos table
+        // Save to videos table with the user_id
         const { data, error } = await supabase
           .from('videos')
           .insert({
             final_video_url: statusData.url,
             script_text: scriptText,
-            ai_video_url: aiVideoUrl
+            ai_video_url: aiVideoUrl,
+            user_id: userId
           });
         
         if (error) {
           console.error("Error saving to database:", error);
+        } else {
+          console.log("Successfully saved video to database");
         }
       }
     }

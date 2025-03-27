@@ -1,4 +1,3 @@
-
 import { GenerationProgress, ScriptOption } from '@/types';
 import { supabase } from "@/integrations/supabase/client";
 import { generateUUID } from '../utils';
@@ -27,7 +26,7 @@ export async function generateVideo(params: {
     }
     
     // Start the real video generation process
-    startVideoGeneration(processId, params);
+    startVideoGeneration(processId, params, sessionData.session.user.id);
     
     return processId;
   } catch (error) {
@@ -37,7 +36,7 @@ export async function generateVideo(params: {
 }
 
 // This handles the actual video generation process using the edge functions
-async function startVideoGeneration(processId: string, params: any): Promise<void> {
+async function startVideoGeneration(processId: string, params: any, userId: string): Promise<void> {
   // Initial progress
   updateProgressInStorage(processId, {
     progress: 5,
@@ -124,8 +123,8 @@ async function startVideoGeneration(processId: string, params: any): Promise<voi
     if (error) throw new Error(`Final video creation failed: ${error.message}`);
     if (!data.renderId) throw new Error("No render ID returned from final video creation");
     
-    // Poll for final video completion
-    finalVideoUrl = await pollFinalVideoStatus(processId, data.renderId, scriptText, aiVideoUrl);
+    // Poll for final video completion - Pass userId to associate the video with the user
+    finalVideoUrl = await pollFinalVideoStatus(processId, data.renderId, scriptText, aiVideoUrl, userId);
     
   } catch (error) {
     console.error("Error creating final video:", error);
@@ -136,19 +135,7 @@ async function startVideoGeneration(processId: string, params: any): Promise<voi
     return;
   }
   
-  // Get the current user session to associate the video with the user
-  const { data: sessionData } = await supabase.auth.getSession();
-  const userId = sessionData.session?.user?.id;
-  
-  if (!userId) {
-    console.error("No user ID available to save video");
-    throw new Error("User must be authenticated to generate videos");
-  }
-  
   try {
-    // Insert video with the user ID - this is now handled by the edge function
-    // that checks the final video status, so we don't need to do it here
-    
     // Complete progress
     updateProgressInStorage(processId, {
       progress: 100,
@@ -209,8 +196,8 @@ async function pollAIVideoStatus(processId: string, jobId: string): Promise<stri
   });
 }
 
-// Poll for final video status until complete
-async function pollFinalVideoStatus(processId: string, renderId: string, scriptText: string, aiVideoUrl: string): Promise<string> {
+// Poll for final video status until complete - updated to include userId
+async function pollFinalVideoStatus(processId: string, renderId: string, scriptText: string, aiVideoUrl: string, userId: string): Promise<string> {
   return new Promise(async (resolve, reject) => {
     let attempts = 0;
     const maxAttempts = 20; // Maximum number of polling attempts
@@ -219,7 +206,7 @@ async function pollFinalVideoStatus(processId: string, renderId: string, scriptT
     const checkStatus = async () => {
       try {
         const { data, error } = await supabase.functions.invoke('check-final-video-status', {
-          body: { renderId, scriptText, aiVideoUrl }
+          body: { renderId, scriptText, aiVideoUrl, userId }
         });
         
         if (error) throw new Error(`Failed to check final video status: ${error.message}`);

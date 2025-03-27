@@ -13,6 +13,8 @@ export async function getVideos(): Promise<{ videos: Video[], stats: any | null 
       return { videos: mockVideos, stats: null };
     }
 
+    console.log("Fetching videos for user:", sessionData.session.user.id);
+
     // Pass the auth token to the edge function
     const { data, error } = await supabase.functions.invoke('get-videos', {
       headers: {
@@ -26,6 +28,8 @@ export async function getVideos(): Promise<{ videos: Video[], stats: any | null 
       return { videos: mockVideos, stats: null };
     }
     
+    console.log("API Response:", data);
+    
     const videos = data.videos.map((video: any) => ({
       id: video.id,
       finalVideoUrl: video.finalVideoUrl,
@@ -33,6 +37,8 @@ export async function getVideos(): Promise<{ videos: Video[], stats: any | null 
       timestamp: new Date(video.timestamp).getTime(),
       userId: video.userId
     }));
+
+    console.log("Processed videos:", videos);
 
     return { 
       videos,
