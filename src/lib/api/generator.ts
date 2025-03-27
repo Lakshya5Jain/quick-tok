@@ -1,3 +1,4 @@
+
 import { GenerationProgress, ScriptOption } from '@/types';
 import { supabase } from "@/integrations/supabase/client";
 import { generateUUID } from '../utils';
@@ -59,6 +60,12 @@ async function startVideoGeneration(processId: string, params: any, userId: stri
       if (error) throw new Error(`Script generation failed: ${error.message}`);
       scriptText = data.scriptText;
       
+      updateProgressInStorage(processId, {
+        progress: 25,
+        status: "Script generation complete!",
+        scriptText,
+      });
+      
     } catch (error) {
       console.error("Error generating script:", error);
       updateProgressInStorage(processId, {
@@ -69,31 +76,60 @@ async function startVideoGeneration(processId: string, params: any, userId: stri
     }
   } else {
     scriptText = params.customScript || "";
+    updateProgressInStorage(processId, {
+      progress: 25,
+      status: "Using custom script",
+      scriptText,
+    });
   }
   
   updateProgressInStorage(processId, {
-    progress: 20,
+    progress: 30,
     status: "Generating AI video...",
     scriptText,
   });
   
+  // Upload voice media if it's a file
+  let voiceMediaUrl = params.voiceMedia || "";
+  if (params.voiceMediaFile && 'publicUrl' in params.voiceMediaFile) {
+    // @ts-ignore - Use the public URL we added earlier
+    voiceMediaUrl = params.voiceMediaFile.publicUrl;
+  }
+  
   // Step 2: Generate AI video with Infinity AI
   let aiVideoUrl = "";
   try {
+    console.log("Generating AI video with params:", {
+      script: scriptText,
+      voiceId: params.voiceId,
+      voiceMedia: voiceMediaUrl,
+      highResolution: params.highResolution
+    });
+    
     const { data, error } = await supabase.functions.invoke('generate-ai-video', {
       body: { 
         script: scriptText,
         voiceId: params.voiceId,
-        voiceMedia: params.voiceMedia,
+        voiceMedia: voiceMediaUrl,
         highResolution: params.highResolution
       }
     });
     
-    if (error) throw new Error(`AI video generation failed: ${error.message}`);
-    if (!data.jobId) throw new Error("No job ID returned from AI video generation");
+    if (error) {
+      console.error("Error from generate-ai-video function:", error);
+      throw new Error(`AI video generation failed: ${error.message}`);
+    }
+    
+    if (!data.jobId) {
+      console.error("No job ID returned from AI video generation:", data);
+      throw new Error("No job ID returned from AI video generation");
+    }
+    
+    console.log("AI video jobId received:", data.jobId);
     
     // Poll for AI video completion
     aiVideoUrl = await pollAIVideoStatus(processId, data.jobId);
+    console.log("AI video generation complete, URL:", aiVideoUrl);
     
   } catch (error) {
     console.error("Error generating AI video:", error);
@@ -110,21 +146,43 @@ async function startVideoGeneration(processId: string, params: any, userId: stri
     aiVideoUrl,
   });
   
+  // Get the supporting media URL if it's a file
+  let supportingMediaUrl = params.supportingMedia || "";
+  if (params.supportingMediaFile && 'publicUrl' in params.supportingMediaFile) {
+    // @ts-ignore - Use the public URL we added earlier
+    supportingMediaUrl = params.supportingMediaFile.publicUrl;
+  }
+  
   // Step 3: Create the final video with Creatomate
   let finalVideoUrl = "";
   try {
+    console.log("Creating final video with params:", { 
+      aiVideoUrl, 
+      supportingVideo: supportingMediaUrl 
+    });
+    
     const { data, error } = await supabase.functions.invoke('create-final-video', {
       body: { 
         aiVideoUrl, 
-        supportingVideo: params.supportingMedia
+        supportingVideo: supportingMediaUrl
       }
     });
     
-    if (error) throw new Error(`Final video creation failed: ${error.message}`);
-    if (!data.renderId) throw new Error("No render ID returned from final video creation");
+    if (error) {
+      console.error("Error from create-final-video function:", error);
+      throw new Error(`Final video creation failed: ${error.message}`);
+    }
+    
+    if (!data.renderId) {
+      console.error("No render ID returned from final video creation:", data);
+      throw new Error("No render ID returned from final video creation");
+    }
+    
+    console.log("Final video renderId received:", data.renderId);
     
     // Poll for final video completion - Pass userId to associate the video with the user
     finalVideoUrl = await pollFinalVideoStatus(processId, data.renderId, scriptText, aiVideoUrl, userId);
+    console.log("Final video generation complete, URL:", finalVideoUrl);
     
   } catch (error) {
     console.error("Error creating final video:", error);
@@ -161,24 +219,33 @@ async function pollAIVideoStatus(processId: string, jobId: string): Promise<stri
     
     const checkStatus = async () => {
       try {
+        console.log(`Checking AI video status for job ${jobId}, attempt ${attempts + 1}`);
+        
         const { data, error } = await supabase.functions.invoke('check-ai-video-status', {
           body: { jobId }
         });
         
-        if (error) throw new Error(`Failed to check AI video status: ${error.message}`);
+        if (error) {
+          console.error("Error from check-ai-video-status:", error);
+          throw new Error(`Failed to check AI video status: ${error.message}`);
+        }
+        
+        console.log("AI video status response:", data);
         
         updateProgressInStorage(processId, {
-          progress: Math.min(20 + Math.floor(attempts * 1.5), 60), // Progress from 20% to 60%
+          progress: Math.min(30 + Math.floor(attempts * 1.5), 50), // Progress from 30% to 50%
           status: "Generating AI talking head...",
         });
         
         if (data.completed && data.videoUrl) {
+          console.log("AI video generation completed with URL:", data.videoUrl);
           resolve(data.videoUrl);
           return;
         }
         
         attempts++;
         if (attempts >= maxAttempts) {
+          console.error("AI video generation timed out after maximum attempts");
           reject(new Error("AI video generation timed out after maximum attempts"));
           return;
         }
@@ -205,24 +272,33 @@ async function pollFinalVideoStatus(processId: string, renderId: string, scriptT
     
     const checkStatus = async () => {
       try {
+        console.log(`Checking final video status for render ${renderId}, attempt ${attempts + 1}`);
+        
         const { data, error } = await supabase.functions.invoke('check-final-video-status', {
           body: { renderId, scriptText, aiVideoUrl, userId }
         });
         
-        if (error) throw new Error(`Failed to check final video status: ${error.message}`);
+        if (error) {
+          console.error("Error from check-final-video-status:", error);
+          throw new Error(`Failed to check final video status: ${error.message}`);
+        }
+        
+        console.log("Final video status response:", data);
         
         updateProgressInStorage(processId, {
-          progress: Math.min(70 + Math.floor(attempts * 1.5), 95), // Progress from 70% to 95%
+          progress: Math.min(50 + Math.floor(attempts * 2), 95), // Progress from 50% to 95%
           status: "Adding finishing touches...",
         });
         
         if (data.completed && data.url) {
+          console.log("Final video generation completed with URL:", data.url);
           resolve(data.url);
           return;
         }
         
         attempts++;
         if (attempts >= maxAttempts) {
+          console.error("Final video generation timed out after maximum attempts");
           reject(new Error("Final video generation timed out after maximum attempts"));
           return;
         }

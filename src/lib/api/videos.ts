@@ -30,12 +30,17 @@ export async function getVideos(): Promise<{ videos: Video[], stats: any | null 
     
     console.log("API Response:", data);
     
+    if (!data || !data.videos) {
+      console.error("Invalid response format from get-videos:", data);
+      return { videos: mockVideos, stats: null };
+    }
+    
     const videos = data.videos.map((video: any) => ({
       id: video.id,
-      finalVideoUrl: video.finalVideoUrl,
-      scriptText: video.scriptText,
-      timestamp: new Date(video.timestamp).getTime(),
-      userId: video.userId
+      finalVideoUrl: video.finalVideoUrl || video.final_video_url,
+      scriptText: video.scriptText || video.script_text,
+      timestamp: new Date(video.timestamp || video.created_at).getTime(),
+      userId: video.userId || video.user_id
     }));
 
     console.log("Processed videos:", videos);

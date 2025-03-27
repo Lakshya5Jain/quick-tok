@@ -26,6 +26,9 @@ serve(async (req) => {
       );
     }
 
+    console.log(`Checking status for render ID: ${renderId}`);
+    console.log(`User ID: ${userId}`);
+
     const headers = {
       'Authorization': `Bearer ${creatomateApiKey}`,
       'Content-Type': 'application/json',
@@ -34,6 +37,7 @@ serve(async (req) => {
     const response = await fetch(`${creatomateBaseUrl}/${renderId}`, { headers });
     
     if (!response.ok) {
+      console.error(`Failed to check render status: ${response.status}`);
       return new Response(
         JSON.stringify({ error: "Failed to check render status", status: response.status }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -61,7 +65,8 @@ serve(async (req) => {
             final_video_url: statusData.url,
             script_text: scriptText,
             ai_video_url: aiVideoUrl,
-            user_id: userId
+            user_id: userId,
+            timestamp: new Date().toISOString()
           });
         
         if (error) {
@@ -69,6 +74,8 @@ serve(async (req) => {
         } else {
           console.log("Successfully saved video to database");
         }
+      } else {
+        console.error("No Supabase key found");
       }
     }
 

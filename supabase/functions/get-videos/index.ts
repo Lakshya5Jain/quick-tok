@@ -1,5 +1,7 @@
 
+// Previously missing - Create this file to fetch videos from database
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
 const corsHeaders = {
@@ -8,104 +10,99 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-    
-    if (!supabaseKey) {
-      throw new Error("Supabase key not found");
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    // Get the user's auth token from the request headers
+    // Get the auth token from the request header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('No authorization header');
+      return new Response(
+        JSON.stringify({ error: "No authorization token provided" }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Verify the user's session
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
+    // Create a Supabase client with the admin key
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://oghwtfuquhqwtqekpsyn.supabase.co';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseServiceKey) {
+      return new Response(
+        JSON.stringify({ error: "Supabase service key not configured" }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Verify the JWT and get the user
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(
       authHeader.replace('Bearer ', '')
     );
-
-    if (authError || !user) {
-      console.error("Auth error:", authError);
-      throw new Error('Unauthorized');
+    
+    if (userError || !user) {
+      console.error("Auth error:", userError);
+      return new Response(
+        JSON.stringify({ error: "Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-
-    console.log(`Getting videos for user: ${user.id}`);
-
-    // Check if user is admin to determine which videos to fetch
-    const { data: profileData, error: profileError } = await supabase
+    
+    // Get user profile to check if admin
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('is_admin')
       .eq('id', user.id)
       .single();
-
-    if (profileError) {
-      console.error("Profile error:", profileError);
-    }
-
-    const isAdmin = profileData?.is_admin || false;
-    console.log(`User is admin: ${isAdmin}`);
     
-    // Admin users see all videos, regular users only see their own
-    let query = supabase
-      .from('videos')
-      .select('id, final_video_url, script_text, timestamp, user_id');
+    console.log("Getting videos for user:", user.id);
+    console.log("User is admin:", profile?.is_admin || false);
     
-    // Apply filter for non-admin users
-    if (!isAdmin) {
+    // If admin, get all videos, otherwise get only user's videos
+    let query = supabaseAdmin.from('videos').select('*');
+    
+    if (!profile?.is_admin) {
       query = query.eq('user_id', user.id);
     }
     
-    // Execute the query
-    const { data, error } = await query.order('timestamp', { ascending: false });
+    const { data: videos, error: videosError } = await query.order('timestamp', { ascending: false });
     
-    if (error) {
-      console.error("Database query error:", error);
-      throw error;
+    if (videosError) {
+      console.error("Error fetching videos:", videosError);
+      return new Response(
+        JSON.stringify({ error: "Failed to fetch videos" }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
     
-    console.log(`Retrieved ${data?.length || 0} videos`);
+    console.log("Retrieved", videos.length, "videos");
     
-    // Fetch stats if user is admin
+    // For admins, also fetch system stats
     let stats = null;
-    if (isAdmin) {
-      const { data: statsData, error: statsError } = await supabase
+    if (profile?.is_admin) {
+      const { data: statsData } = await supabaseAdmin
         .from('system_stats')
         .select('*')
         .order('updated_at', { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
       
-      if (statsError) {
-        console.error("Stats error:", statsError);
+      if (statsData && statsData.length > 0) {
+        stats = statsData[0];
       }
-      
-      stats = statsData;
     }
     
     return new Response(
       JSON.stringify({
-        videos: data.map(video => ({
-          id: video.id,
-          finalVideoUrl: video.final_video_url,
-          scriptText: video.script_text,
-          timestamp: new Date(video.timestamp).getTime(),
-          userId: video.user_id
-        })),
+        videos: videos || [],
         stats
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error("Error getting videos:", error);
+    console.error("Error fetching videos:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -36,18 +36,34 @@ const MediaInput: React.FC<MediaInputProps> = ({
   onMediaAvailable,
   defaultUrl
 }) => {
+  const [mediaError, setMediaError] = useState(false);
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+
   // When component mounts or when url/file changes, update preview and notify parent
   useEffect(() => {
+    setMediaError(false);
+    
     if (useFile && selectedFile) {
-      const preview = URL.createObjectURL(selectedFile);
-      onMediaAvailable(true, preview);
-      return () => URL.revokeObjectURL(preview);
+      if ('publicUrl' in selectedFile) {
+        // @ts-ignore
+        const preview = selectedFile.publicUrl;
+        setMediaUrl(preview);
+        onMediaAvailable(true, preview);
+      } else {
+        const preview = URL.createObjectURL(selectedFile);
+        setMediaUrl(preview);
+        onMediaAvailable(true, preview);
+        return () => URL.revokeObjectURL(preview);
+      }
     } else if (!useFile && url) {
+      setMediaUrl(url);
       onMediaAvailable(true, url);
     } else if (!useFile && defaultUrl && !url) {
+      setMediaUrl(defaultUrl);
       onMediaAvailable(true, defaultUrl);
       // Don't update the input value, just use the default for preview
     } else {
+      setMediaUrl(null);
       onMediaAvailable(false, null);
     }
   }, [useFile, selectedFile, url, defaultUrl, onMediaAvailable]);
@@ -84,6 +100,19 @@ const MediaInput: React.FC<MediaInputProps> = ({
     }
     
     onFileChange(file);
+  };
+
+  const handleMediaError = () => {
+    console.error("Error loading media:", mediaUrl);
+    setMediaError(true);
+    
+    // Fallback to default URL if available
+    if (defaultUrl && mediaUrl !== defaultUrl) {
+      setMediaUrl(defaultUrl);
+      onMediaAvailable(true, defaultUrl);
+    } else {
+      onMediaAvailable(false, null);
+    }
   };
 
   const clearFile = () => {
@@ -125,6 +154,28 @@ const MediaInput: React.FC<MediaInputProps> = ({
           </TabsList>
         </Tabs>
       </div>
+
+      {/* Preview of the media */}
+      {mediaUrl && !mediaError && (
+        <div className="mb-4 border border-zinc-700 rounded-lg overflow-hidden">
+          {mediaUrl.includes('video') || mediaUrl.includes('mp4') ? (
+            <video 
+              src={mediaUrl} 
+              className="w-full h-32 object-cover" 
+              controls 
+              muted
+              onError={handleMediaError}
+            />
+          ) : (
+            <img 
+              src={mediaUrl} 
+              alt="Media preview" 
+              className="w-full h-32 object-cover"
+              onError={handleMediaError}
+            />
+          )}
+        </div>
+      )}
 
       {useFile ? (
         <div className="space-y-3">
