@@ -63,7 +63,10 @@ const Index = () => {
           setCurrentProcessId(null);
           
           // Refresh videos list if a new video was generated
-          getVideos().then(setVideos);
+          getVideos().then(({ videos: loadedVideos, stats }) => {
+            setVideos(loadedVideos);
+            setAdminStats(stats);
+          });
         } else {
           // Continue polling
           setTimeout(pollProgress, 1000);
