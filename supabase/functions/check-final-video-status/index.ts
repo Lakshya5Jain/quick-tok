@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const { renderId, scriptText, aiVideoUrl } = await req.json();
+    const { renderId, scriptText, aiVideoUrl, userId } = await req.json();
     const creatomateApiKey = Deno.env.get('CREATOMATE_API_KEY');
     const creatomateBaseUrl = 'https://api.creatomate.com/v1/renders';
     
@@ -52,13 +52,14 @@ serve(async (req) => {
       if (supabaseKey) {
         const supabase = createClient(supabaseUrl, supabaseKey);
         
-        // Save to videos table
+        // Save to videos table with the userId
         const { data, error } = await supabase
           .from('videos')
           .insert({
             final_video_url: statusData.url,
             script_text: scriptText,
-            ai_video_url: aiVideoUrl
+            ai_video_url: aiVideoUrl,
+            user_id: userId
           });
         
         if (error) {
