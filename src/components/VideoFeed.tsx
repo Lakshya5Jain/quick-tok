@@ -26,8 +26,8 @@ const VideoFeed: React.FC<VideoFeedProps> = ({ videos }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-      {videos.map((video) => (
+    <div className="grid grid-cols-1 gap-6">
+      {videos.map((video, index) => (
         <VideoCard key={video.id} video={video} />
       ))}
     </div>

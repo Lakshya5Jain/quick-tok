@@ -14,11 +14,12 @@ const Logo: React.FC<LogoProps> = ({
   size = "md",
   onClick
 }) => {
+  // Significantly increased size values to make the logo larger
   const sizeClasses = {
-    sm: "h-28",
-    md: "h-44",
-    lg: "h-56",
-    xl: "h-72"
+    sm: "h-36", // Increased from h-28
+    md: "h-56", // Increased from h-44
+    lg: "h-72", // Increased from h-56
+    xl: "h-96"  // Increased from h-72
   };
 
   return (

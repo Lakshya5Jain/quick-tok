@@ -14,40 +14,16 @@ export type Database = {
           created_at: string | null
           email: string
           id: string
-          is_admin: boolean | null
         }
         Insert: {
           created_at?: string | null
           email: string
           id: string
-          is_admin?: boolean | null
         }
         Update: {
           created_at?: string | null
           email?: string
           id?: string
-          is_admin?: boolean | null
-        }
-        Relationships: []
-      }
-      system_stats: {
-        Row: {
-          id: string
-          total_users: number
-          total_videos: number
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          total_users: number
-          total_videos: number
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          total_users?: number
-          total_videos?: number
-          updated_at?: string
         }
         Relationships: []
       }
@@ -58,7 +34,6 @@ export type Database = {
           id: string
           script_text: string
           timestamp: string
-          user_id: string
         }
         Insert: {
           ai_video_url?: string | null
@@ -66,7 +41,6 @@ export type Database = {
           id?: string
           script_text: string
           timestamp?: string
-          user_id: string
         }
         Update: {
           ai_video_url?: string | null
@@ -74,7 +48,6 @@ export type Database = {
           id?: string
           script_text?: string
           timestamp?: string
-          user_id?: string
         }
         Relationships: []
       }
