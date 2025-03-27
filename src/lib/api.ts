@@ -250,6 +250,10 @@ async function processVideoGeneration(processId: string, formData: {
     
     const renderId = renderData.renderId;
     
+    // Get current user ID
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id;
+    
     // Poll for final video status
     let finalVideoUrl: string | null = null;
     while (!finalVideoUrl) {
@@ -260,7 +264,8 @@ async function processVideoGeneration(processId: string, formData: {
         body: { 
           renderId,
           scriptText,
-          aiVideoUrl
+          aiVideoUrl,
+          userId  // Pass the user ID to the edge function
         }
       });
       
@@ -315,7 +320,13 @@ export async function checkProgress(processId: string): Promise<GenerationProgre
 // Get saved videos from database
 export async function getVideos(): Promise<Video[]> {
   try {
-    const { data, error } = await supabase.functions.invoke('get-videos', {});
+    // Get current user ID for filtering videos
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id;
+    
+    const { data, error } = await supabase.functions.invoke('get-videos', {
+      body: { userId }
+    });
     
     if (error) {
       console.error("Error fetching videos:", error);
