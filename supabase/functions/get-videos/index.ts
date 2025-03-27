@@ -14,6 +14,9 @@ serve(async (req) => {
   }
 
   try {
+    // Extract authorization header
+    const authHeader = req.headers.get('authorization');
+    
     // Create a Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://oghwtfuquhqwtqekpsyn.supabase.co';
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY');
@@ -27,11 +30,27 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseKey);
     
+    // If auth header is provided, get user-specific videos
+    let query = supabase.from('videos').select('*');
+    
+    if (authHeader) {
+      try {
+        // Parse the JWT token to get the user ID
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await supabase.auth.getUser(token);
+        
+        if (user) {
+          console.log("Found user:", user.id);
+          query = query.eq('user_id', user.id);
+        }
+      } catch (authError) {
+        console.error("Auth error:", authError);
+        // Continue without filtering if auth fails
+      }
+    }
+    
     // Get all videos ordered by timestamp (newest first)
-    const { data, error } = await supabase
-      .from('videos')
-      .select('*')
-      .order('timestamp', { ascending: false });
+    const { data, error } = await query.order('timestamp', { ascending: false });
     
     if (error) {
       return new Response(

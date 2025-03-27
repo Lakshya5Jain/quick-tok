@@ -22,6 +22,18 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
   // Use the default supporting media if none provided
   const supportingMediaSrc = supportingMedia || defaultSupportingMedia;
   
+  // Debug media sources
+  console.log("Voice media preview:", voiceMediaSrc);
+  console.log("Supporting media preview:", supportingMediaSrc);
+  
+  const isVideoMedia = (src: string) => {
+    return src.includes("video") || 
+           src.includes(".mp4") || 
+           src.includes(".mov") || 
+           src.includes(".webm") || 
+           src.includes(".avi");
+  };
+  
   return (
     <div className="rounded-xl overflow-hidden border border-zinc-700 bg-zinc-900 shadow-lg mx-auto">
       <div className="relative aspect-[9/16] w-full max-w-[320px] bg-black flex flex-col">
@@ -39,7 +51,7 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
         {/* Bottom section - Supporting Media (exactly 1/2 of height) */}
         <div className="flex-grow-0 h-1/2 overflow-hidden bg-zinc-800">
           {supportingMediaSrc ? (
-            supportingMediaSrc.includes("video") || supportingMediaSrc.includes(".mp4") ? (
+            isVideoMedia(supportingMediaSrc) ? (
               <video 
                 src={supportingMediaSrc} 
                 className="w-full h-full object-cover"
@@ -66,7 +78,7 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-white px-4 py-2 rounded-lg max-w-[85%] text-center shadow-lg"
+            className="bg-white/90 px-4 py-2 rounded-lg max-w-[85%] text-center shadow-lg"
           >
             <p className="text-black text-sm font-bold">
               {script ? script.substring(0, 80) + (script.length > 80 ? "..." : "") : "Your script will appear here..."}

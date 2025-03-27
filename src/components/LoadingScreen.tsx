@@ -10,9 +10,33 @@ interface LoadingScreenProps {
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ progress }) => {
   const [message, setMessage] = useState("Starting up the AI engines...");
   
+  // Map progress values to more natural-looking progress
+  const getNormalizedProgress = () => {
+    const { status, progress: rawProgress } = progress;
+    
+    // Enforce milestone percentages
+    if (status.includes("Generating script")) {
+      return Math.min(25, rawProgress);
+    } else if (status.includes("Generating AI video")) {
+      return 25 + Math.min(25, (rawProgress - 25) * (25/25));
+    } else if (status.includes("Creating final")) {
+      return 50 + Math.min(25, (rawProgress - 50) * (25/25));
+    } else if (status.includes("Complete")) {
+      return 100;
+    } else if (rawProgress < 100) {
+      // For other statuses, make progress smoother
+      return rawProgress;
+    }
+    
+    return rawProgress;
+  };
+
+  // Normalized progress for display
+  const displayProgress = getNormalizedProgress();
+  
   // Change detailed message based on status
   useEffect(() => {
-    if (progress.status.includes("Uploading")) {
+    if (progress.status.includes("Uploading") || progress.status.includes("Starting")) {
       setMessage("Preparing your media for AI processing...");
     } else if (progress.status.includes("Generating script")) {
       setMessage("Creating an engaging script with our AI...");
@@ -42,18 +66,26 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ progress }) => {
           <h2 className="text-2xl font-bold text-center mb-2 text-quicktok-orange">Processing Your Video</h2>
           <p className="text-gray-300 text-center mb-6">{message}</p>
           
-          {/* Single progress indicator */}
+          {/* Progress indicator */}
           <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
             <motion.div 
               className="h-full bg-quicktok-orange"
               initial={{ width: 0 }}
-              animate={{ width: `${progress.progress}%` }}
+              animate={{ width: `${displayProgress}%` }}
               transition={{ duration: 0.5 }}
             />
           </div>
           
           {/* Progress percentage */}
-          <p className="text-quicktok-orange font-medium mt-2">{progress.progress}%</p>
+          <p className="text-quicktok-orange font-medium mt-2">{Math.round(displayProgress)}%</p>
+          
+          {/* Milestone indicators */}
+          <div className="w-full flex justify-between mt-2 px-1 text-xs text-gray-500">
+            <span>Start</span>
+            <span>Script</span>
+            <span>AI Video</span>
+            <span>Final</span>
+          </div>
           
           {/* Bouncing animation */}
           <div className="flex justify-center mt-8">
