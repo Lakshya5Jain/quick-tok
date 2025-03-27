@@ -37,23 +37,33 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Fetch videos (RLS will handle permissions)
-    const { data, error } = await supabase
-      .from('videos')
-      .select('id, final_video_url, script_text, timestamp, user_id')
-      .order('timestamp', { ascending: false });
-    
-    if (error) throw error;
-    
-    // Check if user is admin to get system stats
+    // Check if user is admin to determine which videos to fetch
     const { data: profileData } = await supabase
       .from('profiles')
       .select('is_admin')
       .eq('id', user.id)
       .single();
 
+    const isAdmin = profileData?.is_admin || false;
+    
+    // Admin users see all videos, regular users only see their own
+    let query = supabase
+      .from('videos')
+      .select('id, final_video_url, script_text, timestamp, user_id');
+    
+    // Apply filter for non-admin users
+    if (!isAdmin) {
+      query = query.eq('user_id', user.id);
+    }
+    
+    // Execute the query
+    const { data, error } = await query.order('timestamp', { ascending: false });
+    
+    if (error) throw error;
+    
+    // Fetch stats if user is admin
     let stats = null;
-    if (profileData?.is_admin) {
+    if (isAdmin) {
       const { data: statsData } = await supabase
         .from('system_stats')
         .select('*')

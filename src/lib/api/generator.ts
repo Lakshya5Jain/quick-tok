@@ -18,16 +18,26 @@ export async function generateVideo(params: {
 }): Promise<string> {
   // Create a process ID for tracking progress
   const processId = generateUUID();
-  
-  // Mock progress for demo purposes
-  // This would be replaced with real API calls
-  mockGenerateVideo(processId, params);
-  
-  return processId;
+
+  try {
+    // Check if user is authenticated
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session?.user) {
+      throw new Error("User must be authenticated to generate videos");
+    }
+    
+    // Start the real video generation process (or mock for demo)
+    startVideoGeneration(processId, params);
+    
+    return processId;
+  } catch (error) {
+    console.error("Error in generateVideo:", error);
+    throw error;
+  }
 }
 
-// Mock implementation of video generation for demo
-async function mockGenerateVideo(processId: string, params: any): Promise<void> {
+// This would be the real implementation or mock for demo
+async function startVideoGeneration(processId: string, params: any): Promise<void> {
   // Initial progress
   updateProgressInStorage(processId, {
     progress: 5,
@@ -36,12 +46,15 @@ async function mockGenerateVideo(processId: string, params: any): Promise<void> 
   
   // Simulate script processing
   await new Promise(resolve => setTimeout(resolve, 1500));
+  
+  const scriptText = params.scriptOption === ScriptOption.CUSTOM 
+    ? params.customScript 
+    : "This is a sample script generated for the topic: " + (params.topic || "Technology");
+  
   updateProgressInStorage(processId, {
     progress: 15,
     status: "Generating voice...",
-    scriptText: params.scriptOption === 'custom' 
-      ? params.customScript 
-      : "This is a sample script generated for the topic: " + (params.topic || "Technology"),
+    scriptText,
   });
   
   // Simulate voice generation
@@ -67,24 +80,29 @@ async function mockGenerateVideo(processId: string, params: any): Promise<void> 
   const { data: sessionData } = await supabase.auth.getSession();
   const userId = sessionData.session?.user?.id;
   
+  // Default video URL for demo purposes
   const finalVideoUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
   
-  // Save to database if we have a user
+  // Save to database if we have a user ID
   if (userId) {
     try {
-      const scriptText = params.scriptOption === 'custom' 
-        ? params.customScript 
-        : "This is a sample script generated for the topic: " + (params.topic || "Technology");
-      
-      await supabase.from('videos').insert({
+      // Insert video with the user ID
+      const { error } = await supabase.from('videos').insert({
         final_video_url: finalVideoUrl,
         script_text: scriptText,
         user_id: userId
       });
+      
+      if (error) {
+        console.error("Error saving video to database:", error);
+        throw error;
+      }
     } catch (error) {
       console.error("Error saving video to database:", error);
-      // Continue with local storage anyway so the user sees something
+      throw error;
     }
+  } else {
+    console.error("No user ID available to save video");
   }
   
   // Complete progress
@@ -92,5 +110,6 @@ async function mockGenerateVideo(processId: string, params: any): Promise<void> 
     progress: 100,
     status: "Complete!",
     finalVideoUrl,
+    scriptText,
   });
 }
