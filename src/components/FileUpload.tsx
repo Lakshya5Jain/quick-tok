@@ -78,17 +78,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
       
       console.log("Attempting to upload file to Supabase bucket 'uploads':", fileName);
       
-      // Check if the 'uploads' bucket exists, create it if it doesn't
-      const { error: bucketError } = await supabase.storage
-        .getBucket('uploads');
-        
-      if (bucketError) {
-        console.log("Creating uploads bucket as it doesn't exist");
-        await supabase.storage.createBucket('uploads', {
-          public: true,
-        });
-      }
-      
       // Upload to Supabase bucket
       const { data, error } = await supabase.storage
         .from('uploads')

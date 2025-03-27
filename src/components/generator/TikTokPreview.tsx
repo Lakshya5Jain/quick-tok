@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 
 interface TikTokPreviewProps {
@@ -16,23 +16,11 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
   const defaultVoiceMedia = "https://6ammc3n5zzf5ljnz.public.blob.vercel-storage.com/inf2-image-uploads/image_8132d-DYy5ZM9i939tkiyw6ADf3oVyn6LivZ.png";
   const defaultSupportingMedia = "https://i.makeagif.com/media/11-27-2023/Uii6jU.mp4";
   
-  const [supportingMediaError, setSupportingMediaError] = useState(false);
-  
   // Use the default image if no voice media provided
   const voiceMediaSrc = voiceMedia || defaultVoiceMedia;
   
-  // Use the default supporting media if none provided or if there was an error
-  const supportingMediaSrc = (supportingMedia && !supportingMediaError) ? supportingMedia : defaultSupportingMedia;
-  
-  // Reset error state when supportingMedia changes
-  useEffect(() => {
-    setSupportingMediaError(false);
-  }, [supportingMedia]);
-  
-  const handleMediaError = () => {
-    console.error("Error loading supporting media:", supportingMedia);
-    setSupportingMediaError(true);
-  };
+  // Use the default supporting media if none provided
+  const supportingMediaSrc = supportingMedia || defaultSupportingMedia;
   
   return (
     <div className="rounded-xl overflow-hidden border border-zinc-700 bg-zinc-900 shadow-lg mx-auto">
@@ -44,7 +32,6 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
               src={voiceMediaSrc} 
               alt="Voice character" 
               className="w-full h-full object-cover"
-              onError={() => console.log("Voice media failed to load, using default")}
             />
           )}
         </div>
@@ -59,14 +46,12 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
                 autoPlay
                 muted
                 loop
-                onError={handleMediaError}
               />
             ) : (
               <img 
                 src={supportingMediaSrc} 
                 alt="Supporting media" 
                 className="w-full h-full object-cover"
-                onError={handleMediaError}
               />
             )
           ) : (

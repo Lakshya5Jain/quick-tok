@@ -18,7 +18,9 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
 
   return (
     <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-      <Logo size="md" onClick={() => navigate("/")} />
+      <div onClick={() => navigate("/")} className="cursor-pointer">
+        <Logo size="md" />
+      </div>
       
       <div className="flex items-center gap-4">
         <div className="bg-zinc-800 p-1 rounded-lg flex">

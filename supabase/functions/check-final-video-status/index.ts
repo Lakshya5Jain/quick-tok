@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const { renderId, scriptText, aiVideoUrl, userId } = await req.json();
+    const { renderId, scriptText, aiVideoUrl } = await req.json();
     const creatomateApiKey = Deno.env.get('CREATOMATE_API_KEY');
     const creatomateBaseUrl = 'https://api.creatomate.com/v1/renders';
     
@@ -26,9 +26,6 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Checking status for render ID: ${renderId}`);
-    console.log(`User ID: ${userId}`);
-
     const headers = {
       'Authorization': `Bearer ${creatomateApiKey}`,
       'Content-Type': 'application/json',
@@ -37,7 +34,6 @@ serve(async (req) => {
     const response = await fetch(`${creatomateBaseUrl}/${renderId}`, { headers });
     
     if (!response.ok) {
-      console.error(`Failed to check render status: ${response.status}`);
       return new Response(
         JSON.stringify({ error: "Failed to check render status", status: response.status }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -48,9 +44,7 @@ serve(async (req) => {
     const completed = statusData.status === 'succeeded';
     
     // If completed, save to database
-    if (completed && statusData.url && scriptText && userId) {
-      console.log(`Video completed. Saving to database for user: ${userId}`);
-      
+    if (completed && statusData.url && scriptText) {
       // Create a Supabase client
       const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://oghwtfuquhqwtqekpsyn.supabase.co';
       const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY');
@@ -58,24 +52,18 @@ serve(async (req) => {
       if (supabaseKey) {
         const supabase = createClient(supabaseUrl, supabaseKey);
         
-        // Save to videos table with the user_id
+        // Save to videos table
         const { data, error } = await supabase
           .from('videos')
           .insert({
             final_video_url: statusData.url,
             script_text: scriptText,
-            ai_video_url: aiVideoUrl,
-            user_id: userId,
-            timestamp: new Date().toISOString()
+            ai_video_url: aiVideoUrl
           });
         
         if (error) {
           console.error("Error saving to database:", error);
-        } else {
-          console.log("Successfully saved video to database");
         }
-      } else {
-        console.error("No Supabase key found");
       }
     }
 

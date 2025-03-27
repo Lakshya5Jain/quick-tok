@@ -100,7 +100,7 @@ const HomePage: React.FC = () => {
             transition={{ duration: 0.5, delay: 0.4 }}
             whileHover={{ y: -5 }}
           >
-            Get Started Now
+            {user ? "Get Started Now" : "Sign In / Sign Up"}
           </motion.button>
         </div>
       </section>

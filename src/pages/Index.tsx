@@ -10,45 +10,29 @@ import { GenerationProgress, ScriptOption, Video } from "@/types";
 import { generateVideo, checkProgress, getVideos } from "@/lib/api";
 import { toast } from "sonner";
 import { voiceOptions } from "@/data/mockData";
-import { useAuth } from "@/context/AuthContext";
 
 const Index = () => {
-  const { user, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<"generate" | "videos">("generate");
   const [videos, setVideos] = useState<Video[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingVideos, setIsLoadingVideos] = useState(false);
   const [currentProcessId, setCurrentProcessId] = useState<string | null>(null);
   const [progress, setProgress] = useState<GenerationProgress | null>(null);
   const [showResult, setShowResult] = useState(false);
-  const [adminStats, setAdminStats] = useState<{
-    total_users: number;
-    total_videos: number;
-    updated_at: string;
-  } | null>(null);
 
-  // Load videos on mount and when activeTab changes to videos
+  // Load videos on mount
   useEffect(() => {
     const loadVideos = async () => {
-      if (activeTab === "videos") {
-        setIsLoadingVideos(true);
-        try {
-          const { videos: loadedVideos, stats } = await getVideos();
-          console.log("Fetched videos:", loadedVideos);
-          console.log("Fetched stats:", stats);
-          setVideos(loadedVideos);
-          setAdminStats(stats);
-        } catch (error) {
-          console.error("Failed to load videos:", error);
-          toast.error("Failed to load past videos");
-        } finally {
-          setIsLoadingVideos(false);
-        }
+      try {
+        const loadedVideos = await getVideos();
+        setVideos(loadedVideos);
+      } catch (error) {
+        console.error("Failed to load videos:", error);
+        toast.error("Failed to load past videos");
       }
     };
     
     loadVideos();
-  }, [activeTab]);
+  }, []);
 
   // Poll for progress updates when a process is running
   useEffect(() => {
@@ -63,12 +47,6 @@ const Index = () => {
           setIsSubmitting(false);
           setShowResult(true);
           setCurrentProcessId(null);
-          
-          // Refresh videos list if a new video was generated
-          getVideos().then(({ videos: loadedVideos, stats }) => {
-            setVideos(loadedVideos);
-            setAdminStats(stats);
-          });
         } else {
           // Continue polling
           setTimeout(pollProgress, 1000);
@@ -126,22 +104,7 @@ const Index = () => {
   const handleResultClose = () => {
     setShowResult(false);
     // Refresh videos list
-    getVideos().then(({ videos, stats }) => {
-      setVideos(videos);
-      setAdminStats(stats);
-    });
-  };
-
-  const handleTabChange = (tab: "generate" | "videos") => {
-    setActiveTab(tab);
-    
-    // If switching to videos tab, refresh the video list
-    if (tab === "videos") {
-      getVideos().then(({ videos, stats }) => {
-        setVideos(videos);
-        setAdminStats(stats);
-      });
-    }
+    getVideos().then(setVideos);
   };
 
   return (
@@ -149,7 +112,7 @@ const Index = () => {
       <div className="max-w-6xl mx-auto pt-8">
         <Navbar 
           activeTab={activeTab} 
-          onTabChange={handleTabChange}
+          onTabChange={setActiveTab}
         />
         
         <AnimatePresence mode="wait">
@@ -177,7 +140,7 @@ const Index = () => {
               transition={{ duration: 0.3 }}
               className="max-w-2xl mx-auto"
             >
-              <VideoFeed videos={videos} isLoading={isLoadingVideos} stats={adminStats} />
+              <VideoFeed videos={videos} />
             </motion.div>
           )}
         </AnimatePresence>
