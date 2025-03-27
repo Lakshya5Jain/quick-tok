@@ -80,29 +80,29 @@ async function startVideoGeneration(processId: string, params: any): Promise<voi
   const { data: sessionData } = await supabase.auth.getSession();
   const userId = sessionData.session?.user?.id;
   
+  if (!userId) {
+    console.error("No user ID available to save video");
+    throw new Error("User must be authenticated to generate videos");
+  }
+  
   // Default video URL for demo purposes
   const finalVideoUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
   
-  // Save to database if we have a user ID
-  if (userId) {
-    try {
-      // Insert video with the user ID
-      const { error } = await supabase.from('videos').insert({
-        final_video_url: finalVideoUrl,
-        script_text: scriptText,
-        user_id: userId
-      });
-      
-      if (error) {
-        console.error("Error saving video to database:", error);
-        throw error;
-      }
-    } catch (error) {
+  try {
+    // Insert video with the user ID
+    const { error } = await supabase.from('videos').insert({
+      final_video_url: finalVideoUrl,
+      script_text: scriptText,
+      user_id: userId
+    });
+    
+    if (error) {
       console.error("Error saving video to database:", error);
       throw error;
     }
-  } else {
-    console.error("No user ID available to save video");
+  } catch (error) {
+    console.error("Error saving video to database:", error);
+    throw error;
   }
   
   // Complete progress
