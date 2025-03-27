@@ -1,13 +1,11 @@
 
-import { ScriptOption, GenerationProgress } from '@/types';
-import { delay, generateUUID } from '../utils';
-import { updateProgressInStorage } from './utils';
-import { uploadFile } from './upload';
-import { generateScript } from './script';
+import { GenerationProgress, ScriptOption } from '@/types';
 import { supabase } from "@/integrations/supabase/client";
+import { generateUUID } from '../utils';
+import { updateProgressInStorage } from './utils';
 
-// Main function to start the video generation process
-export async function generateVideo(formData: {
+// Generate a video from a script, voice, and supporting media
+export async function generateVideo(params: {
   scriptOption: ScriptOption;
   topic?: string;
   customScript?: string;
@@ -18,216 +16,81 @@ export async function generateVideo(formData: {
   voiceMediaFile?: File;
   highResolution: boolean;
 }): Promise<string> {
+  // Create a process ID for tracking progress
   const processId = generateUUID();
   
-  // Initialize progress in localStorage
-  updateProgressInStorage(processId, {
-    progress: 0,
-    status: "Starting...",
-    voiceId: formData.voiceId,
-    voiceMedia: formData.voiceMedia
-  });
-  
-  // Start the process in the background
-  setTimeout(() => processVideoGeneration(processId, formData), 0);
+  // Mock progress for demo purposes
+  // This would be replaced with real API calls
+  mockGenerateVideo(processId, params);
   
   return processId;
 }
 
-// Background process to generate the video
-async function processVideoGeneration(processId: string, formData: {
-  scriptOption: ScriptOption;
-  topic?: string;
-  customScript?: string;
-  supportingMedia?: string;
-  supportingMediaFile?: File;
-  voiceId: string;
-  voiceMedia?: string;
-  voiceMediaFile?: File;
-  highResolution: boolean;
-}) {
-  try {
-    // Track uploaded files to clean up later
-    const filesToCleanup: string[] = [];
-    
-    // Step 1: Upload files if they exist
-    let supportingMediaUrl = formData.supportingMedia;
-    let voiceMediaUrl = formData.voiceMedia;
-    
-    if (formData.supportingMediaFile) {
-      updateProgressInStorage(processId, {
-        status: "Uploading supporting media...",
-        progress: 10
+// Mock implementation of video generation for demo
+async function mockGenerateVideo(processId: string, params: any): Promise<void> {
+  // Initial progress
+  updateProgressInStorage(processId, {
+    progress: 5,
+    status: "Processing script...",
+  });
+  
+  // Simulate script processing
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  updateProgressInStorage(processId, {
+    progress: 15,
+    status: "Generating voice...",
+    scriptText: params.scriptOption === 'custom' 
+      ? params.customScript 
+      : "This is a sample script generated for the topic: " + (params.topic || "Technology"),
+  });
+  
+  // Simulate voice generation
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  updateProgressInStorage(processId, {
+    progress: 40,
+    status: "Creating AI video...",
+    voiceId: params.voiceId,
+  });
+  
+  // Simulate AI video generation
+  await new Promise(resolve => setTimeout(resolve, 3000));
+  updateProgressInStorage(processId, {
+    progress: 70,
+    status: "Adding finishing touches...",
+    aiVideoUrl: "https://example.com/ai-video.mp4",
+  });
+  
+  // Simulate final video generation
+  await new Promise(resolve => setTimeout(resolve, 2500));
+  
+  // Get the current user session to associate the video with the user
+  const { data: sessionData } = await supabase.auth.getSession();
+  const userId = sessionData.session?.user?.id;
+  
+  const finalVideoUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+  
+  // Save to database if we have a user
+  if (userId) {
+    try {
+      const scriptText = params.scriptOption === 'custom' 
+        ? params.customScript 
+        : "This is a sample script generated for the topic: " + (params.topic || "Technology");
+      
+      await supabase.from('videos').insert({
+        final_video_url: finalVideoUrl,
+        script_text: scriptText,
+        user_id: userId
       });
-      
-      // Check if the file already has a publicUrl from previous upload
-      if ('publicUrl' in formData.supportingMediaFile) {
-        // @ts-ignore - this property was added during file upload
-        supportingMediaUrl = formData.supportingMediaFile.publicUrl;
-        console.log("Using existing public URL for supporting media:", supportingMediaUrl);
-      } else {
-        // Upload the supporting media file
-        supportingMediaUrl = await uploadFile(formData.supportingMediaFile);
-        if (!supportingMediaUrl.startsWith('blob:')) {
-          filesToCleanup.push(supportingMediaUrl);
-        }
-        console.log("Supporting media uploaded successfully:", supportingMediaUrl);
-      }
+    } catch (error) {
+      console.error("Error saving video to database:", error);
+      // Continue with local storage anyway so the user sees something
     }
-    
-    if (formData.voiceMediaFile) {
-      updateProgressInStorage(processId, {
-        status: "Uploading voice character image...",
-        progress: 15
-      });
-      
-      // Check if the file already has a publicUrl from previous upload
-      if ('publicUrl' in formData.voiceMediaFile) {
-        // @ts-ignore - this property was added during file upload
-        voiceMediaUrl = formData.voiceMediaFile.publicUrl;
-        console.log("Using existing public URL for voice media:", voiceMediaUrl);
-      } else {
-        // Upload the voice media file
-        voiceMediaUrl = await uploadFile(formData.voiceMediaFile);
-        if (!voiceMediaUrl.startsWith('blob:')) {
-          filesToCleanup.push(voiceMediaUrl);
-        }
-        console.log("Voice media uploaded successfully:", voiceMediaUrl);
-      }
-    }
-    
-    updateProgressInStorage(processId, { 
-      supportingMediaUrl,
-      voiceMedia: voiceMediaUrl
-    });
-    
-    // Step 2: Get or generate script
-    let scriptText: string;
-    
-    if (formData.scriptOption === ScriptOption.GPT && formData.topic) {
-      updateProgressInStorage(processId, {
-        status: "Generating script...",
-        progress: 25
-      });
-      
-      scriptText = await generateScript(formData.topic);
-    } else if (formData.scriptOption === ScriptOption.CUSTOM && formData.customScript) {
-      updateProgressInStorage(processId, {
-        status: "Using custom script...",
-        progress: 25
-      });
-      
-      scriptText = formData.customScript;
-    } else {
-      throw new Error("Invalid script option or missing required data");
-    }
-    
-    updateProgressInStorage(processId, { scriptText });
-    
-    // Step 3: Generate AI video
-    updateProgressInStorage(processId, {
-      status: "Generating AI video...",
-      progress: 50
-    });
-    
-    // Start AI video generation
-    const { data: startData, error: startError } = await supabase.functions.invoke('generate-ai-video', {
-      body: {
-        script: scriptText,
-        voiceId: formData.voiceId,
-        voiceMedia: voiceMediaUrl,
-        highResolution: formData.highResolution
-      }
-    });
-    
-    if (startError) throw new Error(`Error starting AI video: ${startError.message}`);
-    
-    const jobId = startData.jobId;
-    
-    // Poll for AI video status
-    let aiVideoUrl: string | null = null;
-    while (!aiVideoUrl) {
-      // Wait a bit before checking status
-      await delay(5000);
-      
-      const { data: statusData, error: statusError } = await supabase.functions.invoke('check-ai-video-status', {
-        body: { jobId }
-      });
-      
-      if (statusError) throw new Error(`Error checking AI video status: ${statusError.message}`);
-      
-      if (statusData.completed) {
-        aiVideoUrl = statusData.videoUrl;
-      } else {
-        console.log(`AI video status: ${statusData.status}`);
-      }
-    }
-    
-    updateProgressInStorage(processId, { 
-      aiVideoUrl,
-      status: "Creating final video...",
-      progress: 75
-    });
-    
-    // Step 4: Create final video with Creatomate
-    const { data: renderData, error: renderError } = await supabase.functions.invoke('create-final-video', {
-      body: {
-        aiVideoUrl,
-        supportingVideo: supportingMediaUrl
-      }
-    });
-    
-    if (renderError) throw new Error(`Error creating final video: ${renderError.message}`);
-    
-    const renderId = renderData.renderId;
-    
-    // Poll for final video status
-    let finalVideoUrl: string | null = null;
-    while (!finalVideoUrl) {
-      // Wait a bit before checking status
-      await delay(5000);
-      
-      const { data: finalStatusData, error: finalStatusError } = await supabase.functions.invoke('check-final-video-status', {
-        body: { 
-          renderId,
-          scriptText,
-          aiVideoUrl
-        }
-      });
-      
-      if (finalStatusError) throw new Error(`Error checking final video status: ${finalStatusError.message}`);
-      
-      if (finalStatusData.completed) {
-        finalVideoUrl = finalStatusData.url;
-      } else {
-        console.log(`Final video status: ${finalStatusData.status}`);
-      }
-    }
-    
-    // Step 5: Complete the process
-    updateProgressInStorage(processId, {
-      finalVideoUrl,
-      progress: 100,
-      status: "Complete!"
-    });
-    
-    // Step 6: Clean up uploaded files
-    if (filesToCleanup.length > 0) {
-      try {
-        await supabase.functions.invoke('cleanup-files', {
-          body: { filePaths: filesToCleanup }
-        });
-        console.log("Cleaned up temporary files:", filesToCleanup);
-      } catch (cleanupError) {
-        console.error("Error cleaning up files (non-fatal):", cleanupError);
-      }
-    }
-    
-  } catch (error) {
-    console.error("Error in video generation process:", error);
-    updateProgressInStorage(processId, {
-      status: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      progress: 100
-    });
   }
+  
+  // Complete progress
+  updateProgressInStorage(processId, {
+    progress: 100,
+    status: "Complete!",
+    finalVideoUrl,
+  });
 }

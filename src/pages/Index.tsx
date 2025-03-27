@@ -19,6 +19,11 @@ const Index = () => {
   const [currentProcessId, setCurrentProcessId] = useState<string | null>(null);
   const [progress, setProgress] = useState<GenerationProgress | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const [adminStats, setAdminStats] = useState<{
+    total_users: number;
+    total_videos: number;
+    updated_at: string;
+  } | null>(null);
 
   // Load videos on mount and when activeTab changes to videos
   useEffect(() => {
@@ -26,9 +31,11 @@ const Index = () => {
       if (activeTab === "videos") {
         setIsLoadingVideos(true);
         try {
-          const loadedVideos = await getVideos();
+          const { videos: loadedVideos, stats } = await getVideos();
           console.log("Fetched videos:", loadedVideos);
+          console.log("Fetched stats:", stats);
           setVideos(loadedVideos);
+          setAdminStats(stats);
         } catch (error) {
           console.error("Failed to load videos:", error);
           toast.error("Failed to load past videos");
@@ -114,7 +121,10 @@ const Index = () => {
   const handleResultClose = () => {
     setShowResult(false);
     // Refresh videos list
-    getVideos().then(setVideos);
+    getVideos().then(({ videos, stats }) => {
+      setVideos(videos);
+      setAdminStats(stats);
+    });
   };
 
   const handleTabChange = (tab: "generate" | "videos") => {
@@ -122,7 +132,10 @@ const Index = () => {
     
     // If switching to videos tab, refresh the video list
     if (tab === "videos") {
-      getVideos().then(setVideos);
+      getVideos().then(({ videos, stats }) => {
+        setVideos(videos);
+        setAdminStats(stats);
+      });
     }
   };
 
@@ -159,7 +172,7 @@ const Index = () => {
               transition={{ duration: 0.3 }}
               className="max-w-2xl mx-auto"
             >
-              <VideoFeed videos={videos} isLoading={isLoadingVideos} />
+              <VideoFeed videos={videos} isLoading={isLoadingVideos} stats={adminStats} />
             </motion.div>
           )}
         </AnimatePresence>
