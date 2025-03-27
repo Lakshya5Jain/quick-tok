@@ -31,29 +31,38 @@ const Auth = () => {
     try {
       if (isSignUp) {
         // Sign up
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: window.location.origin + '/create'
+          }
         });
         
         if (error) throw error;
         
-        toast.success("Check your email for the confirmation link!");
+        if (data.user?.identities?.length === 0) {
+          toast.error("This email is already registered. Please sign in instead.");
+        } else {
+          toast.success("Check your email for the confirmation link!");
+        }
       } else {
         // Sign in
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         
         if (error) throw error;
         
+        console.log("Sign in successful:", data);
         toast.success("Successfully signed in!");
         navigate("/create");
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Authentication failed";
       toast.error(errorMessage);
+      console.error("Auth error:", error);
     } finally {
       setIsLoading(false);
     }

@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface UserProfile {
   id: string;
@@ -58,43 +59,67 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+    let subscription: { data: { subscription: { unsubscribe: () => void } } };
+
+    // Function to get current session
+    const setupAuth = async () => {
+      setIsLoading(true);
+      
+      // First, get current session
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      if (currentSession) {
+        setSession(currentSession);
+        setUser(currentSession.user);
         
-        if (session?.user) {
-          // Use setTimeout to prevent potential deadlocks with Supabase client
-          setTimeout(() => {
-            fetchUserProfile(session.user.id);
-          }, 0);
-        } else {
+        // Fetch user profile with timeout to prevent potential deadlocks
+        setTimeout(() => {
+          fetchUserProfile(currentSession.user.id);
+        }, 0);
+      }
+      
+      // Then, set up auth state listener
+      subscription = supabase.auth.onAuthStateChange(async (event, newSession) => {
+        console.log('Auth state changed:', event, newSession?.user?.id);
+        
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        
+        if (event === 'SIGNED_OUT') {
           setProfile(null);
           setIsAdmin(false);
+        } else if (newSession?.user) {
+          // Fetch user profile with timeout to prevent potential deadlocks
+          setTimeout(() => {
+            fetchUserProfile(newSession.user.id);
+          }, 0);
         }
-        
-        setIsLoading(false);
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      }
+      });
       
       setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    };
+    
+    setupAuth();
+    
+    // Cleanup
+    return () => {
+      if (subscription) {
+        subscription.data.subscription.unsubscribe();
+      }
+    };
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+      toast.success("Successfully signed out");
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast.error("Failed to sign out");
+    }
   };
 
   return (
