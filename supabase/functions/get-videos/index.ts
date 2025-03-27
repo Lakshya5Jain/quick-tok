@@ -14,9 +14,6 @@ serve(async (req) => {
   }
 
   try {
-    // Get the user ID from the request body
-    const { userId } = await req.json();
-    
     // Create a Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://oghwtfuquhqwtqekpsyn.supabase.co';
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY');
@@ -30,15 +27,11 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // If userId is provided, get videos for that user
-    let query = supabase.from('videos').select('*');
-    
-    if (userId) {
-      query = query.eq('user_id', userId);
-    }
-    
-    // Get videos ordered by timestamp (newest first)
-    const { data, error } = await query.order('timestamp', { ascending: false });
+    // Get all videos ordered by timestamp (newest first)
+    const { data, error } = await supabase
+      .from('videos')
+      .select('*')
+      .order('timestamp', { ascending: false });
     
     if (error) {
       return new Response(

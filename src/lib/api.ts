@@ -199,10 +199,6 @@ async function processVideoGeneration(processId: string, formData: {
       progress: 50
     });
     
-    // Get the current user ID
-    const { data: { user } } = await supabase.auth.getUser();
-    const userId = user?.id;
-    
     // Start AI video generation
     const { data: startData, error: startError } = await supabase.functions.invoke('generate-ai-video', {
       body: {
@@ -264,8 +260,7 @@ async function processVideoGeneration(processId: string, formData: {
         body: { 
           renderId,
           scriptText,
-          aiVideoUrl,
-          userId  // Pass the user ID to the edge function
+          aiVideoUrl
         }
       });
       
@@ -320,18 +315,7 @@ export async function checkProgress(processId: string): Promise<GenerationProgre
 // Get saved videos from database
 export async function getVideos(): Promise<Video[]> {
   try {
-    // Get the current user's videos
-    const { data: { user } } = await supabase.auth.getUser();
-    const userId = user?.id;
-    
-    if (!userId) {
-      console.log("No user logged in, returning mock videos");
-      return mockVideos;
-    }
-    
-    const { data, error } = await supabase.functions.invoke('get-videos', {
-      body: { userId }
-    });
+    const { data, error } = await supabase.functions.invoke('get-videos', {});
     
     if (error) {
       console.error("Error fetching videos:", error);
