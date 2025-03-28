@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Upload, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,7 +26,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // List of allowed MIME types
   const allowedTypes = [
     "image/jpeg", 
     "image/jpg", 
@@ -35,14 +33,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
     "video/mp4"
   ];
 
-  // Generate preview when file is set initially or changed
   useEffect(() => {
     if (!file) {
       setPreview(null);
       return;
     }
     
-    // Create preview for images and videos
     if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -63,7 +59,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
   };
 
   const uploadToSupabase = async (selectedFile: File) => {
-    // First validate the file type
     if (!validateFileType(selectedFile)) {
       return;
     }
@@ -71,19 +66,17 @@ const FileUpload: React.FC<FileUploadProps> = ({
     try {
       setIsUploading(true);
       
-      // Generate a unique file name based on the original name
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `${fileName}`;
       
       console.log("Attempting to upload file to Supabase bucket 'uploads':", fileName);
       
-      // Upload to Supabase bucket
       const { data, error } = await supabase.storage
         .from('uploads')
         .upload(filePath, selectedFile, {
           cacheControl: '3600',
-          upsert: true // Changed from false to true to overwrite if file exists
+          upsert: true
         });
 
       if (error) {
@@ -93,7 +86,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
         return;
       }
       
-      // Get the public URL 
       const { data: publicUrlData } = supabase.storage
         .from('uploads')
         .getPublicUrl(filePath);
@@ -101,16 +93,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
       if (publicUrlData && publicUrlData.publicUrl) {
         console.log("File uploaded successfully to Supabase:", publicUrlData.publicUrl);
         
-        // Create a new File object with the same properties but with a publicUrl attribute
         const fileWithUrl = new File([selectedFile], selectedFile.name, {
           type: selectedFile.type,
-        });
+        }) as any;
         
-        // Set the publicUrl as a property on the file object (non-standard but useful)
-        Object.defineProperty(fileWithUrl, 'publicUrl', {
-          value: publicUrlData.publicUrl,
-          writable: false
-        });
+        fileWithUrl.publicUrl = publicUrlData.publicUrl;
         
         setFile(fileWithUrl);
         onFileChange(fileWithUrl);
@@ -131,7 +118,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
       const selectedFile = e.target.files[0];
       console.log("File selected:", selectedFile.name);
       
-      // Upload to Supabase
       uploadToSupabase(selectedFile);
     }
   };
@@ -154,7 +140,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
       const droppedFile = e.dataTransfer.files[0];
       console.log("File dropped:", droppedFile.name);
       
-      // Upload to Supabase
       uploadToSupabase(droppedFile);
     }
   };
@@ -168,7 +153,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
     }
   };
 
-  // Format accept string to show user-friendly formats
   const getAcceptFormats = () => {
     return accept
       .replace(/image\/jpeg,image\/jpg,image\/png,video\/mp4/g, "JPEG, JPG, PNG, MP4")

@@ -1,7 +1,13 @@
+
 import { delay, generateUUID } from './utils';
 import { GenerationProgress, Video, ScriptOption } from '@/types';
 import { mockVideos } from '@/data/mockData';
 import { supabase } from "@/integrations/supabase/client";
+
+// Define an extended File interface to include our custom publicUrl property
+interface FileWithPublicUrl extends File {
+  publicUrl?: string;
+}
 
 const getProgressFromStorage = (processId: string): GenerationProgress | null => {
   try {
@@ -32,9 +38,11 @@ export async function uploadFile(file: File): Promise<string> {
   try {
     console.log("Uploading file:", file.name);
     
-    if ('publicUrl' in file) {
-      // @ts-ignore - custom property we added
-      return file.publicUrl;
+    // Type assertion to our extended interface
+    const fileWithUrl = file as FileWithPublicUrl;
+    
+    if (fileWithUrl.publicUrl) {
+      return fileWithUrl.publicUrl;
     }
     
     const fileExt = file.name.split('.').pop();
@@ -60,13 +68,15 @@ export async function uploadFile(file: File): Promise<string> {
     
     console.log("Uploaded to Supabase, public URL:", publicUrlData.publicUrl);
     
-    file.publicUrl = publicUrlData.publicUrl;
+    // Set the URL on our extended file object
+    fileWithUrl.publicUrl = publicUrlData.publicUrl;
     
     return publicUrlData.publicUrl;
   } catch (error) {
     console.error("Error uploading file:", error);
     const objectUrl = URL.createObjectURL(file);
-    file.publicUrl = objectUrl;
+    // Type assertion to our extended interface
+    (file as FileWithPublicUrl).publicUrl = objectUrl;
     return objectUrl;
   }
 }
@@ -144,12 +154,15 @@ async function processVideoGeneration(processId: string, formData: {
       });
       
       try {
-        if ('publicUrl' in formData.supportingMediaFile) {
-          supportingMediaUrl = formData.supportingMediaFile.publicUrl;
+        // Use our extended interface for type safety
+        const fileWithUrl = formData.supportingMediaFile as FileWithPublicUrl;
+        
+        if (fileWithUrl.publicUrl) {
+          supportingMediaUrl = fileWithUrl.publicUrl;
           console.log("Using existing public URL for supporting media:", supportingMediaUrl);
         } else {
           supportingMediaUrl = await uploadFile(formData.supportingMediaFile);
-          if (!supportingMediaUrl.startsWith('blob:')) {
+          if (supportingMediaUrl && !supportingMediaUrl.startsWith('blob:')) {
             filesToCleanup.push(supportingMediaUrl);
           }
           console.log("Supporting media uploaded successfully:", supportingMediaUrl);
@@ -166,12 +179,15 @@ async function processVideoGeneration(processId: string, formData: {
       });
       
       try {
-        if ('publicUrl' in formData.voiceMediaFile) {
-          voiceMediaUrl = formData.voiceMediaFile.publicUrl;
+        // Use our extended interface for type safety
+        const fileWithUrl = formData.voiceMediaFile as FileWithPublicUrl;
+        
+        if (fileWithUrl.publicUrl) {
+          voiceMediaUrl = fileWithUrl.publicUrl;
           console.log("Using existing public URL for voice media:", voiceMediaUrl);
         } else {
           voiceMediaUrl = await uploadFile(formData.voiceMediaFile);
-          if (!voiceMediaUrl.startsWith('blob:')) {
+          if (voiceMediaUrl && !voiceMediaUrl.startsWith('blob:')) {
             filesToCleanup.push(voiceMediaUrl);
           }
           console.log("Voice media uploaded successfully:", voiceMediaUrl);
