@@ -8,7 +8,20 @@ import { Button } from "@/components/ui/button";
 import Logo from "@/components/Logo";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
-import { AppleIcon, GoogleIcon } from "lucide-react";
+
+// Custom icon components since lucide-react doesn't have these icons
+const GoogleIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.283 10.356h-8.327v3.451h4.792c-.446 2.193-2.313 3.453-4.792 3.453a5.27 5.27 0 0 1-5.279-5.28 5.27 5.27 0 0 1 5.279-5.279c1.259 0 2.397.447 3.29 1.178l2.6-2.599c-1.584-1.381-3.615-2.233-5.89-2.233a8.908 8.908 0 0 0-8.934 8.934 8.907 8.907 0 0 0 8.934 8.934c4.467 0 8.529-3.249 8.529-8.934 0-.528-.081-1.097-.202-1.625z"></path>
+  </svg>
+);
+
+const AppleIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 20.94c1.5 0 2.75-.67 3.95-1.89a13.5 13.5 0 0 0 2.87-4.58c.26-.64.49-1.38.49-2.25 0-3.75-2.88-5.25-5.33-5.25-1.24 0-2.25.37-3.03.94-.31.23-.61.5-.88.79-.28-.3-.56-.56-.87-.79-.78-.57-1.79-.94-3.03-.94-2.45 0-5.33 1.5-5.33 5.25 0 .87.23 1.61.49 2.25.63 1.56 1.69 3.17 2.87 4.58 1.2 1.22 2.45 1.89 3.95 1.89.66 0 1.32-.19 1.93-.53.61.34 1.27.53 1.92.53Z"></path>
+    <path d="M12 8.98c0-3.33 2.75-4.96 2.75-4.96-.08 2.03 1.89 3.32 1.89 3.32-1.92.08-3.67-.6-4.64 1.64Z"></path>
+  </svg>
+);
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -168,8 +181,8 @@ const Auth = () => {
             className="bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700"
             onClick={handleGoogleSignIn}
           >
-            <GoogleIcon className="mr-2 h-4 w-4" />
-            Google
+            <GoogleIcon />
+            <span className="ml-2">Google</span>
           </Button>
           
           <Button 
@@ -178,8 +191,8 @@ const Auth = () => {
             className="bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700"
             onClick={handleAppleSignIn}
           >
-            <AppleIcon className="mr-2 h-4 w-4" />
-            Apple
+            <AppleIcon />
+            <span className="ml-2">Apple</span>
           </Button>
         </div>
         
