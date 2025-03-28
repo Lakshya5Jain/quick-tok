@@ -9,20 +9,6 @@ import Logo from "@/components/Logo";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
-// Custom icon components since lucide-react doesn't have these icons
-const GoogleIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20.283 10.356h-8.327v3.451h4.792c-.446 2.193-2.313 3.453-4.792 3.453a5.27 5.27 0 0 1-5.279-5.28 5.27 5.27 0 0 1 5.279-5.279c1.259 0 2.397.447 3.29 1.178l2.6-2.599c-1.584-1.381-3.615-2.233-5.89-2.233a8.908 8.908 0 0 0-8.934 8.934 8.907 8.907 0 0 0 8.934 8.934c4.467 0 8.529-3.249 8.529-8.934 0-.528-.081-1.097-.202-1.625z"></path>
-  </svg>
-);
-
-const AppleIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 20.94c1.5 0 2.75-.67 3.95-1.89a13.5 13.5 0 0 0 2.87-4.58c.26-.64.49-1.38.49-2.25 0-3.75-2.88-5.25-5.33-5.25-1.24 0-2.25.37-3.03.94-.31.23-.61.5-.88.79-.28-.3-.56-.56-.87-.79-.78-.57-1.79-.94-3.03-.94-2.45 0-5.33 1.5-5.33 5.25 0 .87.23 1.61.49 2.25.63 1.56 1.69 3.17 2.87 4.58 1.2 1.22 2.45 1.89 3.95 1.89.66 0 1.32-.19 1.93-.53.61.34 1.27.53 1.92.53Z"></path>
-    <path d="M12 8.98c0-3.33 2.75-4.96 2.75-4.96-.08 2.03 1.89 3.32 1.89 3.32-1.92.08-3.67-.6-4.64 1.64Z"></path>
-  </svg>
-);
-
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -70,38 +56,6 @@ const Auth = () => {
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin + '/create'
-        }
-      });
-      
-      if (error) throw error;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Google authentication failed";
-      toast.error(errorMessage);
-    }
-  };
-
-  const handleAppleSignIn = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'apple',
-        options: {
-          redirectTo: window.location.origin + '/create'
-        }
-      });
-      
-      if (error) throw error;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Apple authentication failed";
-      toast.error(errorMessage);
     }
   };
 
@@ -164,37 +118,6 @@ const Auth = () => {
             }
           </Button>
         </form>
-        
-        <div className="mt-6 relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-zinc-700"></div>
-          </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="px-2 bg-zinc-900 text-gray-400">Or continue with</span>
-          </div>
-        </div>
-        
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          <Button 
-            type="button" 
-            variant="outline" 
-            className="bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700"
-            onClick={handleGoogleSignIn}
-          >
-            <GoogleIcon />
-            <span className="ml-2">Google</span>
-          </Button>
-          
-          <Button 
-            type="button" 
-            variant="outline" 
-            className="bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700"
-            onClick={handleAppleSignIn}
-          >
-            <AppleIcon />
-            <span className="ml-2">Apple</span>
-          </Button>
-        </div>
         
         <div className="mt-6 text-center">
           <button
