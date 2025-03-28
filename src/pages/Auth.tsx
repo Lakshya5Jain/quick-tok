@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import Logo from "@/components/Logo";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { AppleIcon, GoogleIcon } from "lucide-react";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -56,6 +57,38 @@ const Auth = () => {
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/create'
+        }
+      });
+      
+      if (error) throw error;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Google authentication failed";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: {
+          redirectTo: window.location.origin + '/create'
+        }
+      });
+      
+      if (error) throw error;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Apple authentication failed";
+      toast.error(errorMessage);
     }
   };
 
@@ -118,6 +151,37 @@ const Auth = () => {
             }
           </Button>
         </form>
+        
+        <div className="mt-6 relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-zinc-700"></div>
+          </div>
+          <div className="relative flex justify-center text-xs">
+            <span className="px-2 bg-zinc-900 text-gray-400">Or continue with</span>
+          </div>
+        </div>
+        
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700"
+            onClick={handleGoogleSignIn}
+          >
+            <GoogleIcon className="mr-2 h-4 w-4" />
+            Google
+          </Button>
+          
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700"
+            onClick={handleAppleSignIn}
+          >
+            <AppleIcon className="mr-2 h-4 w-4" />
+            Apple
+          </Button>
+        </div>
         
         <div className="mt-6 text-center">
           <button
