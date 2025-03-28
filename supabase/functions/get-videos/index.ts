@@ -19,6 +19,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY');
     
     if (!supabaseKey) {
+      console.error("Missing Supabase key");
       return new Response(
         JSON.stringify({ error: "Supabase key not found" }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -27,6 +28,8 @@ serve(async (req) => {
     
     // Get user ID from request if available
     const { userId } = await req.json().catch(() => ({ userId: null }));
+    
+    console.log("Fetching videos for user ID:", userId || "all users");
     
     const supabase = createClient(supabaseUrl, supabaseKey);
     
@@ -38,6 +41,7 @@ serve(async (req) => {
     
     // Filter by user ID if provided
     if (userId) {
+      console.log("Filtering by user ID:", userId);
       query = query.eq('user_id', userId);
     }
     
@@ -45,14 +49,17 @@ serve(async (req) => {
     const { data, error } = await query;
     
     if (error) {
+      console.error("Error fetching videos:", error);
       return new Response(
         JSON.stringify({ error: error.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
+    console.log(`Successfully fetched ${data?.length || 0} videos`);
+    
     return new Response(
-      JSON.stringify({ videos: data }),
+      JSON.stringify({ videos: data || [] }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

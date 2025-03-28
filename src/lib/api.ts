@@ -1,42 +1,47 @@
-
 import { delay, generateUUID } from './utils';
 import { GenerationProgress, Video, ScriptOption } from '@/types';
 import { mockVideos } from '@/data/mockData';
 import { supabase } from "@/integrations/supabase/client";
 
-// We'll use localStorage to store progress for demo purposes
 const getProgressFromStorage = (processId: string): GenerationProgress | null => {
-  const stored = localStorage.getItem(`progress_${processId}`);
-  return stored ? JSON.parse(stored) : null;
+  try {
+    const stored = localStorage.getItem(`progress_${processId}`);
+    return stored ? JSON.parse(stored) : null;
+  } catch (error) {
+    console.error("Error reading progress from storage:", error);
+    return null;
+  }
 };
 
 const updateProgressInStorage = (processId: string, progress: Partial<GenerationProgress>) => {
-  const current = getProgressFromStorage(processId) || {
-    progress: 0,
-    status: "Starting...",
-  };
-  const updated = { ...current, ...progress };
-  localStorage.setItem(`progress_${processId}`, JSON.stringify(updated));
-  return updated;
+  try {
+    const current = getProgressFromStorage(processId) || {
+      progress: 0,
+      status: "Starting...",
+    };
+    const updated = { ...current, ...progress };
+    localStorage.setItem(`progress_${processId}`, JSON.stringify(updated));
+    return updated;
+  } catch (error) {
+    console.error("Error updating progress in storage:", error);
+    return progress;
+  }
 };
 
-// Upload a file to storage and get a URL
 export async function uploadFile(file: File): Promise<string> {
   try {
     console.log("Uploading file:", file.name);
     
-    // Check if the file already has a publicUrl (from previous upload)
     if ('publicUrl' in file) {
       // @ts-ignore - custom property we added
       return file.publicUrl;
     }
     
-    // Generate a unique file name based on the original name
     const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+    const fileName = `${uniqueId}.${fileExt}`;
     const filePath = `${fileName}`;
     
-    // Try to upload to Supabase storage
     const { data, error } = await supabase.storage
       .from('uploads')
       .upload(filePath, file, {
@@ -44,30 +49,41 @@ export async function uploadFile(file: File): Promise<string> {
         upsert: false
       });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error uploading to Supabase:", error);
+      throw error;
+    }
     
-    // Get the public URL
     const { data: publicUrlData } = supabase.storage
       .from('uploads')
       .getPublicUrl(filePath);
     
     console.log("Uploaded to Supabase, public URL:", publicUrlData.publicUrl);
+    
+    file.publicUrl = publicUrlData.publicUrl;
+    
     return publicUrlData.publicUrl;
   } catch (error) {
     console.error("Error uploading file:", error);
-    // Fall back to object URL as last resort
-    return URL.createObjectURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    file.publicUrl = objectUrl;
+    return objectUrl;
   }
 }
 
-// Generate script with GPT
 export async function generateScript(topic: string): Promise<string> {
   try {
+    console.log("Generating script for topic:", topic);
     const { data, error } = await supabase.functions.invoke('generate-script', {
       body: { topic }
     });
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("Error from generate-script function:", error);
+      throw new Error(error.message);
+    }
+    
+    console.log("Script generation successful");
     return data.scriptText;
   } catch (error) {
     console.error('Error generating script:', error);
@@ -75,7 +91,6 @@ export async function generateScript(topic: string): Promise<string> {
   }
 }
 
-// Main function to start the video generation process
 export async function generateVideo(formData: {
   scriptOption: ScriptOption;
   topic?: string;
@@ -87,9 +102,12 @@ export async function generateVideo(formData: {
   voiceMediaFile?: File;
   highResolution: boolean;
 }): Promise<string> {
-  const processId = generateUUID();
+  const timestamp = new Date().getTime();
+  const randomStr = Math.random().toString(36).substring(2, 10);
+  const processId = `process_${timestamp}_${randomStr}`;
   
-  // Initialize progress in localStorage
+  console.log("Starting new video generation process with ID:", processId);
+  
   updateProgressInStorage(processId, {
     progress: 0,
     status: "Starting...",
@@ -97,13 +115,11 @@ export async function generateVideo(formData: {
     voiceMedia: formData.voiceMedia
   });
   
-  // Start the process in the background
   setTimeout(() => processVideoGeneration(processId, formData), 0);
   
   return processId;
 }
 
-// Background process to generate the video
 async function processVideoGeneration(processId: string, formData: {
   scriptOption: ScriptOption;
   topic?: string;
@@ -116,10 +132,8 @@ async function processVideoGeneration(processId: string, formData: {
   highResolution: boolean;
 }) {
   try {
-    // Track uploaded files to clean up later
     const filesToCleanup: string[] = [];
     
-    // Step 1: Upload files if they exist
     let supportingMediaUrl = formData.supportingMedia;
     let voiceMediaUrl = formData.voiceMedia;
     
@@ -129,18 +143,19 @@ async function processVideoGeneration(processId: string, formData: {
         progress: 10
       });
       
-      // Check if the file already has a publicUrl from previous upload
-      if ('publicUrl' in formData.supportingMediaFile) {
-        // @ts-ignore - this property was added during file upload
-        supportingMediaUrl = formData.supportingMediaFile.publicUrl;
-        console.log("Using existing public URL for supporting media:", supportingMediaUrl);
-      } else {
-        // Upload the supporting media file
-        supportingMediaUrl = await uploadFile(formData.supportingMediaFile);
-        if (!supportingMediaUrl.startsWith('blob:')) {
-          filesToCleanup.push(supportingMediaUrl);
+      try {
+        if ('publicUrl' in formData.supportingMediaFile) {
+          supportingMediaUrl = formData.supportingMediaFile.publicUrl;
+          console.log("Using existing public URL for supporting media:", supportingMediaUrl);
+        } else {
+          supportingMediaUrl = await uploadFile(formData.supportingMediaFile);
+          if (!supportingMediaUrl.startsWith('blob:')) {
+            filesToCleanup.push(supportingMediaUrl);
+          }
+          console.log("Supporting media uploaded successfully:", supportingMediaUrl);
         }
-        console.log("Supporting media uploaded successfully:", supportingMediaUrl);
+      } catch (uploadError) {
+        console.error("Error uploading supporting media:", uploadError);
       }
     }
     
@@ -150,18 +165,19 @@ async function processVideoGeneration(processId: string, formData: {
         progress: 15
       });
       
-      // Check if the file already has a publicUrl from previous upload
-      if ('publicUrl' in formData.voiceMediaFile) {
-        // @ts-ignore - this property was added during file upload
-        voiceMediaUrl = formData.voiceMediaFile.publicUrl;
-        console.log("Using existing public URL for voice media:", voiceMediaUrl);
-      } else {
-        // Upload the voice media file
-        voiceMediaUrl = await uploadFile(formData.voiceMediaFile);
-        if (!voiceMediaUrl.startsWith('blob:')) {
-          filesToCleanup.push(voiceMediaUrl);
+      try {
+        if ('publicUrl' in formData.voiceMediaFile) {
+          voiceMediaUrl = formData.voiceMediaFile.publicUrl;
+          console.log("Using existing public URL for voice media:", voiceMediaUrl);
+        } else {
+          voiceMediaUrl = await uploadFile(formData.voiceMediaFile);
+          if (!voiceMediaUrl.startsWith('blob:')) {
+            filesToCleanup.push(voiceMediaUrl);
+          }
+          console.log("Voice media uploaded successfully:", voiceMediaUrl);
         }
-        console.log("Voice media uploaded successfully:", voiceMediaUrl);
+      } catch (uploadError) {
+        console.error("Error uploading voice media:", uploadError);
       }
     }
     
@@ -170,7 +186,6 @@ async function processVideoGeneration(processId: string, formData: {
       voiceMedia: voiceMediaUrl
     });
     
-    // Step 2: Get or generate script
     let scriptText: string;
     
     if (formData.scriptOption === ScriptOption.GPT && formData.topic) {
@@ -179,7 +194,12 @@ async function processVideoGeneration(processId: string, formData: {
         progress: 25
       });
       
-      scriptText = await generateScript(formData.topic);
+      try {
+        scriptText = await generateScript(formData.topic);
+      } catch (scriptError) {
+        console.error("Error generating script:", scriptError);
+        scriptText = `Here's a cool video about ${formData.topic}!`;
+      }
     } else if (formData.scriptOption === ScriptOption.CUSTOM && formData.customScript) {
       updateProgressInStorage(processId, {
         status: "Using custom script...",
@@ -193,43 +213,63 @@ async function processVideoGeneration(processId: string, formData: {
     
     updateProgressInStorage(processId, { scriptText });
     
-    // Step 3: Generate AI video
     updateProgressInStorage(processId, {
       status: "Generating AI video...",
       progress: 50
     });
     
-    // Start AI video generation
     const { data: startData, error: startError } = await supabase.functions.invoke('generate-ai-video', {
       body: {
         script: scriptText,
         voiceId: formData.voiceId,
         voiceMedia: voiceMediaUrl,
-        highResolution: formData.highResolution
+        highResolution: formData.highResolution,
+        processId
       }
     });
     
-    if (startError) throw new Error(`Error starting AI video: ${startError.message}`);
+    if (startError) {
+      console.error("Error starting AI video:", startError);
+      throw new Error(`Error starting AI video: ${startError.message}`);
+    }
     
     const jobId = startData.jobId;
+    console.log("AI video generation started with job ID:", jobId);
     
-    // Poll for AI video status
     let aiVideoUrl: string | null = null;
-    while (!aiVideoUrl) {
-      // Wait a bit before checking status
+    let attempts = 0;
+    const maxAttempts = 60;
+    
+    while (!aiVideoUrl && attempts < maxAttempts) {
       await delay(5000);
+      attempts++;
       
-      const { data: statusData, error: statusError } = await supabase.functions.invoke('check-ai-video-status', {
-        body: { jobId }
-      });
-      
-      if (statusError) throw new Error(`Error checking AI video status: ${statusError.message}`);
-      
-      if (statusData.completed) {
-        aiVideoUrl = statusData.videoUrl;
-      } else {
-        console.log(`AI video status: ${statusData.status}`);
+      try {
+        const { data: statusData, error: statusError } = await supabase.functions.invoke('check-ai-video-status', {
+          body: { jobId, processId }
+        });
+        
+        if (statusError) {
+          console.error(`Error checking AI video status (attempt ${attempts}):`, statusError);
+          continue;
+        }
+        
+        if (statusData.completed) {
+          aiVideoUrl = statusData.videoUrl;
+          console.log("AI video completed:", aiVideoUrl);
+        } else {
+          console.log(`AI video status (attempt ${attempts}): ${statusData.status}`);
+          updateProgressInStorage(processId, {
+            status: `AI video processing: ${statusData.status}...`,
+          });
+        }
+      } catch (pollError) {
+        console.error(`Error polling AI video status (attempt ${attempts}):`, pollError);
       }
+    }
+    
+    if (!aiVideoUrl) {
+      throw new Error("AI video generation timed out after multiple attempts");
     }
     
     updateProgressInStorage(processId, { 
@@ -238,58 +278,76 @@ async function processVideoGeneration(processId: string, formData: {
       progress: 75
     });
     
-    // Step 4: Create final video with Creatomate
     const { data: renderData, error: renderError } = await supabase.functions.invoke('create-final-video', {
       body: {
         aiVideoUrl,
-        supportingVideo: supportingMediaUrl
+        supportingVideo: supportingMediaUrl,
+        processId
       }
     });
     
-    if (renderError) throw new Error(`Error creating final video: ${renderError.message}`);
+    if (renderError) {
+      console.error("Error creating final video:", renderError);
+      throw new Error(`Error creating final video: ${renderError.message}`);
+    }
     
     const renderId = renderData.renderId;
+    console.log("Final video render started with ID:", renderId);
     
-    // Get current user ID
     const { data: { user } } = await supabase.auth.getUser();
     const userId = user?.id;
     
-    // Poll for final video status
     let finalVideoUrl: string | null = null;
-    while (!finalVideoUrl) {
-      // Wait a bit before checking status
+    attempts = 0;
+    
+    while (!finalVideoUrl && attempts < maxAttempts) {
       await delay(5000);
+      attempts++;
       
-      const { data: finalStatusData, error: finalStatusError } = await supabase.functions.invoke('check-final-video-status', {
-        body: { 
-          renderId,
-          scriptText,
-          aiVideoUrl,
-          userId  // Pass the user ID to the edge function
+      try {
+        const { data: finalStatusData, error: finalStatusError } = await supabase.functions.invoke('check-final-video-status', {
+          body: { 
+            renderId,
+            scriptText,
+            aiVideoUrl,
+            userId,
+            processId
+          }
+        });
+        
+        if (finalStatusError) {
+          console.error(`Error checking final video status (attempt ${attempts}):`, finalStatusError);
+          continue;
         }
-      });
-      
-      if (finalStatusError) throw new Error(`Error checking final video status: ${finalStatusError.message}`);
-      
-      if (finalStatusData.completed) {
-        finalVideoUrl = finalStatusData.url;
-      } else {
-        console.log(`Final video status: ${finalStatusData.status}`);
+        
+        if (finalStatusData.completed) {
+          finalVideoUrl = finalStatusData.url;
+          console.log("Final video completed:", finalVideoUrl);
+        } else {
+          console.log(`Final video status (attempt ${attempts}): ${finalStatusData.status}`);
+          updateProgressInStorage(processId, {
+            status: `Final video processing: ${finalStatusData.status}...`,
+          });
+        }
+      } catch (pollError) {
+        console.error(`Error polling final video status (attempt ${attempts}):`, pollError);
       }
     }
     
-    // Step 5: Complete the process
+    if (!finalVideoUrl) {
+      throw new Error("Final video generation timed out after multiple attempts");
+    }
+    
     updateProgressInStorage(processId, {
       finalVideoUrl,
       progress: 100,
       status: "Complete!"
     });
     
-    // Step 6: Clean up uploaded files
     if (filesToCleanup.length > 0) {
       try {
         await supabase.functions.invoke('cleanup-files', {
-          body: { filePaths: filesToCleanup }
+          body: { filePaths: filesToCleanup, processId }
         });
         console.log("Cleaned up temporary files:", filesToCleanup);
       } catch (cleanupError) {
@@ -306,7 +364,6 @@ async function processVideoGeneration(processId: string, formData: {
   }
 }
 
-// Check progress of video generation
 export async function checkProgress(processId: string): Promise<GenerationProgress> {
   const progress = getProgressFromStorage(processId);
   
@@ -317,10 +374,8 @@ export async function checkProgress(processId: string): Promise<GenerationProgre
   return progress;
 }
 
-// Get saved videos from database
 export async function getVideos(): Promise<Video[]> {
   try {
-    // Get current user ID for filtering videos
     const { data: { user } } = await supabase.auth.getUser();
     const userId = user?.id;
     
@@ -330,7 +385,6 @@ export async function getVideos(): Promise<Video[]> {
     
     if (error) {
       console.error("Error fetching videos:", error);
-      // Fall back to mock videos if there's an error
       return mockVideos;
     }
     
@@ -342,7 +396,6 @@ export async function getVideos(): Promise<Video[]> {
     }));
   } catch (error) {
     console.error("Error in getVideos:", error);
-    // Fall back to mock videos if there's an error
     return mockVideos;
   }
 }
