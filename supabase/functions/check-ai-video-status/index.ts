@@ -44,11 +44,14 @@ serve(async (req) => {
     // Add retry logic for network failures
     let response = null;
     let retryCount = 0;
-    const maxRetries = 3;
+    const maxRetries = 5; // Increased max retries
     
     while (retryCount < maxRetries) {
       try {
-        response = await fetch(statusUrl, { headers });
+        response = await fetch(statusUrl, { 
+          headers,
+          signal: AbortSignal.timeout(10000) // 10-second timeout
+        });
         
         // If fetch succeeded, break out of retry loop
         break;
@@ -58,8 +61,12 @@ serve(async (req) => {
         
         if (retryCount >= maxRetries) {
           return new Response(
-            JSON.stringify({ error: "Failed to connect to AI API after multiple attempts" }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            JSON.stringify({ 
+              error: "Failed to connect to AI API after multiple attempts",
+              status: "retrying",  // Still indicate status for frontend
+              completed: false
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
         
@@ -70,33 +77,91 @@ serve(async (req) => {
       }
     }
     
-    if (!response || !response.ok) {
-      console.error(`[${processId}] Failed to check status: ${response?.status}`);
+    if (!response) {
+      console.error(`[${processId}] No response from AI API after retries`);
       return new Response(
         JSON.stringify({ 
-          error: "Failed to check status", 
-          status: response?.status || 500
+          status: "pending", 
+          completed: false,
+          error: "No response from AI API"
         }),
-        { status: response?.status || 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Handle non-OK responses gracefully
+    if (!response.ok) {
+      const errorStatus = response.status;
+      let errorBody = "";
+      
+      try {
+        errorBody = await response.text();
+      } catch (e) {
+        // Ignore error parsing response
+      }
+      
+      console.error(`[${processId}] Failed to check status: ${errorStatus}, body: ${errorBody}`);
+      
+      // For certain error codes, return a more specific status
+      if (errorStatus === 404) {
+        return new Response(
+          JSON.stringify({ 
+            status: "not_found", 
+            completed: false, 
+            error: "Job not found" 
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          status: "error", 
+          completed: false,
+          error: `API returned status ${errorStatus}`
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const statusData = await response.json();
+    // Parse the response body
+    let statusData;
+    try {
+      statusData = await response.json();
+    } catch (jsonError) {
+      console.error(`[${processId}] Error parsing JSON response:`, jsonError);
+      return new Response(
+        JSON.stringify({ 
+          status: "parsing_error", 
+          completed: false,
+          error: "Failed to parse API response"
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     console.log(`[${processId}] AI video status: ${statusData.status}`);
+    
+    // Determine if the job is completed based on the status field
+    const isCompleted = statusData.status === 'completed';
     
     return new Response(
       JSON.stringify({
-        status: statusData.status,
-        videoUrl: statusData.video_url,
-        completed: statusData.status === 'completed'
+        status: statusData.status || "unknown",
+        videoUrl: statusData.video_url || null,
+        completed: isCompleted
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error("Error checking AI video status:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        error: error.message || "Unknown error",
+        status: "error",
+        completed: false
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
