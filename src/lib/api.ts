@@ -1,15 +1,14 @@
 
-// Define an extended File interface to include our custom publicUrl property
-interface FileWithPublicUrl extends File {
-  publicUrl?: string;
-}
-
 import { delay, generateUUID } from './utils';
 import { GenerationProgress, Video, ScriptOption } from '@/types';
 import { mockVideos } from '@/data/mockData';
 import { supabase } from "@/integrations/supabase/client";
 
-// Storage functions for managing process state
+// Define an extended File interface to include our custom publicUrl property
+interface FileWithPublicUrl extends File {
+  publicUrl?: string;
+}
+
 const getProgressFromStorage = (processId: string): GenerationProgress | null => {
   try {
     const stored = localStorage.getItem(`progress_${processId}`);
@@ -35,7 +34,6 @@ const updateProgressInStorage = (processId: string, progress: Partial<Generation
   }
 };
 
-// Upload file function with better type handling
 export async function uploadFile(file: File): Promise<string> {
   try {
     console.log("Uploading file:", file.name);
@@ -47,7 +45,7 @@ export async function uploadFile(file: File): Promise<string> {
       return fileWithUrl.publicUrl;
     }
     
-    const fileExt = file.name.split('.').pop() || '';
+    const fileExt = file.name.split('.').pop();
     const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
     const fileName = `${uniqueId}.${fileExt}`;
     const filePath = `${fileName}`;
@@ -68,16 +66,12 @@ export async function uploadFile(file: File): Promise<string> {
       .from('uploads')
       .getPublicUrl(filePath);
     
-    if (publicUrlData && publicUrlData.publicUrl) {
-      console.log("Uploaded to Supabase, public URL:", publicUrlData.publicUrl);
-      
-      // Set the URL on our extended file object
-      fileWithUrl.publicUrl = publicUrlData.publicUrl;
-      
-      return publicUrlData.publicUrl;
-    } else {
-      throw new Error("Failed to get public URL");
-    }
+    console.log("Uploaded to Supabase, public URL:", publicUrlData.publicUrl);
+    
+    // Set the URL on our extended file object
+    fileWithUrl.publicUrl = publicUrlData.publicUrl;
+    
+    return publicUrlData.publicUrl;
   } catch (error) {
     console.error("Error uploading file:", error);
     const objectUrl = URL.createObjectURL(file);
@@ -87,42 +81,26 @@ export async function uploadFile(file: File): Promise<string> {
   }
 }
 
-// Script generation with improved error handling
 export async function generateScript(topic: string): Promise<string> {
   try {
     console.log("Generating script for topic:", topic);
-    let retries = 0;
-    const maxRetries = 3;
-    
-    while (retries < maxRetries) {
-      try {
-        const { data, error } = await supabase.functions.invoke('generate-script', {
-          body: { topic }
-        });
+    const { data, error } = await supabase.functions.invoke('generate-script', {
+      body: { topic }
+    });
 
-        if (error) {
-          console.error(`Error from generate-script function (attempt ${retries + 1}):`, error);
-          throw new Error(error.message);
-        }
-        
-        console.log("Script generation successful");
-        return data.scriptText || `Here's a video about ${topic}!`;
-      } catch (err) {
-        retries++;
-        if (retries >= maxRetries) throw err;
-        console.log(`Retrying script generation (${retries}/${maxRetries})...`);
-        await delay(1000 * retries); // Exponential backoff
-      }
+    if (error) {
+      console.error("Error from generate-script function:", error);
+      throw new Error(error.message);
     }
     
-    throw new Error("Failed to generate script after multiple attempts");
+    console.log("Script generation successful");
+    return data.scriptText;
   } catch (error) {
     console.error('Error generating script:', error);
     throw error;
   }
 }
 
-// Video generation with concurrency improvements
 export async function generateVideo(formData: {
   scriptOption: ScriptOption;
   topic?: string;
@@ -147,13 +125,11 @@ export async function generateVideo(formData: {
     voiceMedia: formData.voiceMedia
   });
   
-  // Process in the background with setTimeout
   setTimeout(() => processVideoGeneration(processId, formData), 0);
   
   return processId;
 }
 
-// Video generation process with better error handling and concurrency support
 async function processVideoGeneration(processId: string, formData: {
   scriptOption: ScriptOption;
   topic?: string;
@@ -168,8 +144,8 @@ async function processVideoGeneration(processId: string, formData: {
   try {
     const filesToCleanup: string[] = [];
     
-    let supportingMediaUrl = formData.supportingMedia || null;
-    let voiceMediaUrl = formData.voiceMedia || null;
+    let supportingMediaUrl = formData.supportingMedia;
+    let voiceMediaUrl = formData.voiceMedia;
     
     if (formData.supportingMediaFile) {
       updateProgressInStorage(processId, {
@@ -193,8 +169,6 @@ async function processVideoGeneration(processId: string, formData: {
         }
       } catch (uploadError) {
         console.error("Error uploading supporting media:", uploadError);
-        // Continue without supporting media
-        supportingMediaUrl = null;
       }
     }
     
@@ -220,8 +194,6 @@ async function processVideoGeneration(processId: string, formData: {
         }
       } catch (uploadError) {
         console.error("Error uploading voice media:", uploadError);
-        // Continue without voice media
-        voiceMediaUrl = null;
       }
     }
     
@@ -242,7 +214,7 @@ async function processVideoGeneration(processId: string, formData: {
         scriptText = await generateScript(formData.topic);
       } catch (scriptError) {
         console.error("Error generating script:", scriptError);
-        scriptText = `Here's a cool video about ${formData.topic || 'this topic'}!`;
+        scriptText = `Here's a cool video about ${formData.topic}!`;
       }
     } else if (formData.scriptOption === ScriptOption.CUSTOM && formData.customScript) {
       updateProgressInStorage(processId, {
@@ -262,41 +234,24 @@ async function processVideoGeneration(processId: string, formData: {
       progress: 50
     });
     
-    // Use retry logic for AI video generation
-    let aiVideoStartRetries = 0;
-    let jobId: string | null = null;
-    
-    while (aiVideoStartRetries < 3 && !jobId) {
-      try {
-        const { data: startData, error: startError } = await supabase.functions.invoke('generate-ai-video', {
-          body: {
-            script: scriptText,
-            voiceId: formData.voiceId,
-            voiceMedia: voiceMediaUrl,
-            highResolution: formData.highResolution,
-            processId
-          }
-        });
-        
-        if (startError) {
-          console.error(`Error starting AI video (attempt ${aiVideoStartRetries + 1}):`, startError);
-          throw new Error(`Error starting AI video: ${startError.message}`);
-        }
-        
-        jobId = startData.jobId;
-        console.log("AI video generation started with job ID:", jobId);
-      } catch (startErr) {
-        aiVideoStartRetries++;
-        if (aiVideoStartRetries >= 3) throw startErr;
-        await delay(1000 * aiVideoStartRetries);
+    const { data: startData, error: startError } = await supabase.functions.invoke('generate-ai-video', {
+      body: {
+        script: scriptText,
+        voiceId: formData.voiceId,
+        voiceMedia: voiceMediaUrl,
+        highResolution: formData.highResolution,
+        processId
       }
+    });
+    
+    if (startError) {
+      console.error("Error starting AI video:", startError);
+      throw new Error(`Error starting AI video: ${startError.message}`);
     }
     
-    if (!jobId) {
-      throw new Error("Failed to start AI video generation after multiple attempts");
-    }
+    const jobId = startData.jobId;
+    console.log("AI video generation started with job ID:", jobId);
     
-    // Poll for AI video status
     let aiVideoUrl: string | null = null;
     let attempts = 0;
     const maxAttempts = 60;
@@ -312,7 +267,6 @@ async function processVideoGeneration(processId: string, formData: {
         
         if (statusError) {
           console.error(`Error checking AI video status (attempt ${attempts}):`, statusError);
-          // Continue polling despite errors
           continue;
         }
         
@@ -322,12 +276,11 @@ async function processVideoGeneration(processId: string, formData: {
         } else {
           console.log(`AI video status (attempt ${attempts}): ${statusData.status}`);
           updateProgressInStorage(processId, {
-            status: `AI video processing: ${statusData.status || 'in progress'}...`,
+            status: `AI video processing: ${statusData.status}...`,
           });
         }
       } catch (pollError) {
         console.error(`Error polling AI video status (attempt ${attempts}):`, pollError);
-        // Continue polling despite errors
       }
     }
     
@@ -341,43 +294,25 @@ async function processVideoGeneration(processId: string, formData: {
       progress: 75
     });
     
-    // Retry logic for creating final video
-    let finalVideoStartRetries = 0;
-    let renderId: string | null = null;
-    
-    while (finalVideoStartRetries < 3 && !renderId) {
-      try {
-        const { data: renderData, error: renderError } = await supabase.functions.invoke('create-final-video', {
-          body: {
-            aiVideoUrl,
-            supportingVideo: supportingMediaUrl,
-            processId
-          }
-        });
-        
-        if (renderError) {
-          console.error(`Error creating final video (attempt ${finalVideoStartRetries + 1}):`, renderError);
-          throw new Error(`Error creating final video: ${renderError.message}`);
-        }
-        
-        renderId = renderData.renderId;
-        console.log("Final video render started with ID:", renderId);
-      } catch (renderErr) {
-        finalVideoStartRetries++;
-        if (finalVideoStartRetries >= 3) throw renderErr;
-        await delay(1000 * finalVideoStartRetries);
+    const { data: renderData, error: renderError } = await supabase.functions.invoke('create-final-video', {
+      body: {
+        aiVideoUrl,
+        supportingVideo: supportingMediaUrl,
+        processId
       }
+    });
+    
+    if (renderError) {
+      console.error("Error creating final video:", renderError);
+      throw new Error(`Error creating final video: ${renderError.message}`);
     }
     
-    if (!renderId) {
-      throw new Error("Failed to start final video rendering after multiple attempts");
-    }
+    const renderId = renderData.renderId;
+    console.log("Final video render started with ID:", renderId);
     
-    // Get the authenticated user
     const { data: { user } } = await supabase.auth.getUser();
     const userId = user?.id;
     
-    // Poll for final video status
     let finalVideoUrl: string | null = null;
     attempts = 0;
     
@@ -407,7 +342,7 @@ async function processVideoGeneration(processId: string, formData: {
         } else {
           console.log(`Final video status (attempt ${attempts}): ${finalStatusData.status}`);
           updateProgressInStorage(processId, {
-            status: `Final video processing: ${finalStatusData.status || 'in progress'}...`,
+            status: `Final video processing: ${finalStatusData.status}...`,
           });
         }
       } catch (pollError) {
@@ -425,7 +360,6 @@ async function processVideoGeneration(processId: string, formData: {
       status: "Complete!"
     });
     
-    // Clean up temporary files
     if (filesToCleanup.length > 0) {
       try {
         await supabase.functions.invoke('cleanup-files', {
@@ -446,7 +380,6 @@ async function processVideoGeneration(processId: string, formData: {
   }
 }
 
-// Remaining functions with better error handling
 export async function checkProgress(processId: string): Promise<GenerationProgress> {
   const progress = getProgressFromStorage(processId);
   
@@ -462,36 +395,21 @@ export async function getVideos(): Promise<Video[]> {
     const { data: { user } } = await supabase.auth.getUser();
     const userId = user?.id;
     
-    if (!userId) {
-      console.log("No authenticated user found, using mock videos");
+    const { data, error } = await supabase.functions.invoke('get-videos', {
+      body: { userId }
+    });
+    
+    if (error) {
+      console.error("Error fetching videos:", error);
       return mockVideos;
     }
     
-    try {
-      const { data, error } = await supabase.functions.invoke('get-videos', {
-        body: { userId }
-      });
-      
-      if (error) {
-        console.error("Error fetching videos:", error);
-        return mockVideos;
-      }
-      
-      if (!data || !data.videos) {
-        console.error("No videos data returned");
-        return mockVideos;
-      }
-      
-      return data.videos.map((video: any) => ({
-        id: video.id,
-        finalVideoUrl: video.final_video_url,
-        scriptText: video.script_text,
-        timestamp: new Date(video.timestamp).getTime()
-      }));
-    } catch (error) {
-      console.error("Error invoking get-videos function:", error);
-      return mockVideos;
-    }
+    return data.videos.map((video: any) => ({
+      id: video.id,
+      finalVideoUrl: video.final_video_url,
+      scriptText: video.script_text,
+      timestamp: new Date(video.timestamp).getTime()
+    }));
   } catch (error) {
     console.error("Error in getVideos:", error);
     return mockVideos;

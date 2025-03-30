@@ -1,13 +1,7 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Upload, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-// Define a custom interface for files with public URLs
-interface FileWithPublicUrl extends File {
-  publicUrl?: string;
-}
 
 interface FileUploadProps {
   onFileChange: (file: File | null) => void;
@@ -30,7 +24,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const [preview, setPreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadRetries, setUploadRetries] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const allowedTypes = [
@@ -55,13 +48,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
     } else {
       setPreview(null);
     }
-
-    // Clean up previous object URLs
-    return () => {
-      if (preview && preview.startsWith('blob:')) {
-        URL.revokeObjectURL(preview);
-      }
-    };
   }, [file]);
 
   const validateFileType = (selectedFile: File): boolean => {
@@ -81,9 +67,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
       setIsUploading(true);
       
       const fileExt = selectedFile.name.split('.').pop();
-      const timestamp = Date.now();
-      const randomString = Math.random().toString(36).substring(2, 15);
-      const fileName = `${timestamp}-${randomString}.${fileExt}`;
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `${fileName}`;
       
       console.log("Attempting to upload file to Supabase bucket 'uploads':", fileName);
@@ -97,27 +81,10 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
       if (error) {
         console.error("Error uploading to Supabase:", error);
-        
-        // Retry logic for transient errors
-        if (uploadRetries < 3) {
-          setUploadRetries(prev => prev + 1);
-          toast.error(`Upload failed, retrying... (${uploadRetries + 1}/3)`);
-          
-          // Add a small delay before retrying
-          setTimeout(() => {
-            uploadToSupabase(selectedFile);
-          }, 1000);
-          return;
-        }
-        
         toast.error(`Failed to upload file: ${error.message}`);
         setIsUploading(false);
-        setUploadRetries(0);
         return;
       }
-      
-      // Reset retry counter on success
-      setUploadRetries(0);
       
       const { data: publicUrlData } = supabase.storage
         .from('uploads')
@@ -126,10 +93,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
       if (publicUrlData && publicUrlData.publicUrl) {
         console.log("File uploaded successfully to Supabase:", publicUrlData.publicUrl);
         
-        // Create a new file instance with the public URL attached
         const fileWithUrl = new File([selectedFile], selectedFile.name, {
           type: selectedFile.type,
-        }) as FileWithPublicUrl;
+        }) as any;
         
         fileWithUrl.publicUrl = publicUrlData.publicUrl;
         
@@ -179,11 +145,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
   };
 
   const handleClear = () => {
-    // Clean up any blob URLs to prevent memory leaks
-    if (preview && preview.startsWith('blob:')) {
-      URL.revokeObjectURL(preview);
-    }
-    
     setFile(null);
     setPreview(null);
     onFileChange(null);
@@ -229,9 +190,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
           {isUploading ? (
             <div className="w-full h-40 flex flex-col items-center justify-center bg-zinc-800">
               <Loader2 className="h-8 w-8 text-quicktok-orange animate-spin mb-2" />
-              <p className="text-center text-gray-300">
-                {uploadRetries > 0 ? `Retrying upload (${uploadRetries}/3)...` : "Uploading..."}
-              </p>
+              <p className="text-center text-gray-300">Uploading...</p>
             </div>
           ) : preview ? (
             file.type.startsWith("video/") ? (
