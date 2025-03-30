@@ -74,17 +74,11 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       subscription.unsubscribe();
       clearInterval(intervalId);
     };
-  }, [authError, session]);
+  }, [authError]);
 
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
-      // Clear any stored progress data on logout for security
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('progress_')) {
-          localStorage.removeItem(key);
-        }
-      });
     } catch (error) {
       console.error("Error signing out:", error);
       setAuthError(error instanceof Error ? error.message : "Unknown error");

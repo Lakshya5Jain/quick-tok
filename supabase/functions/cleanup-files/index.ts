@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { filePaths, processId } = await req.json();
+    const { filePaths } = await req.json();
     
     if (!filePaths || !Array.isArray(filePaths) || filePaths.length === 0) {
       return new Response(

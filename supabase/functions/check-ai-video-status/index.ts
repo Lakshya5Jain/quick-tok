@@ -157,7 +157,7 @@ serve(async (req) => {
     console.error("Error checking AI video status:", error);
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error.message || "Unknown error",
         status: "error",
         completed: false
       }),
