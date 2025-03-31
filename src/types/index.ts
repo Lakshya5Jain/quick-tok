@@ -15,12 +15,13 @@ export interface VoiceOption {
 export interface GenerationProgress {
   progress: number;
   status: string;
+  processId?: string; // Add processId property
   finalVideoUrl?: string;
   scriptText?: string;
   aiVideoUrl?: string;
   voiceId?: string;
   voiceMedia?: string;
-  supportingMediaUrl?: string; // Added this missing property
+  supportingMediaUrl?: string;
 }
 
 export enum ScriptOption {
