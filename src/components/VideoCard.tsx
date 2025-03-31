@@ -41,10 +41,16 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
       style={{ cursor: onClick ? 'pointer' : 'default' }}
     >
       <div className="video-player border-b border-zinc-800">
-        <video controls playsInline>
-          <source src={video.finalVideoUrl} type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
+        <div className="relative aspect-[9/16] max-w-[280px] mx-auto overflow-hidden">
+          <video 
+            controls 
+            playsInline 
+            className="absolute inset-0 w-full h-full object-contain bg-black"
+          >
+            <source src={video.finalVideoUrl} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
       </div>
       <div className="p-6 space-y-3">
         <h3 className="text-lg font-medium text-gray-200">Video Script</h3>

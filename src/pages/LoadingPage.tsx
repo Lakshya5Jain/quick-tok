@@ -7,13 +7,15 @@ import { checkProgress } from "@/lib/api";
 import { toast } from "sonner";
 import { X, LoaderCircle, Clock, Sparkles, PencilLine, Film, Upload, Check } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
@@ -25,7 +27,7 @@ const LoadingPage: React.FC = () => {
     status: "Starting up the AI engines..."
   });
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [estimatedTime, setEstimatedTime] = useState(300); // 5 minutes in seconds
+  const [wordCount, setWordCount] = useState(0);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [statusMessages, setStatusMessages] = useState<string[]>([]);
   
@@ -48,8 +50,16 @@ const LoadingPage: React.FC = () => {
         const progressData = await checkProgress(processId);
         setProgress(progressData);
         
-        // Add new status message if it changed
-        if (progressData.status && !statusMessages.includes(progressData.status)) {
+        // Count words in script if available
+        if (progressData.scriptText && wordCount === 0) {
+          const words = progressData.scriptText.trim().split(/\s+/).length;
+          setWordCount(words);
+        }
+        
+        // Add new status message if it changed and not a duplicate of the last message
+        if (progressData.status && 
+           (statusMessages.length === 0 || 
+            progressData.status !== statusMessages[statusMessages.length - 1])) {
           setStatusMessages(prev => [...prev, progressData.status]);
         }
         
@@ -75,7 +85,7 @@ const LoadingPage: React.FC = () => {
     return () => {
       clearInterval(timerInterval);
     };
-  }, [processId, navigate, statusMessages]);
+  }, [processId, navigate, statusMessages, wordCount]);
 
   // Get appropriate message and icon based on status
   const getStatusInfo = () => {
@@ -128,7 +138,9 @@ const LoadingPage: React.FC = () => {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  const remainingTime = Math.max(0, estimatedTime - elapsedTime);
+  // Calculate estimated time based on word count: 30 seconds + 5 seconds per word
+  const estimatedTimeInSeconds = 30 + (wordCount * 5);
+  const remainingTime = Math.max(0, estimatedTimeInSeconds - elapsedTime);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black flex items-center justify-center p-4">
@@ -163,7 +175,7 @@ const LoadingPage: React.FC = () => {
           <h2 className="text-2xl font-bold text-center mb-2 text-quicktok-orange">Processing Your Video</h2>
           <p className="text-gray-300 text-center mb-6">{message}</p>
           
-          {/* Time indicator */}
+          {/* Time indicator with improved estimation */}
           <div className="flex items-center justify-center mb-4 text-sm text-gray-400">
             <Clock className="h-4 w-4 mr-2" />
             <span>Elapsed: {formatTime(elapsedTime)} | Remaining: ~{formatTime(remainingTime)}</span>
@@ -177,9 +189,9 @@ const LoadingPage: React.FC = () => {
           {/* Progress percentage */}
           <p className="text-quicktok-orange font-medium mb-6">{progress.progress}%</p>
           
-          {/* Status timeline */}
+          {/* Status timeline - only show the last 4 unique statuses */}
           <div className="w-full border-l-2 border-zinc-800 pl-4 space-y-3 mb-6">
-            {statusMessages.map((status, index) => (
+            {statusMessages.slice(-4).map((status, index) => (
               <motion.div 
                 key={index}
                 initial={{ opacity: 0, x: -10 }}
@@ -201,24 +213,24 @@ const LoadingPage: React.FC = () => {
       </motion.div>
 
       {/* Cancel confirmation dialog */}
-      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <DialogContent className="bg-zinc-900 border-zinc-800">
-          <DialogHeader>
-            <DialogTitle className="text-gray-100">Cancel Video Generation?</DialogTitle>
-            <DialogDescription className="text-gray-400">
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-gray-100">Cancel Video Generation?</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
               Are you sure you want to cancel this video generation? All progress will be lost.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 mt-4">
-            <Button variant="outline" onClick={() => setShowCancelDialog(false)} className="bg-zinc-800 hover:bg-zinc-700 text-gray-200 border-zinc-700">
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 mt-4">
+            <AlertDialogCancel className="bg-zinc-800 hover:bg-zinc-700 text-gray-200 border-zinc-700">
               Continue Processing
-            </Button>
-            <Button variant="destructive" onClick={confirmCancel}>
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCancel} className="bg-red-600 hover:bg-red-700">
               Yes, Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

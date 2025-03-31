@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import GeneratorForm from "@/components/GeneratorForm";
 import VideoFeed from "@/components/VideoFeed";
@@ -12,11 +11,13 @@ import { voiceOptions } from "@/data/mockData";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"generate" | "videos">("generate");
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<"generate" | "videos">(
+    location.state?.activeTab || "generate"
+  );
   const [videos, setVideos] = useState<Video[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load videos on mount
   useEffect(() => {
     const loadVideos = async () => {
       try {
@@ -45,7 +46,6 @@ const Index = () => {
     setIsSubmitting(true);
     
     try {
-      // Start video generation with the form data directly including files
       const processId = await generateVideo({
         scriptOption: formData.scriptOption,
         topic: formData.topic,
@@ -58,7 +58,6 @@ const Index = () => {
         highResolution: formData.highResolution
       });
       
-      // Navigate to loading page with processId in state
       navigate("/loading", { state: { processId } });
     } catch (error) {
       console.error("Error starting video generation:", error);
