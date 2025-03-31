@@ -7,9 +7,10 @@ import { Download, Share } from "lucide-react";
 
 interface VideoCardProps {
   video: Video;
+  onClick?: () => void;
 }
 
-const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
+const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
   const downloadVideo = () => {
     const link = document.createElement('a');
     link.href = video.finalVideoUrl;
@@ -36,6 +37,8 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
+      onClick={onClick}
+      style={{ cursor: onClick ? 'pointer' : 'default' }}
     >
       <div className="video-player border-b border-zinc-800">
         <video controls playsInline>
@@ -54,7 +57,10 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           </div>
           <div className="flex gap-2">
             <button 
-              onClick={downloadVideo}
+              onClick={(e) => {
+                e.stopPropagation();
+                downloadVideo();
+              }}
               className="p-2 rounded-md bg-zinc-800 text-gray-300 hover:bg-zinc-700 transition-colors"
               aria-label="Download"
             >
@@ -62,7 +68,10 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
             </button>
             {navigator.share && (
               <button 
-                onClick={shareVideo}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  shareVideo();
+                }}
                 className="p-2 rounded-md bg-zinc-800 text-gray-300 hover:bg-zinc-700 transition-colors"
                 aria-label="Share"
               >
