@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -17,15 +18,26 @@ const Index = () => {
   );
   const [videos, setVideos] = useState<Video[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingVideos, setIsLoadingVideos] = useState(true);
+
+  useEffect(() => {
+    // Update activeTab when location state changes
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     const loadVideos = async () => {
+      setIsLoadingVideos(true);
       try {
         const loadedVideos = await getVideos();
         setVideos(loadedVideos);
       } catch (error) {
         console.error("Failed to load videos:", error);
         toast.error("Failed to load past videos");
+      } finally {
+        setIsLoadingVideos(false);
       }
     };
     
@@ -97,10 +109,11 @@ const Index = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.3 }}
-              className="max-w-2xl mx-auto"
+              className="max-w-3xl mx-auto w-full"
             >
               <VideoFeed 
-                videos={videos} 
+                videos={videos}
+                isLoading={isLoadingVideos}
                 onVideoClick={(video) => {
                   navigate("/result", { 
                     state: { 

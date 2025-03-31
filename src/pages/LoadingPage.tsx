@@ -5,7 +5,7 @@ import { GenerationProgress } from "@/types";
 import { motion } from "framer-motion";
 import { checkProgress } from "@/lib/api";
 import { toast } from "sonner";
-import { X, LoaderCircle, Clock, Sparkles, PencilLine, Film, Upload, Check } from "lucide-react";
+import { Clock, Sparkles, PencilLine, Film, Upload, Check, X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +16,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
 const LoadingPage: React.FC = () => {
@@ -29,9 +28,17 @@ const LoadingPage: React.FC = () => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [wordCount, setWordCount] = useState(0);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [statusMessages, setStatusMessages] = useState<string[]>([]);
+  const [currentStep, setCurrentStep] = useState<number>(0);
   
   const processId = location.state?.processId;
+  
+  // Define the steps for the video creation process
+  const steps = [
+    { id: 0, label: "Generating AI Script", icon: <PencilLine className="text-green-400" /> },
+    { id: 1, label: "Bringing your image to life with Lemon Slice", icon: <Sparkles className="text-purple-400" /> },
+    { id: 2, label: "Fusing everything together with Creatomate", icon: <Film className="text-orange-400" /> },
+    { id: 3, label: "Your awesome TikTok video is ready!", icon: <Check className="text-green-500" /> }
+  ];
   
   useEffect(() => {
     if (!processId) {
@@ -56,11 +63,15 @@ const LoadingPage: React.FC = () => {
           setWordCount(words);
         }
         
-        // Add new status message if it changed and not a duplicate of the last message
-        if (progressData.status && 
-           (statusMessages.length === 0 || 
-            progressData.status !== statusMessages[statusMessages.length - 1])) {
-          setStatusMessages(prev => [...prev, progressData.status]);
+        // Determine current step based on status
+        if (progressData.status.includes("Generating script")) {
+          setCurrentStep(0);
+        } else if (progressData.status.includes("Generating AI video")) {
+          setCurrentStep(1);
+        } else if (progressData.status.includes("Creating final")) {
+          setCurrentStep(2);
+        } else if (progressData.status.includes("Complete")) {
+          setCurrentStep(3);
         }
         
         if (progressData.progress >= 100) {
@@ -85,44 +96,8 @@ const LoadingPage: React.FC = () => {
     return () => {
       clearInterval(timerInterval);
     };
-  }, [processId, navigate, statusMessages, wordCount]);
+  }, [processId, navigate, wordCount]);
 
-  // Get appropriate message and icon based on status
-  const getStatusInfo = () => {
-    if (progress.status.includes("Uploading")) {
-      return {
-        message: "Preparing your media for AI processing...",
-        icon: <Upload className="text-blue-400 animate-pulse" />
-      };
-    } else if (progress.status.includes("Generating script")) {
-      return {
-        message: "Creating an engaging script with our AI...",
-        icon: <PencilLine className="text-green-400 animate-pulse" />
-      };
-    } else if (progress.status.includes("Generating AI video")) {
-      return {
-        message: "Bringing your images to life with AI...",
-        icon: <Sparkles className="text-purple-400 animate-pulse" />
-      };
-    } else if (progress.status.includes("Creating final")) {
-      return {
-        message: "Fusing your videos together...",
-        icon: <Film className="text-orange-400 animate-pulse" />
-      };
-    } else if (progress.status.includes("Complete")) {
-      return {
-        message: "Your awesome TikTok video is ready!",
-        icon: <Check className="text-green-500" />
-      };
-    }
-    return {
-      message: "Starting up the AI engines...",
-      icon: <LoaderCircle className="text-quicktok-orange animate-spin" />
-    };
-  };
-
-  const { message, icon } = getStatusInfo();
-  
   const handleCancel = () => {
     setShowCancelDialog(true);
   };
@@ -139,78 +114,166 @@ const LoadingPage: React.FC = () => {
   };
 
   // Calculate estimated time based on word count: 30 seconds + 5 seconds per word
-  const estimatedTimeInSeconds = 30 + (wordCount * 5);
+  // Only show this after we have the script (wordCount > 0)
+  const estimatedTimeInSeconds = wordCount > 0 ? 30 + (wordCount * 5) : 0;
   const remainingTime = Math.max(0, estimatedTimeInSeconds - elapsedTime);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black flex items-center justify-center p-4">
-      <motion.div 
-        className="relative max-w-md w-full p-8 bg-zinc-900/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-zinc-800"
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <button 
-          onClick={handleCancel}
-          className="absolute top-4 right-4 p-2 rounded-full bg-zinc-800 text-gray-300 hover:bg-zinc-700 transition-colors z-10"
-          aria-label="Cancel"
-        >
-          <X className="h-4 w-4" />
-        </button>
+    <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black overflow-hidden relative">
+      {/* Lava lamp effect background */}
+      <div className="absolute inset-0 overflow-hidden opacity-20 pointer-events-none">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full bg-quicktok-orange"
+            initial={{ 
+              x: Math.random() * 100, 
+              y: Math.random() * 100,
+              width: 50 + Math.random() * 100,
+              height: 50 + Math.random() * 100
+            }}
+            animate={{ 
+              x: [
+                Math.random() * window.innerWidth, 
+                Math.random() * window.innerWidth,
+                Math.random() * window.innerWidth
+              ],
+              y: [
+                Math.random() * window.innerHeight,
+                Math.random() * window.innerHeight,
+                Math.random() * window.innerHeight
+              ],
+              width: [
+                50 + Math.random() * 100,
+                100 + Math.random() * 150,
+                50 + Math.random() * 100
+              ],
+              height: [
+                50 + Math.random() * 100,
+                100 + Math.random() * 150,
+                50 + Math.random() * 100
+              ]
+            }}
+            transition={{ 
+              repeat: Infinity, 
+              duration: 15 + Math.random() * 20,
+              ease: "easeInOut"
+            }}
+          />
+        ))}
+      </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="flex flex-col items-center"
+      <div className="flex items-center justify-center p-4 min-h-screen relative z-10">
+        <motion.div 
+          className="relative max-w-md w-full p-8 bg-zinc-900/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-zinc-800"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
         >
-          <motion.div 
-            className="mb-6 p-4 rounded-full bg-zinc-800 shadow-[0_0_15px_rgba(255,107,0,0.3)]"
-            animate={{ scale: [1, 1.05, 1] }}
-            transition={{ repeat: Infinity, duration: 3 }}
+          <button 
+            onClick={handleCancel}
+            className="absolute top-4 right-4 p-2 rounded-full bg-zinc-800 text-gray-300 hover:bg-zinc-700 transition-colors z-10"
+            aria-label="Cancel"
           >
-            {icon}
+            <X className="h-4 w-4" />
+          </button>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="flex flex-col items-center"
+          >
+            {/* Bouncing ball animation */}
+            <motion.div 
+              className="mb-6 relative h-20 w-20"
+            >
+              <motion.div
+                className="absolute w-16 h-16 bg-gradient-to-br from-orange-500 to-rose-600 rounded-full shadow-lg"
+                animate={{
+                  y: [0, -30, 0],
+                  scale: [1, 0.9, 1],
+                  borderRadius: ["50%", "30%", "50%"]
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
+              <motion.div
+                className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-gray-700 rounded-full opacity-60"
+                animate={{
+                  width: [10, 16, 10],
+                  opacity: [0.6, 0.4, 0.6]
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
+            </motion.div>
+
+            <h2 className="text-2xl font-bold text-center mb-2 text-quicktok-orange">Processing Your Video</h2>
+            <p className="text-gray-300 text-center mb-6">{steps[currentStep].label}</p>
+            
+            {/* Time indicator with improved estimation - only show after we have word count */}
+            {wordCount > 0 && (
+              <div className="flex items-center justify-center mb-4 text-sm text-gray-400">
+                <Clock className="h-4 w-4 mr-2" />
+                <span>Elapsed: {formatTime(elapsedTime)} | Remaining: ~{formatTime(remainingTime)}</span>
+              </div>
+            )}
+
+            {/* Progress indicator */}
+            <div className="w-full mb-2">
+              <Progress value={progress.progress} className="h-2 bg-zinc-800" />
+            </div>
+            
+            {/* Progress percentage */}
+            <p className="text-quicktok-orange font-medium mb-6">{progress.progress}%</p>
+            
+            {/* Status timeline - only show steps */}
+            <div className="w-full border-l-2 border-zinc-800 pl-4 space-y-3 mb-6">
+              {steps.map((step, index) => (
+                <motion.div 
+                  key={step.id}
+                  initial={{ opacity: index <= currentStep ? 1 : 0.4, x: 0 }}
+                  animate={{ 
+                    opacity: index <= currentStep ? 1 : 0.4,
+                    x: 0
+                  }}
+                  className="flex items-start"
+                >
+                  <div className={`w-2 h-2 rounded-full mt-1.5 -ml-5 mr-3 ${
+                    index < currentStep ? 'bg-green-500' : 
+                    index === currentStep ? 'bg-quicktok-orange' : 
+                    'bg-gray-600'
+                  }`} />
+                  <div className="flex items-center">
+                    <span className={`mr-2 ${
+                      index <= currentStep ? 'text-gray-300' : 'text-gray-500'
+                    }`}>
+                      {step.icon}
+                    </span>
+                    <p className={`text-sm ${
+                      index <= currentStep ? 'text-gray-300' : 'text-gray-500'
+                    }`}>
+                      {step.label}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+            
+            <p className="text-xs text-gray-500 mt-4 text-center">
+              Powered by Creatomate API for Automated Video Generation<br />
+              and Lemon Slice for Talking Avatar
+            </p>
           </motion.div>
-
-          <h2 className="text-2xl font-bold text-center mb-2 text-quicktok-orange">Processing Your Video</h2>
-          <p className="text-gray-300 text-center mb-6">{message}</p>
-          
-          {/* Time indicator with improved estimation */}
-          <div className="flex items-center justify-center mb-4 text-sm text-gray-400">
-            <Clock className="h-4 w-4 mr-2" />
-            <span>Elapsed: {formatTime(elapsedTime)} | Remaining: ~{formatTime(remainingTime)}</span>
-          </div>
-
-          {/* Progress indicator */}
-          <div className="w-full mb-2">
-            <Progress value={progress.progress} className="h-2 bg-zinc-800" />
-          </div>
-          
-          {/* Progress percentage */}
-          <p className="text-quicktok-orange font-medium mb-6">{progress.progress}%</p>
-          
-          {/* Status timeline - only show the last 4 unique statuses */}
-          <div className="w-full border-l-2 border-zinc-800 pl-4 space-y-3 mb-6">
-            {statusMessages.slice(-4).map((status, index) => (
-              <motion.div 
-                key={index}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="flex items-start"
-              >
-                <div className="w-2 h-2 rounded-full bg-quicktok-orange mt-1.5 -ml-5 mr-3" />
-                <p className="text-sm text-gray-400">{status}</p>
-              </motion.div>
-            ))}
-          </div>
-          
-          <p className="text-xs text-gray-500 mt-4 text-center">
-            Powered by Creatomate API for Automated Video Generation<br />
-            and Lemon Slice for Talking Avatar
-          </p>
         </motion.div>
-      </motion.div>
+      </div>
 
       {/* Cancel confirmation dialog */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>

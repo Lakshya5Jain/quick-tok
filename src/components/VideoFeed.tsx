@@ -32,9 +32,27 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
   
   if (videos.length === 0) {
     return (
-      <div className="text-center py-8">
-        <h3 className="text-xl font-semibold text-gray-300">No videos yet</h3>
-        <p className="text-gray-400 mt-2">Create your first TikTok-style video now!</p>
+      <div className="text-center py-16 px-4 bg-zinc-900/50 rounded-xl border border-zinc-800 backdrop-blur-sm">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h3 className="text-xl font-semibold text-gray-300 mb-2">No videos yet</h3>
+          <p className="text-gray-400 mb-6">Create your first TikTok-style video now!</p>
+          <div className="w-24 h-24 mx-auto opacity-30">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+              <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+              <line x1="7" y1="2" x2="7" y2="22"></line>
+              <line x1="17" y1="2" x2="17" y2="22"></line>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <line x1="2" y1="7" x2="7" y2="7"></line>
+              <line x1="2" y1="17" x2="7" y2="17"></line>
+              <line x1="17" y1="17" x2="22" y2="17"></line>
+              <line x1="17" y1="7" x2="22" y2="7"></line>
+            </svg>
+          </div>
+        </motion.div>
       </div>
     );
   }
@@ -44,7 +62,7 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ staggerChildren: 0.1 }}
-      className="grid grid-cols-1 gap-6 w-full"
+      className="grid grid-cols-1 gap-4 w-full pb-8"
     >
       {videos.map((video) => (
         <VideoCard 

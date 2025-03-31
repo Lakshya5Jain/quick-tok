@@ -67,7 +67,7 @@ const ResultPage: React.FC = () => {
   };
 
   const handleExit = () => {
-    // Directly navigate to the videos tab
+    // Navigate to the videos tab
     navigate("/", { state: { activeTab: "videos" } });
   };
 
@@ -101,7 +101,7 @@ const ResultPage: React.FC = () => {
               whileHover={{ scale: 1.02 }}
               transition={{ duration: 0.2 }}
             >
-              <div className="relative aspect-[9/16] w-full overflow-hidden">
+              <div className="relative aspect-[9/16] max-w-[280px] mx-auto overflow-hidden">
                 <video 
                   controls 
                   autoPlay 
@@ -168,12 +168,6 @@ const ResultPage: React.FC = () => {
             </motion.div>
           </CardFooter>
         </Card>
-
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500">
-            Share your creation on social media with #QuickTok
-          </p>
-        </div>
       </motion.div>
     </div>
   );
