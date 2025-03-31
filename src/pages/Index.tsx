@@ -1,23 +1,20 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import GeneratorForm from "@/components/GeneratorForm";
 import VideoFeed from "@/components/VideoFeed";
-import LoadingScreen from "@/components/LoadingScreen";
-import ResultScreen from "@/components/ResultScreen";
-import { GenerationProgress, ScriptOption, Video } from "@/types";
-import { generateVideo, checkProgress, getVideos } from "@/lib/api";
+import { ScriptOption, Video } from "@/types";
+import { generateVideo, getVideos } from "@/lib/api";
 import { toast } from "sonner";
 import { voiceOptions } from "@/data/mockData";
 
 const Index = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"generate" | "videos">("generate");
   const [videos, setVideos] = useState<Video[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentProcessId, setCurrentProcessId] = useState<string | null>(null);
-  const [progress, setProgress] = useState<GenerationProgress | null>(null);
-  const [showResult, setShowResult] = useState(false);
 
   // Load videos on mount
   useEffect(() => {
@@ -33,34 +30,6 @@ const Index = () => {
     
     loadVideos();
   }, []);
-
-  // Poll for progress updates when a process is running
-  useEffect(() => {
-    if (!currentProcessId) return;
-    
-    const pollProgress = async () => {
-      try {
-        const progressData = await checkProgress(currentProcessId);
-        setProgress(progressData);
-        
-        if (progressData.progress >= 100) {
-          setIsSubmitting(false);
-          setShowResult(true);
-          setCurrentProcessId(null);
-        } else {
-          // Continue polling
-          setTimeout(pollProgress, 1000);
-        }
-      } catch (error) {
-        console.error("Error checking progress:", error);
-        toast.error("Error checking progress");
-        setIsSubmitting(false);
-        setCurrentProcessId(null);
-      }
-    };
-    
-    pollProgress();
-  }, [currentProcessId]);
 
   const handleFormSubmit = async (formData: {
     scriptOption: ScriptOption;
@@ -89,22 +58,13 @@ const Index = () => {
         highResolution: formData.highResolution
       });
       
-      setCurrentProcessId(processId);
-      setProgress({
-        progress: 0,
-        status: "Starting...",
-      });
+      // Navigate to loading page with processId in state
+      navigate("/loading", { state: { processId } });
     } catch (error) {
       console.error("Error starting video generation:", error);
       toast.error("Failed to start video generation");
       setIsSubmitting(false);
     }
-  };
-
-  const handleResultClose = () => {
-    setShowResult(false);
-    // Refresh videos list
-    getVideos().then(setVideos);
   };
 
   return (
@@ -140,28 +100,25 @@ const Index = () => {
               transition={{ duration: 0.3 }}
               className="max-w-2xl mx-auto"
             >
-              <VideoFeed videos={videos} />
+              <VideoFeed 
+                videos={videos} 
+                onVideoClick={(video) => {
+                  navigate("/result", { 
+                    state: { 
+                      result: {
+                        finalVideoUrl: video.finalVideoUrl,
+                        scriptText: video.scriptText,
+                        progress: 100,
+                        status: "Complete"
+                      }
+                    }
+                  });
+                }}
+              />
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-      
-      {/* Loading overlay when generating video */}
-      <AnimatePresence>
-        {isSubmitting && progress && (
-          <LoadingScreen progress={progress} />
-        )}
-      </AnimatePresence>
-      
-      {/* Result modal when complete */}
-      <AnimatePresence>
-        {showResult && progress && progress.progress >= 100 && (
-          <ResultScreen 
-            result={progress} 
-            onClose={handleResultClose} 
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 };

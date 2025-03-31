@@ -10,6 +10,8 @@ import NotFound from "./pages/NotFound";
 import AuthProvider from "./context/AuthContext";
 import { RequireAuth } from "./components/auth/RequireAuth";
 import HomePage from "./components/HomePage";
+import LoadingPage from "./pages/LoadingPage";
+import ResultPage from "./pages/ResultPage";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +28,16 @@ const App = () => (
             <Route path="/create" element={
               <RequireAuth>
                 <Index />
+              </RequireAuth>
+            } />
+            <Route path="/loading" element={
+              <RequireAuth>
+                <LoadingPage />
+              </RequireAuth>
+            } />
+            <Route path="/result" element={
+              <RequireAuth>
+                <ResultPage />
               </RequireAuth>
             } />
             <Route path="*" element={<NotFound />} />
