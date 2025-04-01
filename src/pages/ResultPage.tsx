@@ -3,14 +3,13 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { GenerationProgress } from "@/types";
 import { motion } from "framer-motion";
-import { Download, Share, Copy, Edit, X } from "lucide-react";
+import { Download, Share, Copy, Edit, X, Play, Pause } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -72,87 +71,90 @@ const ResultPage: React.FC = () => {
     navigate("/", { state: { activeTab: "videos" } });
   };
 
+  const handleVideoClick = () => {
+    const videoEl = document.querySelector('#result-video') as HTMLVideoElement;
+    if (videoEl) {
+      if (videoEl.paused) {
+        videoEl.play();
+        setIsPlaying(true);
+      } else {
+        videoEl.pause();
+        setIsPlaying(false);
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black py-12 px-4">
-      <motion.div 
-        className="max-w-5xl mx-auto"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Card className="relative bg-zinc-900/90 backdrop-blur-lg border-zinc-800 overflow-hidden shadow-2xl">
-          <motion.button
+      <div className="container max-w-5xl mx-auto">
+        <Card className="bg-zinc-900/90 border-zinc-800 overflow-hidden shadow-2xl">
+          <Button
             onClick={handleExit}
-            className="absolute top-4 right-4 p-2 rounded-full bg-zinc-800 text-gray-300 hover:bg-zinc-700 transition-colors z-10"
-            aria-label="Exit"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 right-4 text-gray-400 hover:text-white hover:bg-zinc-800 z-10"
           >
-            <X className="h-4 w-4" />
-          </motion.button>
+            <X className="h-5 w-5" />
+          </Button>
 
-          <CardHeader className="pb-4">
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.4 }}
-            >
-              <CardTitle className="text-2xl font-bold text-center text-white">Your Video is Ready!</CardTitle>
-              <CardDescription className="text-gray-400 text-center">
-                Check out your awesome TikTok-style video below
-              </CardDescription>
-            </motion.div>
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">Your Video is Ready!</CardTitle>
+            <CardDescription className="text-center">
+              Check out your awesome TikTok-style video below
+            </CardDescription>
           </CardHeader>
           
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <motion.div 
-                className="flex justify-center"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
-              >
-                <div className="relative max-w-[280px] mx-auto w-full">
-                  <div className="aspect-[9/16] relative overflow-hidden rounded-lg shadow-[0_0_25px_rgba(255,107,0,0.2)]">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="flex flex-col items-center">
+                <div className="relative bg-black rounded-lg overflow-hidden shadow-lg">
+                  <div className="aspect-[9/16] max-w-[280px] w-full mx-auto">
                     <video 
-                      className="absolute inset-0 w-full h-full object-cover bg-black"
-                      onClick={(e) => {
-                        const videoEl = e.currentTarget;
-                        if (videoEl.paused) {
-                          videoEl.play();
-                          setIsPlaying(true);
-                        } else {
-                          videoEl.pause();
-                          setIsPlaying(false);
-                        }
-                      }}
+                      id="result-video"
+                      className="w-full h-full object-contain"
+                      src={result.finalVideoUrl}
+                    />
+                    <motion.div 
+                      className="absolute inset-0 flex items-center justify-center cursor-pointer"
+                      whileHover={{ opacity: 1 }}
+                      initial={{ opacity: isPlaying ? 0 : 1 }}
+                      animate={{ opacity: isPlaying ? 0 : 1 }}
+                      onClick={handleVideoClick}
                     >
-                      <source src={result.finalVideoUrl} type="video/mp4" />
-                      Your browser does not support the video tag.
-                    </video>
-                    {!isPlaying && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                        <motion.div 
-                          className="w-16 h-16 flex items-center justify-center rounded-full bg-quicktok-orange/80 backdrop-blur-sm text-white"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                          </svg>
-                        </motion.div>
+                      <div className="w-16 h-16 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white">
+                        {isPlaying ? (
+                          <Pause className="w-6 h-6" />
+                        ) : (
+                          <Play className="w-6 h-6 ml-1" />
+                        )}
                       </div>
-                    )}
+                    </motion.div>
                   </div>
                 </div>
-              </motion.div>
-            
-              <motion.div 
-                className="space-y-4"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.4 }}
-              >
+                
+                <div className="flex gap-3 mt-4">
+                  <Button
+                    onClick={downloadVideo}
+                    className="bg-quicktok-orange hover:bg-quicktok-orange/90 text-white"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download
+                  </Button>
+                  
+                  {navigator.share && (
+                    <Button
+                      onClick={shareVideo}
+                      variant="outline"
+                      className="border-zinc-700 hover:bg-zinc-800"
+                    >
+                      <Share className="mr-2 h-4 w-4" />
+                      Share
+                    </Button>
+                  )}
+                </div>
+              </div>
+              
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium text-gray-300">Script</h3>
                   <Button 
@@ -164,50 +166,23 @@ const ResultPage: React.FC = () => {
                     <Copy className="h-4 w-4 mr-1" /> Copy
                   </Button>
                 </div>
-                <div className="p-4 bg-zinc-800/70 rounded-lg text-sm text-gray-300 whitespace-pre-wrap border border-zinc-700 h-[250px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700">
+                
+                <div className="p-4 bg-zinc-800/70 rounded-lg text-sm text-gray-300 whitespace-pre-wrap border border-zinc-700 h-[250px] overflow-y-auto">
                   {result.scriptText}
                 </div>
                 
-                <div className="mt-6 flex flex-wrap gap-4">
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button
-                      onClick={downloadVideo}
-                      className="bg-quicktok-orange hover:bg-quicktok-orange/90 text-white font-medium"
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Download
-                    </Button>
-                  </motion.div>
-                  
-                  {navigator.share && (
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button
-                        onClick={shareVideo}
-                        variant="outline"
-                        className="bg-zinc-800 text-gray-200 border-zinc-700 hover:bg-zinc-700"
-                      >
-                        <Share className="mr-2 h-4 w-4" />
-                        Share
-                      </Button>
-                    </motion.div>
-                  )}
-
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button
-                      onClick={createAnother}
-                      variant="outline"
-                      className="bg-green-900/30 text-green-300 border-green-800 hover:bg-green-800/50"
-                    >
-                      <Edit className="mr-2 h-4 w-4" />
-                      Create Another
-                    </Button>
-                  </motion.div>
-                </div>
-              </motion.div>
+                <Button
+                  onClick={createAnother}
+                  className="w-full mt-6 bg-green-900/30 text-green-300 border border-green-800 hover:bg-green-800/50"
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  Create Another Video
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     </div>
   );
 };

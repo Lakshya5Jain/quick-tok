@@ -3,8 +3,10 @@ import React, { useState } from "react";
 import { Video } from "@/types";
 import { formatDate } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { Download, Share } from "lucide-react";
+import { Download, Share, Play, Pause } from "lucide-react";
 import { toast } from "sonner";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 interface VideoCardProps {
   video: Video;
@@ -42,94 +44,91 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
     }
   };
 
-  const handleVideoClick = (e: React.MouseEvent<HTMLVideoElement>) => {
+  const handleVideoClick = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
-    const videoEl = e.currentTarget;
+    const videoEl = e.currentTarget.querySelector('video');
     
-    if (videoEl.paused) {
-      videoEl.play();
-      setIsPlaying(true);
-    } else {
-      videoEl.pause();
-      setIsPlaying(false);
+    if (videoEl) {
+      if (videoEl.paused) {
+        videoEl.play();
+        setIsPlaying(true);
+      } else {
+        videoEl.pause();
+        setIsPlaying(false);
+      }
     }
   };
 
   return (
-    <motion.div 
-      className="bg-zinc-900/90 rounded-xl border border-zinc-800 shadow-lg overflow-hidden"
-      whileHover={{ y: -5, boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)" }}
+    <Card 
+      className="bg-zinc-900/90 border-zinc-800 hover:border-zinc-700 transition-all duration-300 shadow-lg"
       onClick={onClick}
-      style={{ cursor: onClick ? 'pointer' : 'default' }}
     >
-      <div className="flex flex-col md:flex-row">
-        <div className="video-container md:border-r border-zinc-800 p-4 flex justify-center items-center">
-          <div className="relative max-w-[240px] mx-auto w-full">
-            <div className="aspect-[9/16] relative overflow-hidden rounded-lg shadow-md">
+      <CardContent className="p-6">
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="w-full lg:w-[180px]">
+            <div className="relative aspect-[9/16] mx-auto max-w-[180px]" onClick={handleVideoClick}>
               <video 
-                className="absolute inset-0 w-full h-full object-cover bg-black"
+                className="rounded-lg w-full h-full object-cover bg-black cursor-pointer"
+                src={video.finalVideoUrl}
                 poster={`${video.finalVideoUrl}?poster=true`}
-                onClick={handleVideoClick}
-              >
-                <source src={video.finalVideoUrl} type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-              {!isPlaying && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                  <motion.div 
-                    className="w-16 h-16 flex items-center justify-center rounded-full bg-quicktok-orange/80 backdrop-blur-sm text-white"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                    </svg>
-                  </motion.div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-        
-        <div className="flex-1 p-5 flex flex-col justify-between">
-          <div className="space-y-3">
-            <h3 className="text-lg font-medium text-gray-200">Video Script</h3>
-            <div className="p-4 bg-zinc-800/70 rounded-lg text-sm text-gray-300 max-h-[150px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
-              {video.scriptText}
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <motion.div 
+                  className="w-12 h-12 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  {isPlaying ? (
+                    <Pause className="w-5 h-5" />
+                  ) : (
+                    <Play className="w-5 h-5 ml-1" />
+                  )}
+                </motion.div>
+              </div>
             </div>
           </div>
           
-          <div className="flex items-center justify-between pt-4 mt-2">
-            <div className="text-xs text-gray-500">
-              Created: {formatDate(video.timestamp)}
+          <div className="flex-1 flex flex-col justify-between">
+            <div>
+              <h3 className="text-lg font-medium text-gray-200 mb-2">Video Script</h3>
+              <div className="p-4 bg-zinc-800/70 rounded-lg text-sm text-gray-300 max-h-[120px] overflow-y-auto">
+                {video.scriptText}
+              </div>
             </div>
-            <div className="flex gap-2">
-              <motion.button 
-                onClick={downloadVideo}
-                className="p-2 rounded-md bg-zinc-800 text-gray-300 hover:bg-zinc-700 transition-colors"
-                aria-label="Download"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Download className="h-4 w-4" />
-              </motion.button>
-              
-              {navigator.share && (
-                <motion.button 
-                  onClick={shareVideo}
-                  className="p-2 rounded-md bg-zinc-800 text-gray-300 hover:bg-zinc-700 transition-colors"
-                  aria-label="Share"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+            
+            <div className="flex items-center justify-between mt-4 pt-2 border-t border-zinc-800">
+              <div className="text-xs text-gray-500">
+                Created: {formatDate(video.timestamp)}
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="text-gray-300 border-zinc-800 hover:bg-zinc-800"
+                  onClick={downloadVideo}
                 >
-                  <Share className="h-4 w-4" />
-                </motion.button>
-              )}
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+                
+                {navigator.share && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="text-gray-300 border-zinc-800 hover:bg-zinc-800"
+                    onClick={shareVideo}
+                  >
+                    <Share className="h-4 w-4 mr-2" />
+                    Share
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </motion.div>
+      </CardContent>
+    </Card>
   );
 };
 

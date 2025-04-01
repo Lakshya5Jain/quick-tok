@@ -37,7 +37,7 @@ const Index = () => {
           setVideos(loadedVideos);
         } catch (error) {
           console.error("Failed to load videos:", error);
-          toast.error("Failed to load past videos");
+          toast.error("Failed to load videos");
         } finally {
           setIsLoadingVideos(false);
         }
@@ -82,8 +82,8 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-primary px-4 pb-16">
-      <div className="max-w-6xl mx-auto pt-8">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black px-4 pb-16">
+      <div className="container max-w-6xl mx-auto pt-8">
         <Navbar 
           activeTab={activeTab} 
           onTabChange={setActiveTab}
@@ -114,22 +114,25 @@ const Index = () => {
               transition={{ duration: 0.3 }}
               className="w-full"
             >
-              <VideoFeed 
-                videos={videos}
-                isLoading={isLoadingVideos}
-                onVideoClick={(video) => {
-                  navigate("/result", { 
-                    state: { 
-                      result: {
-                        finalVideoUrl: video.finalVideoUrl,
-                        scriptText: video.scriptText,
-                        progress: 100,
-                        status: "Complete"
+              <div className="py-4">
+                <h2 className="text-2xl font-bold text-white mb-6">My Videos</h2>
+                <VideoFeed 
+                  videos={videos}
+                  isLoading={isLoadingVideos}
+                  onVideoClick={(video) => {
+                    navigate("/result", { 
+                      state: { 
+                        result: {
+                          finalVideoUrl: video.finalVideoUrl,
+                          scriptText: video.scriptText,
+                          progress: 100,
+                          status: "Complete"
+                        }
                       }
-                    }
-                  });
-                }}
-              />
+                    });
+                  }}
+                />
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
