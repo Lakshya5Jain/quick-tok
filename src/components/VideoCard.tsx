@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Video } from "@/types";
 import { formatDate } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -15,6 +15,7 @@ interface VideoCardProps {
 
 const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const downloadVideo = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -44,16 +45,14 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
     }
   };
 
-  const handleVideoClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleVideoClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const videoEl = e.currentTarget.querySelector('video');
-    
-    if (videoEl) {
-      if (videoEl.paused) {
-        videoEl.play();
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play();
         setIsPlaying(true);
       } else {
-        videoEl.pause();
+        videoRef.current.pause();
         setIsPlaying(false);
       }
     }
@@ -61,21 +60,25 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
 
   return (
     <Card 
-      className="bg-zinc-900/90 border-zinc-800 hover:border-zinc-700 transition-all duration-300 shadow-lg"
+      className="overflow-hidden bg-zinc-900/80 border-zinc-800 hover:border-zinc-700 transition-all duration-300"
       onClick={onClick}
     >
-      <CardContent className="p-6">
-        <div className="flex flex-col lg:flex-row gap-6">
-          <div className="w-full lg:w-[180px]">
-            <div className="relative aspect-[9/16] mx-auto max-w-[180px]" onClick={handleVideoClick}>
+      <CardContent className="p-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="w-full md:w-[160px] shrink-0">
+            <div className="relative aspect-[9/16] h-[240px] md:h-auto mx-auto" onClick={handleVideoClick}>
               <video 
-                className="rounded-lg w-full h-full object-cover bg-black cursor-pointer"
+                ref={videoRef}
+                className="absolute inset-0 w-full h-full object-cover rounded-lg"
                 src={video.finalVideoUrl}
                 poster={`${video.finalVideoUrl}?poster=true`}
+                playsInline
+                preload="metadata"
+                onEnded={() => setIsPlaying(false)}
               />
               <div className="absolute inset-0 flex items-center justify-center">
                 <motion.div 
-                  className="w-12 h-12 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white"
+                  className={`w-12 h-12 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white ${isPlaying ? 'opacity-0' : 'opacity-100'}`}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -92,12 +95,12 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
           <div className="flex-1 flex flex-col justify-between">
             <div>
               <h3 className="text-lg font-medium text-gray-200 mb-2">Video Script</h3>
-              <div className="p-4 bg-zinc-800/70 rounded-lg text-sm text-gray-300 max-h-[120px] overflow-y-auto">
+              <div className="p-3 bg-zinc-800/70 rounded-lg text-sm text-gray-300 max-h-[120px] overflow-y-auto">
                 {video.scriptText}
               </div>
             </div>
             
-            <div className="flex items-center justify-between mt-4 pt-2 border-t border-zinc-800">
+            <div className="flex items-center justify-between mt-4 pt-3 border-t border-zinc-800">
               <div className="text-xs text-gray-500">
                 Created: {formatDate(video.timestamp)}
               </div>

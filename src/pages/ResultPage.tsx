@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { GenerationProgress } from "@/types";
 import { motion } from "framer-motion";
@@ -19,8 +19,9 @@ const ResultPage: React.FC = () => {
   const location = useLocation();
   const result = location.state?.result as GenerationProgress | undefined;
   const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
   
-  React.useEffect(() => {
+  useEffect(() => {
     if (!result || !result.finalVideoUrl) {
       toast.error("No result found. Redirecting to create page.");
       navigate("/create");
@@ -72,13 +73,12 @@ const ResultPage: React.FC = () => {
   };
 
   const handleVideoClick = () => {
-    const videoEl = document.querySelector('#result-video') as HTMLVideoElement;
-    if (videoEl) {
-      if (videoEl.paused) {
-        videoEl.play();
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play();
         setIsPlaying(true);
       } else {
-        videoEl.pause();
+        videoRef.current.pause();
         setIsPlaying(false);
       }
     }
@@ -107,21 +107,23 @@ const ResultPage: React.FC = () => {
           <CardContent className="p-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="flex flex-col items-center">
-                <div className="relative bg-black rounded-lg overflow-hidden shadow-lg">
-                  <div className="aspect-[9/16] max-w-[280px] w-full mx-auto">
+                <div className="relative bg-black rounded-lg overflow-hidden shadow-lg w-full max-w-[350px]">
+                  <div className="aspect-[9/16] w-full">
                     <video 
-                      id="result-video"
+                      ref={videoRef}
                       className="w-full h-full object-contain"
                       src={result.finalVideoUrl}
+                      playsInline
+                      preload="metadata"
+                      onEnded={() => setIsPlaying(false)}
                     />
                     <motion.div 
                       className="absolute inset-0 flex items-center justify-center cursor-pointer"
-                      whileHover={{ opacity: 1 }}
-                      initial={{ opacity: isPlaying ? 0 : 1 }}
+                      initial={{ opacity: 1 }}
                       animate={{ opacity: isPlaying ? 0 : 1 }}
                       onClick={handleVideoClick}
                     >
-                      <div className="w-16 h-16 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white">
+                      <div className="w-16 h-16 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white">
                         {isPlaying ? (
                           <Pause className="w-6 h-6" />
                         ) : (
@@ -132,10 +134,10 @@ const ResultPage: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="flex gap-3 mt-4">
+                <div className="flex gap-3 mt-4 w-full max-w-[350px]">
                   <Button
                     onClick={downloadVideo}
-                    className="bg-quicktok-orange hover:bg-quicktok-orange/90 text-white"
+                    className="bg-quicktok-orange hover:bg-quicktok-orange/90 text-white flex-1"
                   >
                     <Download className="mr-2 h-4 w-4" />
                     Download
@@ -145,7 +147,7 @@ const ResultPage: React.FC = () => {
                     <Button
                       onClick={shareVideo}
                       variant="outline"
-                      className="border-zinc-700 hover:bg-zinc-800"
+                      className="border-zinc-700 hover:bg-zinc-800 flex-1"
                     >
                       <Share className="mr-2 h-4 w-4" />
                       Share
