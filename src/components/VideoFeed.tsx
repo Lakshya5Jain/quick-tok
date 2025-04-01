@@ -19,11 +19,11 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="w-full max-w-3xl mx-auto">
+      <div className="w-full max-w-5xl mx-auto">
         {Array.from({ length: 3 }).map((_, i) => (
           <motion.div 
             key={i} 
-            className="w-full bg-zinc-900 rounded-xl p-5 border border-zinc-800 mb-6"
+            className="w-full bg-zinc-900/80 rounded-xl p-5 border border-zinc-800 mb-6"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: i * 0.1 }}
@@ -68,14 +68,12 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto">
-      <h2 className="text-2xl font-semibold text-gray-200 mb-6">Your Videos</h2>
-      
+    <div className="w-full max-w-5xl mx-auto">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="space-y-6 pb-12"
+        className="space-y-8 pb-12"
       >
         {videos.map((video, index) => (
           <motion.div

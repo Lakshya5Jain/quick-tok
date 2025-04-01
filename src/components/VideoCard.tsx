@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Video } from "@/types";
 import { formatDate } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -12,6 +12,8 @@ interface VideoCardProps {
 }
 
 const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+
   const downloadVideo = (e: React.MouseEvent) => {
     e.stopPropagation();
     
@@ -40,43 +42,60 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
     }
   };
 
+  const handleVideoClick = (e: React.MouseEvent<HTMLVideoElement>) => {
+    e.stopPropagation();
+    const videoEl = e.currentTarget;
+    
+    if (videoEl.paused) {
+      videoEl.play();
+      setIsPlaying(true);
+    } else {
+      videoEl.pause();
+      setIsPlaying(false);
+    }
+  };
+
   return (
     <motion.div 
-      className="bg-zinc-900 rounded-xl border border-zinc-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-zinc-700 overflow-hidden"
+      className="bg-zinc-900/90 rounded-xl border border-zinc-800 shadow-lg overflow-hidden"
       whileHover={{ y: -5, boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)" }}
       onClick={onClick}
       style={{ cursor: onClick ? 'pointer' : 'default' }}
     >
       <div className="flex flex-col md:flex-row">
-        <div className="video-container border-b md:border-b-0 md:border-r border-zinc-800 p-4 flex justify-center items-center">
-          <div className="relative aspect-[9/16] w-full max-w-[160px] overflow-hidden rounded-lg shadow-md">
-            <video 
-              className="absolute inset-0 w-full h-full object-cover bg-black"
-              poster={`${video.finalVideoUrl}?poster=true`}
-              onClick={(e) => {
-                e.stopPropagation();
-                const videoEl = e.currentTarget;
-                if (videoEl.paused) {
-                  videoEl.play();
-                } else {
-                  videoEl.pause();
-                }
-              }}
-            >
-              <source src={video.finalVideoUrl} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30 pointer-events-none" />
+        <div className="video-container md:border-r border-zinc-800 p-4 flex justify-center items-center">
+          <div className="relative max-w-[240px] mx-auto w-full">
+            <div className="aspect-[9/16] relative overflow-hidden rounded-lg shadow-md">
+              <video 
+                className="absolute inset-0 w-full h-full object-cover bg-black"
+                poster={`${video.finalVideoUrl}?poster=true`}
+                onClick={handleVideoClick}
+              >
+                <source src={video.finalVideoUrl} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+              {!isPlaying && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <motion.div 
+                    className="w-16 h-16 flex items-center justify-center rounded-full bg-quicktok-orange/80 backdrop-blur-sm text-white"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                  </motion.div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         
         <div className="flex-1 p-5 flex flex-col justify-between">
           <div className="space-y-3">
             <h3 className="text-lg font-medium text-gray-200">Video Script</h3>
-            <div className="p-4 bg-zinc-800 rounded-lg text-sm text-gray-300 max-h-[120px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
-              {video.scriptText.length > 250 
-                ? `${video.scriptText.substring(0, 250)}...` 
-                : video.scriptText}
+            <div className="p-4 bg-zinc-800/70 rounded-lg text-sm text-gray-300 max-h-[150px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+              {video.scriptText}
             </div>
           </div>
           
