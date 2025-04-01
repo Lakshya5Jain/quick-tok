@@ -3,7 +3,7 @@ import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { GenerationProgress } from "@/types";
 import { motion } from "framer-motion";
-import { Download, Share, X, Copy, Edit } from "lucide-react";
+import { Download, Share, Copy, Edit, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -79,27 +79,37 @@ const ResultPage: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <button
+        <motion.button
           onClick={handleExit}
           className="absolute top-4 right-4 p-2 rounded-full bg-zinc-800 text-gray-300 hover:bg-zinc-700 transition-colors z-10"
           aria-label="Exit"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
         >
           <X className="h-4 w-4" />
-        </button>
+        </motion.button>
 
         <Card className="bg-zinc-900/90 backdrop-blur-lg border-zinc-800 overflow-hidden shadow-2xl">
           <CardHeader className="pb-4">
-            <CardTitle className="text-2xl font-bold text-center text-white">Your Video is Ready!</CardTitle>
-            <CardDescription className="text-gray-400 text-center">
-              Check out your awesome TikTok-style video below
-            </CardDescription>
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+            >
+              <CardTitle className="text-2xl font-bold text-center text-white">Your Video is Ready!</CardTitle>
+              <CardDescription className="text-gray-400 text-center">
+                Check out your awesome TikTok-style video below
+              </CardDescription>
+            </motion.div>
           </CardHeader>
           
           <CardContent className="space-y-6">
             <motion.div 
               className="video-player mx-auto border border-zinc-700 rounded-xl overflow-hidden shadow-[0_0_25px_rgba(255,107,0,0.2)]"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
               whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.2 }}
             >
               <div className="relative aspect-[9/16] max-w-[280px] mx-auto overflow-hidden">
                 <video 
@@ -114,7 +124,12 @@ const ResultPage: React.FC = () => {
               </div>
             </motion.div>
             
-            <div className="space-y-3">
+            <motion.div 
+              className="space-y-3"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.4 }}
+            >
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium text-gray-300">Script</h3>
                 <Button 
@@ -126,10 +141,10 @@ const ResultPage: React.FC = () => {
                   <Copy className="h-4 w-4 mr-1" /> Copy
                 </Button>
               </div>
-              <div className="p-4 bg-zinc-800 rounded-lg text-sm text-gray-300 whitespace-pre-wrap border border-zinc-700">
+              <div className="p-4 bg-zinc-800 rounded-lg text-sm text-gray-300 whitespace-pre-wrap border border-zinc-700 max-h-[150px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700">
                 {result.scriptText}
               </div>
-            </div>
+            </motion.div>
           </CardContent>
           
           <CardFooter className="flex flex-wrap justify-center gap-4 mt-2 pb-6">

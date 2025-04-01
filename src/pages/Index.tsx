@@ -20,29 +20,32 @@ const Index = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingVideos, setIsLoadingVideos] = useState(true);
 
+  // Update activeTab when location state changes
   useEffect(() => {
-    // Update activeTab when location state changes
     if (location.state?.activeTab) {
       setActiveTab(location.state.activeTab);
     }
   }, [location.state]);
 
+  // Load videos when activeTab is "videos" or on component mount
   useEffect(() => {
     const loadVideos = async () => {
-      setIsLoadingVideos(true);
-      try {
-        const loadedVideos = await getVideos();
-        setVideos(loadedVideos);
-      } catch (error) {
-        console.error("Failed to load videos:", error);
-        toast.error("Failed to load past videos");
-      } finally {
-        setIsLoadingVideos(false);
+      if (activeTab === "videos" || isLoadingVideos) {
+        setIsLoadingVideos(true);
+        try {
+          const loadedVideos = await getVideos();
+          setVideos(loadedVideos);
+        } catch (error) {
+          console.error("Failed to load videos:", error);
+          toast.error("Failed to load past videos");
+        } finally {
+          setIsLoadingVideos(false);
+        }
       }
     };
     
     loadVideos();
-  }, []);
+  }, [activeTab]);
 
   const handleFormSubmit = async (formData: {
     scriptOption: ScriptOption;
