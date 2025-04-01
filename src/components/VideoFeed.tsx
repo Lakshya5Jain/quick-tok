@@ -18,7 +18,7 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-6 w-full">
+      <div className="grid grid-cols-1 gap-6 w-full max-w-3xl mx-auto">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="w-full bg-zinc-900 rounded-xl p-5 border border-zinc-800">
             <Skeleton className="h-32 w-full mb-4 bg-zinc-800" />
@@ -32,7 +32,7 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
   
   if (videos.length === 0) {
     return (
-      <div className="text-center py-16 px-4 bg-zinc-900/50 rounded-xl border border-zinc-800 backdrop-blur-sm">
+      <div className="text-center py-16 px-4 bg-zinc-900/50 rounded-xl border border-zinc-800 backdrop-blur-sm max-w-3xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -62,7 +62,7 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ staggerChildren: 0.1 }}
-      className="grid grid-cols-1 gap-4 w-full pb-8"
+      className="grid grid-cols-1 gap-6 w-full max-w-3xl mx-auto pb-12"
     >
       {videos.map((video) => (
         <VideoCard 

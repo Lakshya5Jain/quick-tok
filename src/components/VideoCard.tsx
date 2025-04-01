@@ -35,7 +35,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
 
   return (
     <motion.div 
-      className="mb-6 overflow-hidden bg-zinc-900 rounded-xl border border-zinc-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-zinc-700"
+      className="overflow-hidden bg-zinc-900 rounded-xl border border-zinc-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-zinc-700"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
