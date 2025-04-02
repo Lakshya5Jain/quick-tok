@@ -40,7 +40,6 @@ serve(async (req) => {
     console.log(`[${processId}] High Resolution:`, highResolution ? "Yes (640)" : "No (320)");
 
     // Ensure we have a valid voiceMedia URL that the AI API can access
-    // It should be an absolute URL that's publicly accessible
     let imageUrl;
     
     if (voiceMedia) {

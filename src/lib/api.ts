@@ -24,6 +24,7 @@ const updateProgressInStorage = (processId: string, progress: Partial<Generation
     const current = getProgressFromStorage(processId) || {
       progress: 0,
       status: "Starting...",
+      processId: processId,
     };
     const updated = { ...current, ...progress };
     localStorage.setItem(`progress_${processId}`, JSON.stringify(updated));
@@ -49,6 +50,28 @@ export async function uploadFile(file: File): Promise<string> {
     const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
     const fileName = `${uniqueId}.${fileExt}`;
     const filePath = `${fileName}`;
+    
+    // First, create the uploads bucket if it doesn't exist
+    try {
+      const { data: bucketData, error: bucketError } = await supabase.storage
+        .getBucket('uploads');
+        
+      if (bucketError && bucketError.message.includes('not found')) {
+        // Create the bucket if it doesn't exist
+        const { error: createError } = await supabase.storage
+          .createBucket('uploads', {
+            public: true
+          });
+          
+        if (createError) {
+          console.error("Error creating uploads bucket:", createError);
+          throw createError;
+        }
+      }
+    } catch (bucketCheckError) {
+      console.error("Error checking uploads bucket:", bucketCheckError);
+      // Continue anyway, the upload might still work
+    }
     
     const { data, error } = await supabase.storage
       .from('uploads')
@@ -122,7 +145,8 @@ export async function generateVideo(formData: {
     progress: 0,
     status: "Starting...",
     voiceId: formData.voiceId,
-    voiceMedia: formData.voiceMedia
+    voiceMedia: formData.voiceMedia,
+    processId: processId
   });
   
   setTimeout(() => processVideoGeneration(processId, formData), 0);
@@ -249,6 +273,11 @@ async function processVideoGeneration(processId: string, formData: {
       throw new Error(`Error starting AI video: ${startError.message}`);
     }
     
+    if (!startData || !startData.jobId) {
+      console.error("No job ID returned:", startData);
+      throw new Error("Failed to start AI video generation: No job ID returned");
+    }
+    
     const jobId = startData.jobId;
     console.log("AI video generation started with job ID:", jobId);
     
@@ -305,6 +334,11 @@ async function processVideoGeneration(processId: string, formData: {
     if (renderError) {
       console.error("Error creating final video:", renderError);
       throw new Error(`Error creating final video: ${renderError.message}`);
+    }
+    
+    if (!renderData || !renderData.renderId) {
+      console.error("No render ID returned:", renderData);
+      throw new Error("Failed to start final video rendering: No render ID returned");
     }
     
     const renderId = renderData.renderId;

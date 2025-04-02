@@ -54,16 +54,24 @@ const ResultPage: React.FC = () => {
 
   const downloadVideo = () => {
     try {
+      // Create an invisible anchor element
       const link = document.createElement('a');
       link.href = result.finalVideoUrl!;
       link.download = 'quick-tok-video.mp4';
+      link.style.display = 'none';
+      
+      // Append to the document, click it, and remove it
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      
       toast.success("Download started!");
     } catch (error) {
       console.error("Download error:", error);
       toast.error("Failed to download video");
+      
+      // Fallback: open in a new tab
+      window.open(result.finalVideoUrl, '_blank');
     }
   };
 
@@ -75,9 +83,10 @@ const ResultPage: React.FC = () => {
           text: 'Check out this video I created with Quick-Tok!',
           url: result.finalVideoUrl,
         });
+        toast.success("Video shared successfully!");
       } else {
         // Fallback for browsers that don't support Web Share API
-        navigator.clipboard.writeText(result.finalVideoUrl!);
+        await navigator.clipboard.writeText(result.finalVideoUrl!);
         toast.success("Video URL copied to clipboard!");
       }
     } catch (error) {
@@ -86,7 +95,14 @@ const ResultPage: React.FC = () => {
         // User cancelled share operation
         return;
       }
-      toast.error("Failed to share video");
+      
+      // Try the clipboard fallback if share fails for other reasons
+      try {
+        await navigator.clipboard.writeText(result.finalVideoUrl!);
+        toast.success("Video URL copied to clipboard!");
+      } catch (clipboardError) {
+        toast.error("Failed to share video");
+      }
     }
   };
 
@@ -272,6 +288,10 @@ const ResultPage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+      </div>
+      
+      <div className="text-center text-xs text-gray-500 mt-4 relative z-10">
+        Powered by Creatomate and Lemon Slice
       </div>
     </div>
   );
