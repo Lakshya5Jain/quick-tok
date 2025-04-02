@@ -20,28 +20,43 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
   const downloadVideo = (e: React.MouseEvent) => {
     e.stopPropagation();
     
-    const link = document.createElement('a');
-    link.href = video.finalVideoUrl;
-    link.download = `quick-tok-${video.id}.mp4`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast.success("Download started!");
+    try {
+      const link = document.createElement('a');
+      link.href = video.finalVideoUrl;
+      link.download = `quick-tok-${video.id}.mp4`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("Download started!");
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download video");
+    }
   };
 
-  const shareVideo = (e: React.MouseEvent) => {
+  const shareVideo = async (e: React.MouseEvent) => {
     e.stopPropagation();
     
-    if (navigator.share) {
-      navigator.share({
-        title: 'My Quick-Tok Video',
-        text: 'Check out this video I created with Quick-Tok!',
-        url: video.finalVideoUrl,
-      })
-      .catch((error) => console.log('Error sharing', error));
-    } else {
-      toast.info("Sharing not supported on this device");
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'My Quick-Tok Video',
+          text: 'Check out this video I created with Quick-Tok!',
+          url: video.finalVideoUrl,
+        });
+      } else {
+        // Fallback for browsers that don't support navigator.share
+        navigator.clipboard.writeText(video.finalVideoUrl);
+        toast.success("Video URL copied to clipboard!");
+      }
+    } catch (error) {
+      console.error("Share error:", error);
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        // User cancelled share operation
+        return;
+      }
+      toast.error("Failed to share video");
     }
   };
 
@@ -49,8 +64,15 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
     e.stopPropagation();
     if (videoRef.current) {
       if (videoRef.current.paused) {
-        videoRef.current.play();
-        setIsPlaying(true);
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => setIsPlaying(true))
+            .catch(error => {
+              console.error("Video play error:", error);
+              toast.error("Failed to play video");
+            });
+        }
       } else {
         videoRef.current.pause();
         setIsPlaying(false);
@@ -78,7 +100,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
               />
               <div className="absolute inset-0 flex items-center justify-center">
                 <motion.div 
-                  className={`w-12 h-12 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white ${isPlaying ? 'opacity-0' : 'opacity-100'}`}
+                  className={`w-12 h-12 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-sm text-white ${isPlaying ? 'opacity-0' : 'opacity-100'}`}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -101,31 +123,29 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
             </div>
             
             <div className="flex items-center justify-between mt-4 pt-3 border-t border-zinc-800">
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-gray-400">
                 Created: {formatDate(video.timestamp)}
               </div>
               <div className="flex gap-2">
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="text-gray-300 border-zinc-800 hover:bg-zinc-800"
+                  className="text-gray-300 border-zinc-800 hover:bg-zinc-800 hover:text-white"
                   onClick={downloadVideo}
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Download
                 </Button>
                 
-                {navigator.share && (
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="text-gray-300 border-zinc-800 hover:bg-zinc-800"
-                    onClick={shareVideo}
-                  >
-                    <Share className="h-4 w-4 mr-2" />
-                    Share
-                  </Button>
-                )}
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="text-gray-300 border-zinc-800 hover:bg-zinc-800 hover:text-white"
+                  onClick={shareVideo}
+                >
+                  <Share className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
               </div>
             </div>
           </div>

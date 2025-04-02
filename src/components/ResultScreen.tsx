@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { GenerationProgress } from "@/types";
 import { useNavigate } from "react-router-dom";
 
@@ -11,12 +11,14 @@ interface ResultScreenProps {
 const ResultScreen: React.FC<ResultScreenProps> = ({ result, onClose }) => {
   const navigate = useNavigate();
   
-  React.useEffect(() => {
-    // Redirect to the dedicated result page
-    navigate("/result", { 
-      state: { result },
-      replace: true
-    });
+  useEffect(() => {
+    // Redirect to the dedicated result page with the data
+    if (result && result.finalVideoUrl) {
+      navigate("/result", { 
+        state: { result },
+        replace: true
+      });
+    }
   }, [navigate, result]);
 
   // Return null as we're redirecting
