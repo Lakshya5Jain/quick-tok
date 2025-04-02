@@ -118,46 +118,62 @@ const LoadingPage: React.FC = () => {
   const estimatedTimeInSeconds = wordCount > 0 ? 30 + (wordCount * 5) : 0;
   const remainingTime = Math.max(0, estimatedTimeInSeconds - elapsedTime);
 
+  // Generate bubbles for the lava lamp effect
+  const bubbles = Array.from({ length: 12 }).map((_, i) => ({
+    id: i,
+    size: 50 + Math.random() * 180,
+    duration: 15 + Math.random() * 25,
+    delay: Math.random() * 5,
+    initialX: Math.random() * 100,
+    initialY: 50 + Math.random() * 40,
+    color: i % 2 === 0 ? 
+      `rgba(255, ${107 + Math.floor(Math.random() * 50)}, ${Math.floor(Math.random() * 80)}, 0.${4 + Math.floor(Math.random() * 4)})` : 
+      `rgba(${200 + Math.floor(Math.random() * 55)}, ${70 + Math.floor(Math.random() * 30)}, 0, 0.${4 + Math.floor(Math.random() * 4)})`
+  }));
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black overflow-hidden relative">
-      {/* Lava lamp effect background */}
-      <div className="absolute inset-0 overflow-hidden opacity-20 pointer-events-none">
-        {Array.from({ length: 8 }).map((_, i) => (
+    <div className="min-h-screen overflow-hidden relative bg-gradient-to-b from-black via-zinc-900 to-black">
+      {/* Improved lava lamp effect background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-black opacity-80"></div>
+        
+        {bubbles.map((bubble) => (
           <motion.div
-            key={i}
-            className="absolute rounded-full bg-quicktok-orange"
-            initial={{ 
-              x: Math.random() * 100, 
-              y: Math.random() * 100,
-              width: 50 + Math.random() * 100,
-              height: 50 + Math.random() * 100
+            key={bubble.id}
+            className="absolute rounded-full blur-xl"
+            style={{
+              backgroundColor: bubble.color,
+              width: bubble.size,
+              height: bubble.size,
+              left: `${bubble.initialX}%`,
+              top: `${bubble.initialY}%`,
             }}
-            animate={{ 
+            animate={{
               x: [
-                Math.random() * window.innerWidth, 
-                Math.random() * window.innerWidth,
-                Math.random() * window.innerWidth
+                0,
+                Math.random() * 200 - 100,
+                Math.random() * 200 - 100,
+                0
               ],
               y: [
-                Math.random() * window.innerHeight,
-                Math.random() * window.innerHeight,
-                Math.random() * window.innerHeight
+                0,
+                -300 - Math.random() * 300,
+                -600 - Math.random() * 200,
+                -900
               ],
-              width: [
-                50 + Math.random() * 100,
-                100 + Math.random() * 150,
-                50 + Math.random() * 100
-              ],
-              height: [
-                50 + Math.random() * 100,
-                100 + Math.random() * 150,
-                50 + Math.random() * 100
+              scale: [
+                1,
+                1 + Math.random() * 0.3,
+                1 - Math.random() * 0.2,
+                1
               ]
             }}
-            transition={{ 
-              repeat: Infinity, 
-              duration: 15 + Math.random() * 20,
-              ease: "easeInOut"
+            transition={{
+              repeat: Infinity,
+              duration: bubble.duration,
+              delay: bubble.delay,
+              ease: "easeInOut",
+              times: [0, 0.3, 0.7, 1]
             }}
           />
         ))}
@@ -165,7 +181,7 @@ const LoadingPage: React.FC = () => {
 
       <div className="flex items-center justify-center p-4 min-h-screen relative z-10">
         <motion.div 
-          className="relative max-w-md w-full p-8 bg-zinc-900/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-zinc-800"
+          className="relative max-w-md w-full p-8 bg-zinc-900/70 backdrop-blur-xl rounded-2xl shadow-2xl border border-zinc-800/80"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
@@ -189,7 +205,7 @@ const LoadingPage: React.FC = () => {
               className="mb-6 relative h-20 w-20"
             >
               <motion.div
-                className="absolute w-16 h-16 bg-gradient-to-br from-orange-500 to-rose-600 rounded-full shadow-lg"
+                className="absolute w-16 h-16 bg-gradient-to-br from-quicktok-orange to-rose-600 rounded-full shadow-lg"
                 animate={{
                   y: [0, -30, 0],
                   scale: [1, 0.9, 1],

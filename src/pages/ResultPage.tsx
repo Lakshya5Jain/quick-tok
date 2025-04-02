@@ -197,7 +197,7 @@ const ResultPage: React.FC = () => {
                   <Button
                     onClick={shareVideo}
                     variant="outline"
-                    className="border-zinc-700 bg-zinc-800/50 hover:bg-zinc-800 text-gray-200 flex-1"
+                    className="bg-zinc-800 text-gray-300 border-zinc-700 hover:bg-quicktok-orange hover:text-white hover:border-quicktok-orange transition-colors flex-1"
                   >
                     <Share className="mr-2 h-4 w-4" />
                     Share
@@ -217,7 +217,7 @@ const ResultPage: React.FC = () => {
                     variant="ghost" 
                     size="sm" 
                     onClick={copyScriptToClipboard}
-                    className="text-gray-400 hover:text-white hover:bg-zinc-800"
+                    className="text-gray-400 hover:bg-zinc-800 hover:text-white"
                   >
                     <Copy className="h-4 w-4 mr-1" /> Copy
                   </Button>
@@ -229,7 +229,7 @@ const ResultPage: React.FC = () => {
                 
                 <Button
                   onClick={createAnother}
-                  className="w-full mt-6 bg-green-900/30 text-green-300 border border-green-800 hover:bg-green-800/50"
+                  className="w-full mt-6 bg-zinc-800 text-gray-300 border-zinc-700 hover:bg-quicktok-orange hover:text-white hover:border-quicktok-orange transition-colors"
                 >
                   <Edit className="mr-2 h-4 w-4" />
                   Create Another Video

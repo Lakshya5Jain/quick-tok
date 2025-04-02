@@ -130,7 +130,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="text-gray-300 border-zinc-800 hover:bg-zinc-800 hover:text-white"
+                  className="bg-zinc-800 text-gray-300 border-zinc-700 hover:bg-quicktok-orange hover:text-white hover:border-quicktok-orange transition-colors"
                   onClick={downloadVideo}
                 >
                   <Download className="h-4 w-4 mr-2" />
@@ -140,7 +140,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onClick }) => {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="text-gray-300 border-zinc-800 hover:bg-zinc-800 hover:text-white"
+                  className="bg-zinc-800 text-gray-300 border-zinc-700 hover:bg-quicktok-orange hover:text-white hover:border-quicktok-orange transition-colors"
                   onClick={shareVideo}
                 >
                   <Share className="h-4 w-4 mr-2" />
