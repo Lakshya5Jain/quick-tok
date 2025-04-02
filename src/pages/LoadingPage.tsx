@@ -118,62 +118,37 @@ const LoadingPage: React.FC = () => {
   const estimatedTimeInSeconds = wordCount > 0 ? 30 + (wordCount * 5) : 0;
   const remainingTime = Math.max(0, estimatedTimeInSeconds - elapsedTime);
 
-  // Generate bubbles for the lava lamp effect
-  const bubbles = Array.from({ length: 12 }).map((_, i) => ({
-    id: i,
-    size: 50 + Math.random() * 180,
-    duration: 15 + Math.random() * 25,
-    delay: Math.random() * 5,
-    initialX: Math.random() * 100,
-    initialY: 50 + Math.random() * 40,
-    color: i % 2 === 0 ? 
-      `rgba(255, ${107 + Math.floor(Math.random() * 50)}, ${Math.floor(Math.random() * 80)}, 0.${4 + Math.floor(Math.random() * 4)})` : 
-      `rgba(${200 + Math.floor(Math.random() * 55)}, ${70 + Math.floor(Math.random() * 30)}, 0, 0.${4 + Math.floor(Math.random() * 4)})`
-  }));
-
   return (
     <div className="min-h-screen overflow-hidden relative bg-gradient-to-b from-black via-zinc-900 to-black">
-      {/* Improved lava lamp effect background */}
+      {/* Improved lava lamp effect background - using fixed positions and longer transitions */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute inset-0 bg-black opacity-80"></div>
         
-        {bubbles.map((bubble) => (
+        {/* Fewer bubbles with longer, smoother transitions */}
+        {Array.from({ length: 8 }).map((_, i) => (
           <motion.div
-            key={bubble.id}
+            key={i}
             className="absolute rounded-full blur-xl"
             style={{
-              backgroundColor: bubble.color,
-              width: bubble.size,
-              height: bubble.size,
-              left: `${bubble.initialX}%`,
-              top: `${bubble.initialY}%`,
+              backgroundColor: i % 2 === 0 
+                ? `rgba(255, ${107 + Math.floor(Math.random() * 30)}, ${Math.floor(Math.random() * 60)}, 0.${5 + Math.floor(Math.random() * 3)})` 
+                : `rgba(${220 + Math.floor(Math.random() * 35)}, ${100 + Math.floor(Math.random() * 20)}, 0, 0.${5 + Math.floor(Math.random() * 3)})`,
+              width: 120 + Math.random() * 200,
+              height: 120 + Math.random() * 200,
+              left: `${20 + (i * 8) + Math.random() * 40}%`,
+              bottom: `-${50 + Math.random() * 10}%`,
             }}
-            animate={{
-              x: [
-                0,
-                Math.random() * 200 - 100,
-                Math.random() * 200 - 100,
-                0
-              ],
-              y: [
-                0,
-                -300 - Math.random() * 300,
-                -600 - Math.random() * 200,
-                -900
-              ],
-              scale: [
-                1,
-                1 + Math.random() * 0.3,
-                1 - Math.random() * 0.2,
-                1
-              ]
+            initial={{ y: 0 }}
+            animate={{ 
+              y: [0, -500 - Math.random() * 500],
+              x: [0, Math.sin(i) * 40],
+              scale: [1, 1 + Math.random() * 0.2, 1 - Math.random() * 0.1, 1]
             }}
             transition={{
               repeat: Infinity,
-              duration: bubble.duration,
-              delay: bubble.delay,
-              ease: "easeInOut",
-              times: [0, 0.3, 0.7, 1]
+              duration: 20 + Math.random() * 10, // Much longer durations
+              ease: "linear",
+              delay: i * 2, // Staggered start times
             }}
           />
         ))}
@@ -200,35 +175,23 @@ const LoadingPage: React.FC = () => {
             transition={{ delay: 0.2 }}
             className="flex flex-col items-center"
           >
-            {/* Bouncing ball animation */}
+            {/* Improved pulsing glow instead of bouncing ball */}
             <motion.div 
-              className="mb-6 relative h-20 w-20"
+              className="mb-6 relative h-16 w-16 flex items-center justify-center"
             >
               <motion.div
-                className="absolute w-16 h-16 bg-gradient-to-br from-quicktok-orange to-rose-600 rounded-full shadow-lg"
+                className="absolute inset-0 bg-gradient-to-br from-quicktok-orange to-rose-600 rounded-full opacity-80"
                 animate={{
-                  y: [0, -30, 0],
-                  scale: [1, 0.9, 1],
-                  borderRadius: ["50%", "30%", "50%"]
+                  opacity: [0.7, 0.9, 0.7],
+                  scale: [1, 1.2, 1],
                 }}
                 transition={{
-                  duration: 1.5,
+                  duration: 2,
                   repeat: Infinity,
                   ease: "easeInOut"
                 }}
               />
-              <motion.div
-                className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-gray-700 rounded-full opacity-60"
-                animate={{
-                  width: [10, 16, 10],
-                  opacity: [0.6, 0.4, 0.6]
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              />
+              <div className="absolute inset-0 bg-gradient-to-br from-quicktok-orange to-rose-600 rounded-full" />
             </motion.div>
 
             <h2 className="text-2xl font-bold text-center mb-2 text-quicktok-orange">Processing Your Video</h2>
@@ -284,8 +247,7 @@ const LoadingPage: React.FC = () => {
             </div>
             
             <p className="text-xs text-gray-500 mt-4 text-center">
-              Powered by Creatomate API for Automated Video Generation<br />
-              and Lemon Slice for Talking Avatar
+              Powered by Creatomate and Lemon Slice
             </p>
           </motion.div>
         </motion.div>

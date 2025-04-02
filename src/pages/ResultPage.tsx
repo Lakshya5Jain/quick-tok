@@ -129,8 +129,42 @@ const ResultPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black py-12 px-4">
-      <div className="container max-w-5xl mx-auto">
+    <div className="min-h-screen overflow-hidden relative bg-gradient-to-b from-black via-zinc-900 to-black">
+      {/* Lava lamp background effect */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-black opacity-80"></div>
+        
+        {/* Smooth lava lamp bubbles */}
+        {Array.from({ length: 8 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full blur-xl"
+            style={{
+              backgroundColor: i % 2 === 0 
+                ? `rgba(255, ${107 + Math.floor(Math.random() * 30)}, ${Math.floor(Math.random() * 60)}, 0.${5 + Math.floor(Math.random() * 3)})` 
+                : `rgba(${220 + Math.floor(Math.random() * 35)}, ${100 + Math.floor(Math.random() * 20)}, 0, 0.${5 + Math.floor(Math.random() * 3)})`,
+              width: 120 + Math.random() * 200,
+              height: 120 + Math.random() * 200,
+              left: `${20 + (i * 8) + Math.random() * 40}%`,
+              bottom: `-${50 + Math.random() * 10}%`,
+            }}
+            initial={{ y: 0 }}
+            animate={{ 
+              y: [0, -500 - Math.random() * 500],
+              x: [0, Math.sin(i) * 40],
+              scale: [1, 1 + Math.random() * 0.2, 1 - Math.random() * 0.1, 1]
+            }}
+            transition={{
+              repeat: Infinity,
+              duration: 20 + Math.random() * 10,
+              ease: "linear",
+              delay: i * 2,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="container max-w-5xl mx-auto py-12 px-4 relative z-10">
         <Card className="bg-zinc-900/90 border-zinc-800 overflow-hidden shadow-2xl">
           <Button
             onClick={handleExit}
@@ -188,7 +222,7 @@ const ResultPage: React.FC = () => {
                 <div className="flex gap-3 mt-4 w-full max-w-[350px]">
                   <Button
                     onClick={downloadVideo}
-                    className="bg-quicktok-orange hover:bg-quicktok-orange/90 text-white flex-1"
+                    className="bg-zinc-800 hover:bg-quicktok-orange text-gray-200 hover:text-white transition-colors flex-1"
                   >
                     <Download className="mr-2 h-4 w-4" />
                     Download
