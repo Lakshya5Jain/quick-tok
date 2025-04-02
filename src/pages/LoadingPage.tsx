@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { GenerationProgress } from "@/types";
@@ -113,9 +112,8 @@ const LoadingPage: React.FC = () => {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  // Calculate estimated time based on word count: 30 seconds + 5 seconds per word
-  // Only show this after we have the script (wordCount > 0)
-  const estimatedTimeInSeconds = wordCount > 0 ? 30 + (wordCount * 5) : 0;
+  // Updated formula: 45 seconds + 7 seconds per word (instead of 30 + 5)
+  const estimatedTimeInSeconds = wordCount > 0 ? 45 + (wordCount * 7) : 0;
   const remainingTime = Math.max(0, estimatedTimeInSeconds - elapsedTime);
 
   return (
