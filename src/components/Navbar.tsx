@@ -1,10 +1,11 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { FilmIcon, VideoIcon, HomeIcon } from "lucide-react";
+import { FilmIcon, VideoIcon, HomeIcon, CreditCard, LayoutDashboard } from "lucide-react";
 import Logo from "./Logo";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useCredits } from "@/context/CreditsContext";
 import { Button } from "@/components/ui/button";
 
 interface NavbarProps {
@@ -14,6 +15,7 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
   const { signOut, user } = useAuth();
+  const { credits } = useCredits();
   const navigate = useNavigate();
 
   return (
@@ -48,6 +50,33 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
             <span>My Videos</span>
           </motion.button>
         </div>
+
+        {user && (
+          <>
+            <Button 
+              variant="ghost" 
+              className="text-gray-300 hover:text-white"
+              onClick={() => navigate("/dashboard")}
+            >
+              <LayoutDashboard className="w-4 h-4 mr-2" />
+              Dashboard
+              {credits !== null && (
+                <span className="ml-2 bg-quicktok-orange/20 text-quicktok-orange text-xs px-2 py-0.5 rounded-full">
+                  {credits}
+                </span>
+              )}
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              className="text-gray-300 hover:text-white"
+              onClick={() => navigate("/subscription")}
+            >
+              <CreditCard className="w-4 h-4 mr-2" />
+              Subscription
+            </Button>
+          </>
+        )}
         
         <Button 
           variant="ghost" 
