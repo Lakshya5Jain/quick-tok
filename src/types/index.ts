@@ -15,7 +15,7 @@ export interface VoiceOption {
 export interface GenerationProgress {
   progress: number;
   status: string;
-  processId?: string; // Add processId property
+  processId?: string;
   finalVideoUrl?: string;
   scriptText?: string;
   aiVideoUrl?: string;
@@ -46,9 +46,9 @@ export interface Subscription {
   plan_type: string;
   monthly_credits: number;
   current_period_end: string;
-  current_period_start?: string;
+  current_period_start: string;
   active: boolean;
-  stripe_subscription_id?: string;
+  stripe_subscription_id: string;
   stripe_customer_id?: string;
   created_at?: string;
   updated_at?: string;
