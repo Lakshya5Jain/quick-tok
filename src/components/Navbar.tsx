@@ -7,6 +7,14 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useCredits } from "@/context/CreditsContext";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface NavbarProps {
   activeTab: "generate" | "videos";
@@ -15,7 +23,7 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
   const { signOut, user } = useAuth();
-  const { credits } = useCredits();
+  const { credits, subscription } = useCredits();
   const navigate = useNavigate();
 
   return (
@@ -67,14 +75,35 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
               )}
             </Button>
             
-            <Button 
-              variant="ghost" 
-              className="text-gray-300 hover:text-white"
-              onClick={() => navigate("/subscription")}
-            >
-              <CreditCard className="w-4 h-4 mr-2" />
-              Subscription
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="text-gray-300 hover:text-white"
+                >
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Subscription
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
+                <DropdownMenuLabel className="text-zinc-400">Subscription Options</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-zinc-800" />
+                <DropdownMenuItem 
+                  className="text-white hover:bg-zinc-800 cursor-pointer" 
+                  onClick={() => navigate("/subscription")}
+                >
+                  View Plans
+                </DropdownMenuItem>
+                {subscription?.active && (
+                  <DropdownMenuItem 
+                    className="text-white hover:bg-zinc-800 cursor-pointer" 
+                    onClick={() => navigate("/subscription-management")}
+                  >
+                    Manage Subscription
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </>
         )}
         

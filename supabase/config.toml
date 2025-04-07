@@ -69,3 +69,5 @@ trusted_cors_urls = ["https://*"]
 [functions]
 [functions.webhook-stripe]
 verify_jwt = false
+[functions.cancel-subscription]
+verify_jwt = true

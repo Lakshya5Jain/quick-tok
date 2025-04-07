@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check, ChevronRight, CreditCard, Sparkles } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, CreditCard, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useCredits } from "@/context/CreditsContext";
@@ -104,6 +104,26 @@ const SubscriptionPlans = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black px-4 pb-16">
       <div className="container max-w-6xl mx-auto pt-8">
+        <div className="flex justify-between items-center mb-8">
+          <Button
+            variant="ghost"
+            className="text-zinc-400 hover:text-white"
+            onClick={() => navigate(-1)}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" /> Back
+          </Button>
+          
+          {isSubscribed && (
+            <Button
+              onClick={() => navigate("/subscription-management")}
+              variant="outline"
+              className="border-zinc-700 hover:bg-zinc-800"
+            >
+              Manage Subscription
+            </Button>
+          )}
+        </div>
+
         <div className="text-center mb-12">
           <motion.h1
             initial={{ opacity: 0, y: -10 }}
