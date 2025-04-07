@@ -40,3 +40,17 @@ export interface HowItWorksStep {
   title: string;
   description: string;
 }
+
+export interface Subscription {
+  id: string;
+  plan_type: string;
+  monthly_credits: number;
+  current_period_end: string;
+  current_period_start?: string;
+  active: boolean;
+  stripe_subscription_id?: string;
+  stripe_customer_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  user_id?: string;
+}

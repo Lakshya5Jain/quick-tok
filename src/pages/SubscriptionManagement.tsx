@@ -27,7 +27,7 @@ const SubscriptionManagement = () => {
   };
 
   const cancelSubscription = async () => {
-    if (!user || !subscription) return;
+    if (!user || !subscription || !subscription.stripe_subscription_id) return;
     
     setIsLoading(true);
     
