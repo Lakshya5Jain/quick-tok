@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -27,7 +26,7 @@ const SubscriptionManagement = () => {
   };
 
   const cancelSubscription = async () => {
-    if (!user || !subscription || !subscription.stripe_subscription_id) return;
+    if (!user || !subscription) return;
     
     setIsLoading(true);
     
