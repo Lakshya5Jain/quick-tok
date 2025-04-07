@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -26,7 +27,10 @@ const SubscriptionManagement = () => {
   };
 
   const cancelSubscription = async () => {
-    if (!user || !subscription) return;
+    if (!user || !subscription || !subscription.stripe_subscription_id) {
+      toast.error("No valid subscription found to cancel");
+      return;
+    }
     
     setIsLoading(true);
     
