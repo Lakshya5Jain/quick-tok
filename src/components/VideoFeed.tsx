@@ -17,7 +17,6 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
   onVideoClick,
   isLoading = false 
 }) => {
-  // Return loading state
   if (isLoading) {
     return (
       <div className="grid gap-4">
@@ -31,8 +30,7 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
     );
   }
   
-  // Return empty state
-  if (!videos || videos.length === 0) {
+  if (videos.length === 0) {
     return (
       <motion.div 
         className="text-center py-16 px-8 bg-zinc-900/50 rounded-xl border border-zinc-800 backdrop-blur-sm"
@@ -49,7 +47,6 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
     );
   }
 
-  // Return videos
   return (
     <div className="grid gap-4">
       {videos.map((video, index) => (
