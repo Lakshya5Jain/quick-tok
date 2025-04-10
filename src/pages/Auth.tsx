@@ -53,6 +53,7 @@ const Auth = () => {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Authentication failed";
+      console.error("Auth error:", errorMessage);
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);

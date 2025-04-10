@@ -27,13 +27,10 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Enhanced error handling for auth state changes
     const handleAuthStateChange = (event: string, currentSession: Session | null) => {
       console.log("Auth state changed:", event, currentSession?.user?.email);
       
       if (event === 'SIGNED_OUT') {
-        // Only update state if it was an intentional signout
-        // This prevents unexpected logouts during API calls
         if (authError) {
           console.log("Auth error detected:", authError);
           toast.error(`Authentication error: ${authError}`);
@@ -46,14 +43,18 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       setIsLoading(false);
     };
 
-    // Set up auth state listener FIRST
+    // First establish the listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
-    // THEN check for existing session
+    // Then check the current session state
     supabase.auth.getSession().then(({ data: { session: currentSession }, error }) => {
+      console.log("Initial session check:", currentSession?.user?.email || "No session");
+      
       if (error) {
         console.error("Error getting session:", error);
         setAuthError(error.message);
+        setIsLoading(false);
+        return;
       }
       
       setSession(currentSession);
@@ -61,18 +62,8 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       setIsLoading(false);
     });
 
-    // Refresh session periodically to prevent token expiration
-    const intervalId = setInterval(() => {
-      if (session) {
-        supabase.auth.refreshSession().catch(error => {
-          console.error("Error refreshing session:", error);
-        });
-      }
-    }, 5 * 60 * 1000); // Refresh every 5 minutes
-
     return () => {
       subscription.unsubscribe();
-      clearInterval(intervalId);
     };
   }, [authError]);
 
