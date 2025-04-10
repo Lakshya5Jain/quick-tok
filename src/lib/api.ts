@@ -468,26 +468,48 @@ export async function checkProgress(processId: string): Promise<GenerationProgre
 
 export async function getVideos(): Promise<Video[]> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    const userId = user?.id;
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
-    const { data, error } = await supabase.functions.invoke('get-videos', {
-      body: { userId }
-    });
-    
-    if (error) {
-      console.error("Error fetching videos:", error);
+    if (userError) {
+      console.error("Auth error when fetching videos:", userError);
       return mockVideos;
     }
     
-    return data.videos.map((video: any) => ({
-      id: video.id,
-      finalVideoUrl: video.final_video_url,
-      scriptText: video.script_text,
-      timestamp: new Date(video.timestamp).getTime()
-    }));
+    const userId = user?.id;
+    
+    if (!userId) {
+      console.warn("No user ID found, returning mock videos");
+      return mockVideos;
+    }
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('get-videos', {
+        body: { userId }
+      });
+      
+      if (error) {
+        console.error("Error fetching videos from Supabase function:", error);
+        return mockVideos;
+      }
+      
+      if (!data || !data.videos || !Array.isArray(data.videos)) {
+        console.error("Invalid response format from get-videos function");
+        return mockVideos;
+      }
+      
+      return data.videos.map((video: any) => ({
+        id: video.id || `mock-${Date.now()}`,
+        finalVideoUrl: video.final_video_url,
+        scriptText: video.script_text || "No script text available",
+        timestamp: video.timestamp ? new Date(video.timestamp).getTime() : Date.now()
+      }));
+    } catch (funcError) {
+      console.error("Exception when calling Supabase function:", funcError);
+      return mockVideos;
+    }
   } catch (error) {
-    console.error("Error in getVideos:", error);
+    console.error("Unexpected error in getVideos:", error);
     return mockVideos;
   }
 }

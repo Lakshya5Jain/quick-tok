@@ -1,57 +1,65 @@
-
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import GeneratorForm from "@/components/GeneratorForm";
 import VideoFeed from "@/components/VideoFeed";
-import { ScriptOption, Video } from "@/types";
-import { generateVideo, getVideos } from "@/lib/api";
+import LoadingScreen from "@/components/LoadingScreen";
+import ResultScreen from "@/components/ResultScreen";
+import { GenerationProgress, ScriptOption, Video } from "@/types";
+import { generateVideo, checkProgress, getVideos } from "@/lib/api";
 import { toast } from "sonner";
 import { voiceOptions } from "@/data/mockData";
 
 const Index = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [activeTab, setActiveTab] = useState<"generate" | "videos">(
-    location.state?.activeTab || "generate"
-  );
+  const [activeTab, setActiveTab] = useState<"generate" | "videos">("generate");
   const [videos, setVideos] = useState<Video[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingVideos, setIsLoadingVideos] = useState(false);
-  const [hasError, setHasError] = useState(false);
+  const [currentProcessId, setCurrentProcessId] = useState<string | null>(null);
+  const [progress, setProgress] = useState<GenerationProgress | null>(null);
+  const [showResult, setShowResult] = useState(false);
 
-  // Update activeTab when location state changes
-  useEffect(() => {
-    if (location.state?.activeTab) {
-      setActiveTab(location.state.activeTab);
-    }
-  }, [location.state]);
-
-  // Load videos only when the tab changes to "videos"
+  // Load videos on mount
   useEffect(() => {
     const loadVideos = async () => {
-      if (activeTab === "videos") {
-        setIsLoadingVideos(true);
-        setHasError(false);
-        
-        try {
-          console.log("Fetching videos...");
-          const loadedVideos = await getVideos();
-          console.log(`Fetched ${loadedVideos.length} videos`);
-          setVideos(loadedVideos || []);
-        } catch (error) {
-          console.error("Failed to load videos:", error);
-          setHasError(true);
-          toast.error("Failed to load videos");
-        } finally {
-          setIsLoadingVideos(false);
-        }
+      try {
+        const loadedVideos = await getVideos();
+        setVideos(loadedVideos);
+      } catch (error) {
+        console.error("Failed to load videos:", error);
+        toast.error("Failed to load past videos");
       }
     };
     
     loadVideos();
-  }, [activeTab]);
+  }, []);
+
+  // Poll for progress updates when a process is running
+  useEffect(() => {
+    if (!currentProcessId) return;
+    
+    const pollProgress = async () => {
+      try {
+        const progressData = await checkProgress(currentProcessId);
+        setProgress(progressData);
+        
+        if (progressData.progress >= 100) {
+          setIsSubmitting(false);
+          setShowResult(true);
+          setCurrentProcessId(null);
+        } else {
+          // Continue polling
+          setTimeout(pollProgress, 1000);
+        }
+      } catch (error) {
+        console.error("Error checking progress:", error);
+        toast.error("Error checking progress");
+        setIsSubmitting(false);
+        setCurrentProcessId(null);
+      }
+    };
+    
+    pollProgress();
+  }, [currentProcessId]);
 
   const handleFormSubmit = async (formData: {
     scriptOption: ScriptOption;
@@ -67,6 +75,7 @@ const Index = () => {
     setIsSubmitting(true);
     
     try {
+      // Start video generation with the form data directly including files
       const processId = await generateVideo({
         scriptOption: formData.scriptOption,
         topic: formData.topic,
@@ -79,7 +88,11 @@ const Index = () => {
         highResolution: formData.highResolution
       });
       
-      navigate("/loading", { state: { processId } });
+      setCurrentProcessId(processId);
+      setProgress({
+        progress: 0,
+        status: "Starting...",
+      });
     } catch (error) {
       console.error("Error starting video generation:", error);
       toast.error("Failed to start video generation");
@@ -87,22 +100,15 @@ const Index = () => {
     }
   };
 
-  const handleVideoClick = (video: Video) => {
-    navigate("/result", { 
-      state: { 
-        result: {
-          finalVideoUrl: video.finalVideoUrl,
-          scriptText: video.scriptText,
-          progress: 100,
-          status: "Complete"
-        }
-      }
-    });
+  const handleResultClose = () => {
+    setShowResult(false);
+    // Refresh videos list
+    getVideos().then(setVideos);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black px-4 pb-16">
-      <div className="container max-w-6xl mx-auto pt-8">
+    <div className="min-h-screen bg-gradient-primary px-4 pb-16">
+      <div className="max-w-6xl mx-auto pt-8">
         <Navbar 
           activeTab={activeTab} 
           onTabChange={setActiveTab}
@@ -131,46 +137,30 @@ const Index = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.3 }}
-              className="w-full"
+              className="max-w-2xl mx-auto"
             >
-              <div className="py-4">
-                <h2 className="text-2xl font-bold text-white mb-6">My Videos</h2>
-                
-                {hasError && (
-                  <div className="p-4 mb-4 bg-red-900/20 border border-red-800 rounded-lg text-center">
-                    <p className="text-red-200">Failed to load videos. Please try again later.</p>
-                    <Button 
-                      variant="outline"
-                      className="mt-2 border-red-700 text-red-200 hover:bg-red-900/30"
-                      onClick={() => {
-                        setIsLoadingVideos(true);
-                        getVideos()
-                          .then(loadedVideos => {
-                            setVideos(loadedVideos || []);
-                            setHasError(false);
-                          })
-                          .catch(error => {
-                            console.error("Retry failed:", error);
-                            toast.error("Failed to load videos");
-                          })
-                          .finally(() => setIsLoadingVideos(false));
-                      }}
-                    >
-                      Retry
-                    </Button>
-                  </div>
-                )}
-                
-                <VideoFeed 
-                  videos={videos}
-                  isLoading={isLoadingVideos}
-                  onVideoClick={handleVideoClick}
-                />
-              </div>
+              <VideoFeed videos={videos} />
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+      
+      {/* Loading overlay when generating video */}
+      <AnimatePresence>
+        {isSubmitting && progress && (
+          <LoadingScreen progress={progress} />
+        )}
+      </AnimatePresence>
+      
+      {/* Result modal when complete */}
+      <AnimatePresence>
+        {showResult && progress && progress.progress >= 100 && (
+          <ResultScreen 
+            result={progress} 
+            onClose={handleResultClose} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
