@@ -1,4 +1,3 @@
-
 import { delay, generateUUID } from './utils';
 import { GenerationProgress, Video, ScriptOption } from '@/types';
 import { mockVideos } from '@/data/mockData';
@@ -135,23 +134,66 @@ export async function generateVideo(formData: {
   voiceMediaFile?: File;
   highResolution: boolean;
 }): Promise<string> {
-  const timestamp = new Date().getTime();
-  const randomStr = Math.random().toString(36).substring(2, 10);
-  const processId = `process_${timestamp}_${randomStr}`;
-  
-  console.log("Starting new video generation process with ID:", processId);
-  
-  updateProgressInStorage(processId, {
-    progress: 0,
-    status: "Starting...",
-    voiceId: formData.voiceId,
-    voiceMedia: formData.voiceMedia,
-    processId: processId
-  });
-  
-  setTimeout(() => processVideoGeneration(processId, formData), 0);
-  
-  return processId;
+  // First check if the user has enough credits (100 credits per video)
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error("User not authenticated");
+    }
+
+    // Check if the user has enough credits (100 credits per video)
+    const { data: hasSufficientCredits, error: creditsError } = await supabase.rpc(
+      'has_sufficient_credits',
+      { user_uuid: user.id, required_credits: 100 }
+    );
+
+    if (creditsError) {
+      console.error("Error checking credits:", creditsError);
+      throw new Error("Could not verify credit balance");
+    }
+
+    if (!hasSufficientCredits) {
+      throw new Error("Insufficient credits. You need 100 credits to generate a video.");
+    }
+
+    // Use the credits
+    const { data: creditsUsed, error: useCreditsError } = await supabase.rpc(
+      'use_credits',
+      { 
+        user_uuid: user.id, 
+        amount: 100, 
+        description: 'Used for generating a video' 
+      }
+    );
+
+    if (useCreditsError || !creditsUsed) {
+      console.error("Error using credits:", useCreditsError);
+      throw new Error("Could not process credits for this operation");
+    }
+
+    // Now proceed with video generation
+    const timestamp = new Date().getTime();
+    const randomStr = Math.random().toString(36).substring(2, 10);
+    const processId = `process_${timestamp}_${randomStr}`;
+    
+    console.log("Starting new video generation process with ID:", processId);
+    
+    updateProgressInStorage(processId, {
+      progress: 0,
+      status: "Starting...",
+      voiceId: formData.voiceId,
+      voiceMedia: formData.voiceMedia,
+      processId: processId
+    });
+    
+    setTimeout(() => processVideoGeneration(processId, formData), 0);
+    
+    return processId;
+  } catch (error) {
+    console.error("Error in generateVideo:", error);
+    throw error;
+  }
 }
 
 async function processVideoGeneration(processId: string, formData: {
