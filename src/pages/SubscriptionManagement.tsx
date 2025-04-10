@@ -2,7 +2,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CreditCard, Info, Loader2, X } from "lucide-react";
+import { CreditCard, Loader2, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCredits } from "@/context/CreditsContext";
 import { Button } from "@/components/ui/button";
