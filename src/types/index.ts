@@ -54,3 +54,11 @@ export interface Subscription {
   updated_at?: string;
   user_id?: string;
 }
+
+export interface CreditTransaction {
+  id: string;
+  amount: number;
+  description: string;
+  transaction_type: string;
+  created_at: string;
+}

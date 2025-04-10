@@ -102,19 +102,7 @@ const SubscriptionManagement = () => {
 
         <Card className="border-zinc-800 bg-zinc-900/40">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Current Subscription</span>
-              {subscription?.active && (
-                <span className="text-xs bg-green-500/20 text-green-500 px-3 py-1 rounded-full">
-                  Active
-                </span>
-              )}
-              {!subscription?.active && (
-                <span className="text-xs bg-zinc-500/20 text-zinc-400 px-3 py-1 rounded-full">
-                  No active subscription
-                </span>
-              )}
-            </CardTitle>
+            <CardTitle>Current Subscription</CardTitle>
             <CardDescription>
               Manage your subscription and credits
             </CardDescription>
@@ -148,15 +136,11 @@ const SubscriptionManagement = () => {
                     <p className="text-sm text-zinc-400">Billing Period Progress</p>
                     <p className="text-sm text-zinc-400">{daysRemaining()} days remaining</p>
                   </div>
-                  <Progress 
-                    value={subscriptionProgress()} 
-                    className="h-2" 
-                    indicatorClassName={subscriptionProgress() > 80 ? "bg-amber-500" : "bg-quicktok-orange"}
-                  />
+                  <Progress value={subscriptionProgress()} className="h-2" />
                 </div>
                 
                 <div className="flex justify-between items-center pt-4">
-                  <p className="text-sm text-zinc-400">Current Credits Balance: <span className="font-semibold text-quicktok-orange">{credits}</span></p>
+                  <p className="text-sm text-zinc-400">Current Credits: <span className="font-semibold">{credits}</span></p>
                   <Button
                     variant="destructive"
                     size="sm"
@@ -176,13 +160,6 @@ const SubscriptionManagement = () => {
                     )}
                   </Button>
                 </div>
-                
-                <div className="flex items-start gap-2 mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-md">
-                  <Info className="h-5 w-5 text-blue-500 mt-0.5" />
-                  <div className="text-sm text-zinc-300">
-                    <p>Your subscription will remain active until the end of the billing period. You'll still have access to all features until then.</p>
-                  </div>
-                </div>
               </>
             ) : (
               <div className="py-6 text-center space-y-4">
@@ -190,12 +167,12 @@ const SubscriptionManagement = () => {
                 <div className="space-y-2">
                   <p className="text-lg text-zinc-300">No Active Subscription</p>
                   <p className="text-zinc-400 max-w-md mx-auto">
-                    Subscribe to a plan to get more credits and create more videos.
+                    Subscribe to a plan to get more credits.
                   </p>
                 </div>
                 <Button
                   onClick={() => navigate("/subscription")}
-                  className="mt-4 bg-quicktok-orange hover:bg-quicktok-orange/90"
+                  className="mt-4"
                 >
                   View Plans
                 </Button>
