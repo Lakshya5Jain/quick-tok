@@ -22,39 +22,49 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
   const [supportingMediaType, setSupportingMediaType] = useState<'video' | 'image' | null>(null);
   const [isVoiceMediaLoading, setIsVoiceMediaLoading] = useState(true);
   const [isSupportingMediaLoading, setIsSupportingMediaLoading] = useState(true);
+  const [voiceMediaSrc, setVoiceMediaSrc] = useState<string>(defaultVoiceMedia);
+  const [supportingMediaSrc, setSupportingMediaSrc] = useState<string>(defaultSupportingMedia);
+  
+  // Effect to clear previous errors when media changes
+  useEffect(() => {
+    if (voiceMedia !== null) {
+      setVoiceMediaError(false);
+      setIsVoiceMediaLoading(true);
+    }
+  }, [voiceMedia]);
+  
+  useEffect(() => {
+    if (supportingMedia !== null) {
+      setSupportingMediaError(false);
+      setIsSupportingMediaLoading(true);
+    }
+  }, [supportingMedia]);
+  
+  // Effect to update voice media source
+  useEffect(() => {
+    setVoiceMediaSrc((!voiceMedia || voiceMediaError) ? defaultVoiceMedia : voiceMedia);
+  }, [voiceMedia, voiceMediaError]);
+  
+  // Effect to update supporting media source
+  useEffect(() => {
+    setSupportingMediaSrc((!supportingMedia || supportingMediaError) ? defaultSupportingMedia : supportingMedia);
+  }, [supportingMedia, supportingMediaError]);
   
   // Determine if the supporting media is a video or image
   useEffect(() => {
     if (supportingMedia) {
       const isVideo = 
-        supportingMedia.includes("video") || 
-        supportingMedia.includes(".mp4") || 
-        supportingMedia.includes(".mov") || 
-        supportingMedia.includes(".webm") ||
-        supportingMedia.includes(".avi");
+        supportingMedia.toLowerCase().includes("video") || 
+        supportingMedia.toLowerCase().includes(".mp4") || 
+        supportingMedia.toLowerCase().includes(".mov") || 
+        supportingMedia.toLowerCase().includes(".webm") ||
+        supportingMedia.toLowerCase().includes(".avi");
       setSupportingMediaType(isVideo ? 'video' : 'image');
-      // Reset loading state when URL changes
-      setIsSupportingMediaLoading(true);
-      setSupportingMediaError(false);
     } else {
       // Default supporting media is a video
       setSupportingMediaType('video');
     }
   }, [supportingMedia]);
-  
-  // Reset loading state when voice media URL changes
-  useEffect(() => {
-    if (voiceMedia) {
-      setIsVoiceMediaLoading(true);
-      setVoiceMediaError(false);
-    }
-  }, [voiceMedia]);
-  
-  // Use the default image if no voice media provided or on error
-  const voiceMediaSrc = (!voiceMedia || voiceMediaError) ? defaultVoiceMedia : voiceMedia;
-  
-  // Use the default supporting media if none provided or on error
-  const supportingMediaSrc = (!supportingMedia || supportingMediaError) ? defaultSupportingMedia : supportingMedia;
   
   const handleVoiceMediaLoad = () => {
     setIsVoiceMediaLoading(false);
