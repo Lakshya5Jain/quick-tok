@@ -23,19 +23,6 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
   const [isVoiceMediaLoading, setIsVoiceMediaLoading] = useState(true);
   const [isSupportingMediaLoading, setIsSupportingMediaLoading] = useState(true);
   
-  // Reset loading state when media URLs change
-  useEffect(() => {
-    if (voiceMedia) {
-      setIsVoiceMediaLoading(true);
-      setVoiceMediaError(false);
-    }
-    
-    if (supportingMedia) {
-      setIsSupportingMediaLoading(true);
-      setSupportingMediaError(false);
-    }
-  }, [voiceMedia, supportingMedia]);
-  
   // Determine if the supporting media is a video or image
   useEffect(() => {
     if (supportingMedia) {
@@ -46,11 +33,22 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
         supportingMedia.includes(".webm") ||
         supportingMedia.includes(".avi");
       setSupportingMediaType(isVideo ? 'video' : 'image');
+      // Reset loading state when URL changes
+      setIsSupportingMediaLoading(true);
+      setSupportingMediaError(false);
     } else {
       // Default supporting media is a video
       setSupportingMediaType('video');
     }
   }, [supportingMedia]);
+  
+  // Reset loading state when voice media URL changes
+  useEffect(() => {
+    if (voiceMedia) {
+      setIsVoiceMediaLoading(true);
+      setVoiceMediaError(false);
+    }
+  }, [voiceMedia]);
   
   // Use the default image if no voice media provided or on error
   const voiceMediaSrc = (!voiceMedia || voiceMediaError) ? defaultVoiceMedia : voiceMedia;
@@ -63,9 +61,9 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
   };
   
   const handleVoiceMediaError = () => {
+    console.log("Error loading voice media, falling back to default");
     setVoiceMediaError(true);
     setIsVoiceMediaLoading(false);
-    console.log("Error loading voice media, falling back to default");
   };
   
   const handleSupportingMediaLoad = () => {
@@ -73,9 +71,9 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
   };
   
   const handleSupportingMediaError = () => {
+    console.log("Error loading supporting media, falling back to default");
     setSupportingMediaError(true);
     setIsSupportingMediaLoading(false);
-    console.log("Error loading supporting media, falling back to default");
   };
   
   return (
@@ -106,33 +104,29 @@ const TikTokPreview: React.FC<TikTokPreviewProps> = ({
             </div>
           )}
           
-          {supportingMediaSrc ? (
-            supportingMediaType === 'video' ? (
-              <video 
-                src={supportingMediaSrc} 
-                className="w-full h-full object-cover"
-                autoPlay
-                muted
-                loop
-                playsInline
-                onLoadedData={handleSupportingMediaLoad}
-                onError={handleSupportingMediaError}
-                style={{ display: isSupportingMediaLoading ? 'none' : 'block' }}
-              />
-            ) : (
-              <img 
-                src={supportingMediaSrc} 
-                alt="Supporting media" 
-                className="w-full h-full object-cover"
-                onLoad={handleSupportingMediaLoad}
-                onError={handleSupportingMediaError}
-                style={{ display: isSupportingMediaLoading ? 'none' : 'block' }}
-              />
-            )
+          {supportingMediaType === 'video' ? (
+            <video 
+              key={supportingMediaSrc} // Add key to force re-render when URL changes
+              src={supportingMediaSrc} 
+              className="w-full h-full object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+              onLoadedData={handleSupportingMediaLoad}
+              onError={handleSupportingMediaError}
+              style={{ display: isSupportingMediaLoading ? 'none' : 'block' }}
+            />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-              Supporting media will appear here
-            </div>
+            <img 
+              key={supportingMediaSrc} // Add key to force re-render when URL changes
+              src={supportingMediaSrc} 
+              alt="Supporting media" 
+              className="w-full h-full object-cover"
+              onLoad={handleSupportingMediaLoad}
+              onError={handleSupportingMediaError}
+              style={{ display: isSupportingMediaLoading ? 'none' : 'block' }}
+            />
           )}
         </div>
         

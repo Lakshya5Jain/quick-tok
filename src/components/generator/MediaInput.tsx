@@ -37,35 +37,38 @@ const MediaInput: React.FC<MediaInputProps> = ({
   defaultUrl
 }) => {
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
+  const [fileInputKey, setFileInputKey] = useState<string>(`file-input-${Date.now()}`);
 
-  // When component mounts or when url/file changes, update preview and notify parent
+  // Clean up blob URLs when component unmounts
   useEffect(() => {
-    // Clean up previous object URL when component unmounts or when file changes
     return () => {
       if (localPreviewUrl && localPreviewUrl.startsWith('blob:')) {
         URL.revokeObjectURL(localPreviewUrl);
-        setLocalPreviewUrl(null);
       }
     };
-  }, [localPreviewUrl]);
+  }, []);
   
+  // When file or URL changes, update preview and notify parent
   useEffect(() => {
-    // Clean up previous blob URL before creating a new one
+    // First clean up any existing blob URL
     if (localPreviewUrl && localPreviewUrl.startsWith('blob:')) {
       URL.revokeObjectURL(localPreviewUrl);
       setLocalPreviewUrl(null);
     }
     
     if (useFile && selectedFile) {
+      // Create a new blob URL for the selected file
       const preview = URL.createObjectURL(selectedFile);
       setLocalPreviewUrl(preview);
       onMediaAvailable(true, preview);
     } else if (!useFile && url) {
+      // Use the provided URL directly
       onMediaAvailable(true, url);
     } else if (!useFile && defaultUrl && !url) {
+      // Use the default URL if no URL is provided
       onMediaAvailable(true, defaultUrl);
-      // Don't update the input value, just use the default for preview
     } else {
+      // No media available
       onMediaAvailable(false, null);
     }
   }, [useFile, selectedFile, url, defaultUrl, onMediaAvailable]);
@@ -105,11 +108,16 @@ const MediaInput: React.FC<MediaInputProps> = ({
   };
 
   const clearFile = () => {
+    // Clean up blob URL when file is cleared
     if (localPreviewUrl && localPreviewUrl.startsWith('blob:')) {
       URL.revokeObjectURL(localPreviewUrl);
       setLocalPreviewUrl(null);
     }
+    
     onFileChange(null);
+    
+    // Reset file input to allow selecting the same file again
+    setFileInputKey(`file-input-${Date.now()}`);
   };
 
   const clearUrl = () => {
@@ -152,6 +160,7 @@ const MediaInput: React.FC<MediaInputProps> = ({
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Input
+              key={fileInputKey}
               type="file"
               onChange={handleFileChange}
               accept={fileAccept}
