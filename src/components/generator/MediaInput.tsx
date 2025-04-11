@@ -36,12 +36,30 @@ const MediaInput: React.FC<MediaInputProps> = ({
   onMediaAvailable,
   defaultUrl
 }) => {
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
+
   // When component mounts or when url/file changes, update preview and notify parent
   useEffect(() => {
+    // Clean up previous object URL when component unmounts or when file changes
+    return () => {
+      if (localPreviewUrl && localPreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(localPreviewUrl);
+        setLocalPreviewUrl(null);
+      }
+    };
+  }, [localPreviewUrl]);
+  
+  useEffect(() => {
+    // Clean up previous blob URL before creating a new one
+    if (localPreviewUrl && localPreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(localPreviewUrl);
+      setLocalPreviewUrl(null);
+    }
+    
     if (useFile && selectedFile) {
       const preview = URL.createObjectURL(selectedFile);
+      setLocalPreviewUrl(preview);
       onMediaAvailable(true, preview);
-      return () => URL.revokeObjectURL(preview);
     } else if (!useFile && url) {
       onMediaAvailable(true, url);
     } else if (!useFile && defaultUrl && !url) {
@@ -87,6 +105,10 @@ const MediaInput: React.FC<MediaInputProps> = ({
   };
 
   const clearFile = () => {
+    if (localPreviewUrl && localPreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(localPreviewUrl);
+      setLocalPreviewUrl(null);
+    }
     onFileChange(null);
   };
 
