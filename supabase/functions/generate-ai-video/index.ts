@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -16,7 +15,7 @@ serve(async (req) => {
   try {
     const { script, voiceId, voiceMedia, highResolution, processId } = await req.json();
     const aiApiKey = Deno.env.get('AI_API_KEY');
-    const aiBaseUrl = 'https://infinity.ai/api/v2/generate';
+    const aiBaseUrl = 'https://lemonslice.com/api/v2/generate';
 
     if (!script || !voiceId) {
       console.error(`[${processId}] Missing required parameters`);
@@ -71,7 +70,7 @@ serve(async (req) => {
       'voice_id': voiceId,
       'resolution': highResolution ? '640' : '320',
       'crop_head': false,
-      'expressiveness': 0.7
+      'expressiveness': 1
     };
 
     console.log(`[${processId}] Sending request to AI API with data:`, JSON.stringify(data));
@@ -83,8 +82,6 @@ serve(async (req) => {
     
     while (retryCount < maxRetries) {
       try {
-        // This is just to start the job and get the job ID
-        // We'll return the job ID to the client, which will poll for progress
         response = await fetch(aiBaseUrl, { 
           method: 'POST',
           headers,

@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.31.0";
 
@@ -15,8 +14,13 @@ serve(async (req) => {
 
   try {
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase credentials');
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get authentication info from the request
@@ -50,7 +54,49 @@ serve(async (req) => {
       .eq('user_id', userId)
       .single();
     
-    if (creditsError) {
+    // If no credits record exists, create one with 100 credits
+    if (creditsError && creditsError.code === 'PGRST116') {
+      // Add initial credits
+      const { error: addCreditsError } = await supabase.rpc('add_credits', {
+        user_uuid: userId,
+        amount: 100,
+        description: 'Initial free credits',
+        transaction_type: 'INITIAL'
+      });
+      
+      if (addCreditsError) {
+        console.error('Error adding initial credits:', addCreditsError);
+        return new Response(
+          JSON.stringify({ error: 'Error initializing credits' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Get the newly created credits record
+      const { data: newCredits, error: newCreditsError } = await supabase
+        .from('user_credits')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+      
+      if (newCreditsError) {
+        console.error('Error fetching new credits:', newCreditsError);
+        return new Response(
+          JSON.stringify({ error: 'Error fetching credits' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      return new Response(
+        JSON.stringify({
+          credits: newCredits,
+          subscription: null,
+          transactions: []
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else if (creditsError) {
+      console.error('Error fetching credits:', creditsError);
       return new Response(
         JSON.stringify({ error: 'Error fetching user credits' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

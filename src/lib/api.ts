@@ -473,14 +473,14 @@ export async function getVideos(): Promise<Video[]> {
     
     if (userError) {
       console.error("Auth error when fetching videos:", userError);
-      return mockVideos;
+      throw new Error("Authentication error. Please try again.");
     }
     
     const userId = user?.id;
     
     if (!userId) {
-      console.warn("No user ID found, returning mock videos");
-      return mockVideos;
+      console.warn("No user ID found");
+      throw new Error("Please sign in to view your videos.");
     }
     
     try {
@@ -490,26 +490,26 @@ export async function getVideos(): Promise<Video[]> {
       
       if (error) {
         console.error("Error fetching videos from Supabase function:", error);
-        return mockVideos;
+        throw new Error("Failed to fetch videos. Please try again.");
       }
       
       if (!data || !data.videos || !Array.isArray(data.videos)) {
         console.error("Invalid response format from get-videos function");
-        return mockVideos;
+        throw new Error("Invalid server response. Please try again.");
       }
       
       return data.videos.map((video: any) => ({
-        id: video.id || `mock-${Date.now()}`,
+        id: video.id || generateUUID(),
         finalVideoUrl: video.final_video_url,
         scriptText: video.script_text || "No script text available",
         timestamp: video.timestamp ? new Date(video.timestamp).getTime() : Date.now()
       }));
     } catch (funcError) {
       console.error("Exception when calling Supabase function:", funcError);
-      return mockVideos;
+      throw funcError instanceof Error ? funcError : new Error("Failed to fetch videos. Please try again.");
     }
   } catch (error) {
-    console.error("Unexpected error in getVideos:", error);
-    return mockVideos;
+    console.error("Error in getVideos:", error);
+    throw error instanceof Error ? error : new Error("An unexpected error occurred.");
   }
 }

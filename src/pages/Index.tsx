@@ -9,6 +9,7 @@ import { GenerationProgress, ScriptOption, Video } from "@/types";
 import { generateVideo, checkProgress, getVideos } from "@/lib/api";
 import { toast } from "sonner";
 import { voiceOptions } from "@/data/mockData";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<"generate" | "videos">("generate");
@@ -17,16 +18,23 @@ const Index = () => {
   const [currentProcessId, setCurrentProcessId] = useState<string | null>(null);
   const [progress, setProgress] = useState<GenerationProgress | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   // Load videos on mount
   useEffect(() => {
     const loadVideos = async () => {
       try {
+        setIsLoading(true);
+        setHasError(false);
         const loadedVideos = await getVideos();
         setVideos(loadedVideos);
       } catch (error) {
         console.error("Failed to load videos:", error);
         toast.error("Failed to load past videos");
+        setHasError(true);
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -103,7 +111,30 @@ const Index = () => {
   const handleResultClose = () => {
     setShowResult(false);
     // Refresh videos list
-    getVideos().then(setVideos);
+    getVideos()
+      .then(loadedVideos => {
+        setVideos(loadedVideos);
+        setHasError(false);
+      })
+      .catch(error => {
+        console.error("Error fetching videos:", error);
+        toast.error("Failed to refresh videos");
+        setHasError(true);
+      });
+  };
+
+  const handleRetry = () => {
+    getVideos()
+      .then(loadedVideos => {
+        setVideos(loadedVideos);
+        setHasError(false);
+        toast.success("Videos loaded successfully");
+      })
+      .catch(error => {
+        console.error("Failed to load videos:", error);
+        toast.error("Failed to load videos");
+        setHasError(true);
+      });
   };
 
   return (
@@ -139,7 +170,20 @@ const Index = () => {
               transition={{ duration: 0.3 }}
               className="max-w-2xl mx-auto"
             >
-              <VideoFeed videos={videos} />
+              {isLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-white mb-4">Loading videos...</p>
+                </div>
+              ) : hasError ? (
+                <div className="text-center py-8">
+                  <p className="text-white mb-4">Failed to load videos</p>
+                  <Button onClick={handleRetry} variant="outline">
+                    Retry
+                  </Button>
+                </div>
+              ) : (
+                <VideoFeed videos={videos} />
+              )}
             </motion.div>
           )}
         </AnimatePresence>

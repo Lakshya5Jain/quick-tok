@@ -1,0 +1,8 @@
+{
+  "project_id": "oghwtfuquhqwtqekpsyn",
+  "functions": {
+    "get-user-credits": {
+      "verify_jwt": true
+    }
+  }
+} 
