@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { GenerationProgress } from "@/types";
 import { motion } from "framer-motion";
-import { checkProgress } from "@/lib/api";
+import { checkProgress, cancelVideoGeneration } from "@/lib/api";
 import { toast } from "sonner";
 import { Clock, Sparkles, PencilLine, Film, Upload, Check, X } from "lucide-react";
 import {
@@ -102,7 +102,15 @@ const LoadingPage: React.FC = () => {
   };
 
   const confirmCancel = () => {
-    toast.info("Processing canceled");
+    // Call cancelVideoGeneration to stop the process
+    if (processId) {
+      const success = cancelVideoGeneration(processId);
+      if (success) {
+        toast.info("Video generation canceled");
+      } else {
+        toast.error("Error canceling the process");
+      }
+    }
     navigate("/create");
   };
 
@@ -112,8 +120,8 @@ const LoadingPage: React.FC = () => {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  // Updated formula: 45 seconds + 7 seconds per word (instead of 30 + 5)
-  const estimatedTimeInSeconds = wordCount > 0 ? 45 + (wordCount * 7) : 0;
+  // Updated formula: 2 minutes (120 seconds) + 10 seconds per word
+  const estimatedTimeInSeconds = wordCount > 0 ? 120 + (wordCount * 10) : 0;
   const remainingTime = Math.max(0, estimatedTimeInSeconds - elapsedTime);
 
   return (

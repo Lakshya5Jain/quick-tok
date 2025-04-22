@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { ScriptOption, VoiceOption } from "@/types";
 import { motion } from "framer-motion";
@@ -46,7 +45,7 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
   const [voiceMedia, setVoiceMedia] = useState("");
   const [voiceMediaFile, setVoiceMediaFile] = useState<File | null>(null);
   const [useVoiceMediaFile, setUseVoiceMediaFile] = useState(false);
-  const [highResolution, setHighResolution] = useState(false);
+  const [highResolution] = useState(true);
 
   // Preview state
   const [previewVoiceMedia, setPreviewVoiceMedia] = useState<string | null>(null);
@@ -180,22 +179,6 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
             defaultUrl={defaultSupportingMedia}
           />
           
-          {/* Resolution toggle */}
-          <div className="flex flex-row items-center justify-between space-x-2 pt-2">
-            <div>
-              <Label htmlFor="high-resolution" className="text-white">Video Resolution</Label>
-              <p className="text-xs text-gray-400 mt-1">
-                {highResolution ? "High resolution (640)" : "Standard resolution (320)"}
-              </p>
-            </div>
-            <Switch
-              id="high-resolution"
-              checked={highResolution}
-              onCheckedChange={setHighResolution}
-              className="data-[state=checked]:bg-quicktok-orange"
-            />
-          </div>
-          
           {/* Submit Button */}
           <SubmitButton 
             isSubmitting={isSubmitting} 
@@ -225,8 +208,7 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
         </p>
         
         <p className="text-gray-500 text-xs mt-4 text-center">
-          Powered by Creatomate API for Automated Video Generation<br />
-          and Lemon Slice for Talking Avatar
+          Powered by Creatomate & Lemon Slice
         </p>
       </motion.div>
     </div>

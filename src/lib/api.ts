@@ -34,6 +34,31 @@ const updateProgressInStorage = (processId: string, progress: Partial<Generation
   }
 };
 
+// Function to mark a video generation process as canceled
+export function cancelVideoGeneration(processId: string): boolean {
+  try {
+    // Set a cancellation flag in localStorage
+    localStorage.setItem(`canceled_${processId}`, 'true');
+    
+    // Update the progress status to indicate cancellation
+    updateProgressInStorage(processId, {
+      status: "Canceled by user",
+      progress: 100
+    });
+    
+    console.log(`Video generation process ${processId} has been marked as canceled`);
+    return true;
+  } catch (error) {
+    console.error(`Failed to cancel video generation process ${processId}:`, error);
+    return false;
+  }
+}
+
+// Helper to check if a process has been canceled
+const isProcessCanceled = (processId: string): boolean => {
+  return localStorage.getItem(`canceled_${processId}`) === 'true';
+};
+
 export async function uploadFile(file: File): Promise<string> {
   try {
     console.log("Uploading file:", file.name);
@@ -132,44 +157,38 @@ export async function generateVideo(formData: {
   voiceId: string;
   voiceMedia?: string;
   voiceMediaFile?: File;
-  highResolution: boolean;
+  highResolution?: boolean;
 }): Promise<string> {
-  // First check if the user has enough credits (100 credits per video)
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    
     if (!user) {
       throw new Error("User not authenticated");
     }
 
-    // Check if the user has enough credits (100 credits per video)
-    const { data: hasSufficientCredits, error: creditsError } = await supabase.rpc(
-      'has_sufficient_credits',
-      { user_uuid: user.id, required_credits: 100 }
-    );
+    // Estimate script and cost based on word count (120 words = 60s = 100 credits)
+    let scriptText: string;
+    if (formData.scriptOption === ScriptOption.GPT && formData.topic) {
+      scriptText = await generateScript(formData.topic);
+    } else if (formData.scriptOption === ScriptOption.CUSTOM && formData.customScript) {
+      scriptText = formData.customScript;
+    } else {
+      throw new Error("Invalid script option or missing data");
+    }
+    const wordCount = scriptText.trim().split(/\s+/).length;
+    const estimatedSeconds = Math.ceil((wordCount / 120) * 60);
+    const cost = Math.ceil((estimatedSeconds / 60) * 100);
 
+    // Check if the user has enough credits
+    const { data: hasSufficient, error: creditsError } = await supabase.rpc(
+      'has_sufficient_credits',
+      { user_uuid: user.id, required_credits: cost }
+    );
     if (creditsError) {
       console.error("Error checking credits:", creditsError);
       throw new Error("Could not verify credit balance");
     }
-
-    if (!hasSufficientCredits) {
-      throw new Error("Insufficient credits. You need 100 credits to generate a video.");
-    }
-
-    // Use the credits
-    const { data: creditsUsed, error: useCreditsError } = await supabase.rpc(
-      'use_credits',
-      { 
-        user_uuid: user.id, 
-        amount: 100, 
-        description: 'Used for generating a video' 
-      }
-    );
-
-    if (useCreditsError || !creditsUsed) {
-      console.error("Error using credits:", useCreditsError);
-      throw new Error("Could not process credits for this operation");
+    if (!hasSufficient) {
+      throw new Error(`Insufficient credits. You need ${cost} credits to generate this video.`);
     }
 
     // Now proceed with video generation
@@ -179,16 +198,19 @@ export async function generateVideo(formData: {
     
     console.log("Starting new video generation process with ID:", processId);
     
+    // Include scriptText in progress storage for potential client use
     updateProgressInStorage(processId, {
       progress: 0,
       status: "Starting...",
       voiceId: formData.voiceId,
       voiceMedia: formData.voiceMedia,
-      processId: processId
+      processId: processId,
+      scriptText
     });
     
-    setTimeout(() => processVideoGeneration(processId, formData), 0);
-    
+    // Start the background process, passing along scriptText
+    setTimeout(() => processVideoGeneration(processId, { ...formData, highResolution: true, scriptText }), 0);
+
     return processId;
   } catch (error) {
     console.error("Error in generateVideo:", error);
@@ -205,10 +227,17 @@ async function processVideoGeneration(processId: string, formData: {
   voiceId: string;
   voiceMedia?: string;
   voiceMediaFile?: File;
-  highResolution: boolean;
+  highResolution?: boolean;
+  scriptText: string;
 }) {
   try {
     const filesToCleanup: string[] = [];
+    
+    // Check if the process was canceled before we even start
+    if (isProcessCanceled(processId)) {
+      console.log(`Process ${processId} was canceled before starting`);
+      return;
+    }
     
     let supportingMediaUrl = formData.supportingMedia;
     let voiceMediaUrl = formData.voiceMedia;
@@ -263,49 +292,36 @@ async function processVideoGeneration(processId: string, formData: {
       }
     }
     
+    // Check for cancellation after file uploads
+    if (isProcessCanceled(processId)) {
+      console.log(`Process ${processId} was canceled after file uploads`);
+      return;
+    }
+    
     updateProgressInStorage(processId, { 
       supportingMediaUrl,
       voiceMedia: voiceMediaUrl
     });
     
-    let scriptText: string;
-    
-    if (formData.scriptOption === ScriptOption.GPT && formData.topic) {
-      updateProgressInStorage(processId, {
-        status: "Generating script...",
-        progress: 25
-      });
-      
-      try {
-        scriptText = await generateScript(formData.topic);
-      } catch (scriptError) {
-        console.error("Error generating script:", scriptError);
-        scriptText = `Here's a cool video about ${formData.topic}!`;
-      }
-    } else if (formData.scriptOption === ScriptOption.CUSTOM && formData.customScript) {
-      updateProgressInStorage(processId, {
-        status: "Using custom script...",
-        progress: 25
-      });
-      
-      scriptText = formData.customScript;
-    } else {
-      throw new Error("Invalid script option or missing required data");
-    }
-    
-    updateProgressInStorage(processId, { scriptText });
+    updateProgressInStorage(processId, { scriptText: formData.scriptText });
     
     updateProgressInStorage(processId, {
       status: "Generating AI video...",
       progress: 50
     });
     
+    // Check for cancellation before starting AI generation
+    if (isProcessCanceled(processId)) {
+      console.log(`Process ${processId} was canceled before AI generation`);
+      return;
+    }
+    
     const { data: startData, error: startError } = await supabase.functions.invoke('generate-ai-video', {
       body: {
-        script: scriptText,
+        script: formData.scriptText,
         voiceId: formData.voiceId,
         voiceMedia: voiceMediaUrl,
-        highResolution: formData.highResolution,
+        highResolution: true,
         processId
       }
     });
@@ -330,6 +346,12 @@ async function processVideoGeneration(processId: string, formData: {
     while (!aiVideoUrl && attempts < maxAttempts) {
       await delay(5000);
       attempts++;
+      
+      // Check for cancellation during AI video generation polling
+      if (isProcessCanceled(processId)) {
+        console.log(`Process ${processId} was canceled during AI video generation`);
+        return;
+      }
       
       try {
         const { data: statusData, error: statusError } = await supabase.functions.invoke('check-ai-video-status', {
@@ -365,6 +387,12 @@ async function processVideoGeneration(processId: string, formData: {
       progress: 75
     });
     
+    // Check for cancellation before final video creation
+    if (isProcessCanceled(processId)) {
+      console.log(`Process ${processId} was canceled before final video creation`);
+      return;
+    }
+    
     const { data: renderData, error: renderError } = await supabase.functions.invoke('create-final-video', {
       body: {
         aiVideoUrl,
@@ -396,11 +424,17 @@ async function processVideoGeneration(processId: string, formData: {
       await delay(5000);
       attempts++;
       
+      // Check for cancellation during final video generation polling
+      if (isProcessCanceled(processId)) {
+        console.log(`Process ${processId} was canceled during final video generation`);
+        return;
+      }
+      
       try {
         const { data: finalStatusData, error: finalStatusError } = await supabase.functions.invoke('check-final-video-status', {
           body: { 
             renderId,
-            scriptText,
+            scriptText: formData.scriptText,
             aiVideoUrl,
             userId,
             processId
@@ -408,6 +442,11 @@ async function processVideoGeneration(processId: string, formData: {
         });
         
         if (finalStatusError) {
+          // If we get a 402 error and the video is not completed, continue polling
+          if (finalStatusError.status === 402 && !finalStatusData?.completed) {
+            console.log(`Insufficient credits check (attempt ${attempts}). Video still rendering...`);
+            continue;
+          }
           console.error(`Error checking final video status (attempt ${attempts}):`, finalStatusError);
           continue;
         }

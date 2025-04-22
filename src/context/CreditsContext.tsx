@@ -1,8 +1,8 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { Subscription as SubscriptionType } from "@/types";
 
 interface CreditTransaction {
   id: string;
@@ -12,18 +12,10 @@ interface CreditTransaction {
   created_at: string;
 }
 
-interface Subscription {
-  id: string;
-  plan_type: string;
-  monthly_credits: number;
-  current_period_end: string;
-  active: boolean;
-}
-
 interface CreditsContextType {
   credits: number | null;
   loading: boolean;
-  subscription: Subscription | null;
+  subscription: SubscriptionType | null;
   transactions: CreditTransaction[];
   refreshCredits: () => Promise<void>;
   hasEnoughCredits: (required: number) => boolean;
@@ -43,7 +35,7 @@ export const useCredits = () => useContext(CreditsContext);
 export const CreditsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [credits, setCredits] = useState<number | null>(null);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionType | null>(null);
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [loading, setLoading] = useState(true);
 

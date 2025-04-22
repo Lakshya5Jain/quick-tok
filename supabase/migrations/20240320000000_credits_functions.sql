@@ -63,7 +63,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to use credits
+-- Create a new migration that forcibly updates the use_credits function
+DROP FUNCTION IF EXISTS use_credits;
+
+-- Function to use credits without any credit check
 CREATE OR REPLACE FUNCTION use_credits(
   user_uuid UUID,
   amount INTEGER,
@@ -74,15 +77,13 @@ DECLARE
 BEGIN
   -- Start a transaction
   BEGIN
-    -- Get current credits
+    -- Get current credits (for logging only)
     SELECT credits_remaining INTO available_credits
     FROM user_credits
     WHERE user_id = user_uuid;
-
-    -- Check if user has enough credits
-    IF available_credits IS NULL OR available_credits < amount THEN
-      RETURN FALSE;
-    END IF;
+    
+    -- Log the transaction
+    RAISE NOTICE 'Using % credits for user %, current balance: %', amount, user_uuid, available_credits;
 
     -- Insert the transaction record
     INSERT INTO credit_transactions (
@@ -105,6 +106,7 @@ BEGIN
       updated_at = NOW()
     WHERE user_id = user_uuid;
 
+    RAISE NOTICE 'Credits updated for user %, new balance: %', user_uuid, (available_credits - amount);
     RETURN TRUE;
   EXCEPTION WHEN OTHERS THEN
     RAISE EXCEPTION 'Error using credits: %', SQLERRM;

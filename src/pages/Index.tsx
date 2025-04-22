@@ -2,44 +2,22 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import GeneratorForm from "@/components/GeneratorForm";
-import VideoFeed from "@/components/VideoFeed";
 import LoadingScreen from "@/components/LoadingScreen";
 import ResultScreen from "@/components/ResultScreen";
-import { GenerationProgress, ScriptOption, Video } from "@/types";
-import { generateVideo, checkProgress, getVideos } from "@/lib/api";
+import { GenerationProgress, ScriptOption } from "@/types";
+import { generateVideo, checkProgress } from "@/lib/api";
 import { toast } from "sonner";
 import { voiceOptions } from "@/data/mockData";
-import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { useCredits } from "@/context/CreditsContext";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<"generate" | "videos">("generate");
-  const [videos, setVideos] = useState<Video[]>([]);
+  const navigate = useNavigate();
+  const { subscription } = useCredits();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentProcessId, setCurrentProcessId] = useState<string | null>(null);
   const [progress, setProgress] = useState<GenerationProgress | null>(null);
   const [showResult, setShowResult] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasError, setHasError] = useState(false);
-
-  // Load videos on mount
-  useEffect(() => {
-    const loadVideos = async () => {
-      try {
-        setIsLoading(true);
-        setHasError(false);
-        const loadedVideos = await getVideos();
-        setVideos(loadedVideos);
-      } catch (error) {
-        console.error("Failed to load videos:", error);
-        toast.error("Failed to load past videos");
-        setHasError(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadVideos();
-  }, []);
 
   // Poll for progress updates when a process is running
   useEffect(() => {
@@ -78,12 +56,12 @@ const Index = () => {
     voiceId: string;
     voiceMedia?: string;
     voiceMediaFile?: File;
-    highResolution: boolean;
+    highResolution?: boolean;
   }) => {
     setIsSubmitting(true);
     
     try {
-      // Start video generation with the form data directly including files
+      // Always use highResolution: true
       const processId = await generateVideo({
         scriptOption: formData.scriptOption,
         topic: formData.topic,
@@ -93,7 +71,7 @@ const Index = () => {
         voiceId: formData.voiceId,
         voiceMedia: formData.voiceMedia,
         voiceMediaFile: formData.voiceMediaFile,
-        highResolution: formData.highResolution
+        highResolution: true
       });
       
       setCurrentProcessId(processId);
@@ -110,83 +88,28 @@ const Index = () => {
 
   const handleResultClose = () => {
     setShowResult(false);
-    // Refresh videos list
-    getVideos()
-      .then(loadedVideos => {
-        setVideos(loadedVideos);
-        setHasError(false);
-      })
-      .catch(error => {
-        console.error("Error fetching videos:", error);
-        toast.error("Failed to refresh videos");
-        setHasError(true);
-      });
-  };
-
-  const handleRetry = () => {
-    getVideos()
-      .then(loadedVideos => {
-        setVideos(loadedVideos);
-        setHasError(false);
-        toast.success("Videos loaded successfully");
-      })
-      .catch(error => {
-        console.error("Failed to load videos:", error);
-        toast.error("Failed to load videos");
-        setHasError(true);
-      });
   };
 
   return (
     <div className="min-h-screen bg-gradient-primary px-4 pb-16">
-      <div className="max-w-6xl mx-auto pt-8">
+      <div className="max-w-7xl mx-auto pt-8">
         <Navbar 
-          activeTab={activeTab} 
-          onTabChange={setActiveTab}
+          activeTab="generate"
+          onTabChange={() => navigate("/create")}
         />
         
-        <AnimatePresence mode="wait">
-          {activeTab === "generate" ? (
-            <motion.div
-              key="generator"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-              className="w-full"
-            >
-              <GeneratorForm 
-                onSubmit={handleFormSubmit} 
-                isSubmitting={isSubmitting} 
-                voiceOptions={voiceOptions}
-              />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="videos"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.3 }}
-              className="max-w-2xl mx-auto"
-            >
-              {isLoading ? (
-                <div className="text-center py-8">
-                  <p className="text-white mb-4">Loading videos...</p>
-                </div>
-              ) : hasError ? (
-                <div className="text-center py-8">
-                  <p className="text-white mb-4">Failed to load videos</p>
-                  <Button onClick={handleRetry} variant="outline">
-                    Retry
-                  </Button>
-                </div>
-              ) : (
-                <VideoFeed videos={videos} />
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3 }}
+          className="w-full"
+        >
+          <GeneratorForm 
+            onSubmit={handleFormSubmit} 
+            isSubmitting={isSubmitting} 
+            voiceOptions={voiceOptions}
+          />
+        </motion.div>
       </div>
       
       {/* Loading overlay when generating video */}

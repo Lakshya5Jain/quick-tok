@@ -1,24 +1,15 @@
-
 import React from "react";
 import { motion } from "framer-motion";
-import { FilmIcon, VideoIcon, HomeIcon, CreditCard, LayoutDashboard } from "lucide-react";
+import { FilmIcon, VideoIcon, CreditCard, LayoutDashboard, Sparkles } from "lucide-react";
 import Logo from "./Logo";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useCredits } from "@/context/CreditsContext";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface NavbarProps {
-  activeTab: "generate" | "videos";
-  onTabChange: (tab: "generate" | "videos") => void;
+  activeTab: "generate" | "videos" | "dashboard" | "subscription";
+  onTabChange: (tab: "generate" | "videos" | "dashboard" | "subscription") => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
@@ -28,94 +19,66 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
 
   return (
     <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-      <div onClick={() => navigate("/")} className="cursor-pointer">
-        <Logo size="md" />
+      {/* Left group: Logo */}
+      <div className="flex items-center">
+        <div onClick={() => navigate("/")} className="cursor-pointer">
+          <Logo size="md" />
+        </div>
       </div>
-      
+      {/* Right group: Credits, Nav bar buttons, and Sign Out */}
       <div className="flex items-center gap-4">
-        <div className="bg-zinc-800 p-1 rounded-lg flex">
+        {credits !== null && (
+          <div className="flex items-center text-quicktok-orange">
+            <Sparkles className="w-5 h-5" />
+            <span className="ml-1 font-medium">{credits}</span>
+          </div>
+        )}
+        <div className="bg-zinc-800 p-1 rounded-lg flex items-center">
           <motion.button
             className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
               activeTab === "generate" ? "bg-quicktok-orange text-white" : "text-gray-300 hover:text-white"
             }`}
-            onClick={() => onTabChange("generate")}
+            onClick={() => navigate("/create")}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
           >
             <FilmIcon className="w-4 h-4" />
             <span>Create</span>
           </motion.button>
-          
           <motion.button
             className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
               activeTab === "videos" ? "bg-quicktok-orange text-white" : "text-gray-300 hover:text-white"
             }`}
-            onClick={() => onTabChange("videos")}
+            onClick={() => navigate("/videos")}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
           >
             <VideoIcon className="w-4 h-4" />
             <span>My Videos</span>
           </motion.button>
+          <motion.button
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+              activeTab === "dashboard" ? "bg-quicktok-orange text-white" : "text-gray-300 hover:text-white"
+            }`}
+            onClick={() => navigate("/dashboard")}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <LayoutDashboard className="w-4 h-4" />
+            <span>Dashboard</span>
+          </motion.button>
+          <motion.button
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+              activeTab === "subscription" ? "bg-quicktok-orange text-white" : "text-gray-300 hover:text-white"
+            }`}
+            onClick={() => navigate(subscription?.active ? "/subscription-management" : "/subscription")}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <CreditCard className="w-4 h-4" />
+            <span>Subscriptions</span>
+          </motion.button>
         </div>
-
-        {user && (
-          <>
-            <Button 
-              variant="ghost" 
-              className="text-gray-300 hover:text-white"
-              onClick={() => navigate("/dashboard")}
-            >
-              <LayoutDashboard className="w-4 h-4 mr-2" />
-              Dashboard
-              {credits !== null && (
-                <span className="ml-2 bg-quicktok-orange/20 text-quicktok-orange text-xs px-2 py-0.5 rounded-full">
-                  {credits}
-                </span>
-              )}
-            </Button>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  className="text-gray-300 hover:text-white"
-                >
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  Subscription
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
-                <DropdownMenuLabel className="text-zinc-400">Subscription Options</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-zinc-800" />
-                <DropdownMenuItem 
-                  className="text-white hover:bg-zinc-800 cursor-pointer" 
-                  onClick={() => navigate("/subscription")}
-                >
-                  View Plans
-                </DropdownMenuItem>
-                {subscription?.active && (
-                  <DropdownMenuItem 
-                    className="text-white hover:bg-zinc-800 cursor-pointer" 
-                    onClick={() => navigate("/subscription-management")}
-                  >
-                    Manage Subscription
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </>
-        )}
-        
-        <Button 
-          variant="ghost" 
-          className="text-gray-300 hover:text-white"
-          onClick={() => navigate("/")}
-        >
-          <HomeIcon className="w-4 h-4 mr-2" />
-          Home
-        </Button>
-        
         {user && (
           <Button 
             variant="ghost" 

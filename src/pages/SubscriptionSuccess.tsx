@@ -1,10 +1,10 @@
-
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Check, ChevronRight } from "lucide-react";
 import { useCredits } from "@/context/CreditsContext";
 import { Button } from "@/components/ui/button";
+import Logo from "@/components/Logo";
 
 const SubscriptionSuccess = () => {
   const navigate = useNavigate();
@@ -34,6 +34,8 @@ const SubscriptionSuccess = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black px-4 flex items-center justify-center">
+      {/* QuickTok logo on top */}
+      <Logo size="md" className="mb-6 mx-auto" />
       <div className="max-w-xl w-full bg-zinc-900/40 border border-zinc-800 rounded-lg p-8">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}

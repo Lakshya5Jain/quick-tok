@@ -1,9 +1,9 @@
-
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AlertTriangle, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Logo from "@/components/Logo";
 
 const SubscriptionCancelled = () => {
   const navigate = useNavigate();
@@ -24,7 +24,8 @@ const SubscriptionCancelled = () => {
   }, [countdown, navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black px-4 flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black px-4 flex flex-col items-center justify-center">
+      <Logo size="md" className="mb-6" />
       <div className="max-w-xl w-full bg-zinc-900/40 border border-zinc-800 rounded-lg p-8">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}

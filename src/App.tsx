@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +17,7 @@ import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import SubscriptionCancelled from "./pages/SubscriptionCancelled";
 import SubscriptionManagement from "./pages/SubscriptionManagement";
 import Dashboard from "./pages/Dashboard";
+import VideosPage from "./pages/Videos";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +65,11 @@ const App = () => (
               <Route path="/subscription-management" element={
                 <RequireAuth>
                   <SubscriptionManagement />
+                </RequireAuth>
+              } />
+              <Route path="/videos" element={
+                <RequireAuth>
+                  <VideosPage />
                 </RequireAuth>
               } />
               <Route path="/dashboard" element={

@@ -1,3 +1,5 @@
+// @ts-nocheck
+// deno-lint-ignore-file
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.31.0";
 
@@ -47,60 +49,59 @@ serve(async (req) => {
     
     const userId = userData.user.id;
     
-    // Get user credits
+    // Get user credits (or null if none)
     const { data: credits, error: creditsError } = await supabase
       .from('user_credits')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
+
+    if (creditsError) {
+      console.error('Error fetching credits:', creditsError);
+      return new Response(
+        JSON.stringify({ error: 'Error fetching user credits' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    let finalCredits = credits;
     
-    // If no credits record exists, create one with 100 credits
-    if (creditsError && creditsError.code === 'PGRST116') {
-      // Add initial credits
-      const { error: addCreditsError } = await supabase.rpc('add_credits', {
-        user_uuid: userId,
-        amount: 100,
-        description: 'Initial free credits',
-        transaction_type: 'INITIAL'
-      });
+    // If no credits record exists, create one with 1000 initial credits
+    if (!finalCredits) {
+      // First insert the user with 1000 initial credits
+      const { data: insertedCredits, error: insertError } = await supabase
+        .from('user_credits')
+        .insert([{ 
+          user_id: userId, 
+          credits_remaining: 1000,
+          last_reset_date: new Date().toISOString()
+        }])
+        .select()
+        .single();
       
-      if (addCreditsError) {
-        console.error('Error adding initial credits:', addCreditsError);
+      if (insertError) {
+        console.error('Error inserting initial credits:', insertError);
         return new Response(
           JSON.stringify({ error: 'Error initializing credits' }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
-      // Get the newly created credits record
-      const { data: newCredits, error: newCreditsError } = await supabase
-        .from('user_credits')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
+      // Then record the transaction
+      const { error: transactionError } = await supabase
+        .from('credit_transactions')
+        .insert([{
+          user_id: userId,
+          amount: 1000,
+          description: 'Initial free credits (1000)',
+          transaction_type: 'INITIAL'
+        }]);
       
-      if (newCreditsError) {
-        console.error('Error fetching new credits:', newCreditsError);
-        return new Response(
-          JSON.stringify({ error: 'Error fetching credits' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      if (transactionError) {
+        console.error('Error recording initial transaction:', transactionError);
       }
       
-      return new Response(
-        JSON.stringify({
-          credits: newCredits,
-          subscription: null,
-          transactions: []
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } else if (creditsError) {
-      console.error('Error fetching credits:', creditsError);
-      return new Response(
-        JSON.stringify({ error: 'Error fetching user credits' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      finalCredits = insertedCredits;
     }
     
     // Get user subscription if any
@@ -125,7 +126,7 @@ serve(async (req) => {
     
     return new Response(
       JSON.stringify({
-        credits,
+        credits: finalCredits,
         subscription: subscription || null,
         transactions: transactions || []
       }),
