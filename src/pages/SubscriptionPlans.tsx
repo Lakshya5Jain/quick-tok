@@ -91,6 +91,28 @@ const SubscriptionPlans = () => {
     }
   };
 
+  const handleManageSubscription = async () => {
+    if (!subscription?.stripe_customer_id) {
+      toast.error("No Stripe customer ID found");
+      return;
+    }
+    setIsLoading("manage");
+    try {
+      const { data, error } = await supabase.functions.invoke("create-customer-portal-session", {
+        body: { customerId: subscription.stripe_customer_id },
+      });
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(error?.message || "No portal URL returned");
+      }
+    } catch (err) {
+      toast.error("Could not open Stripe portal");
+    } finally {
+      setIsLoading(null);
+    }
+  };
+
   const isSubscribed = subscription?.active || false;
   const currentPlan = subscription?.plan_type || null;
 
@@ -105,7 +127,7 @@ const SubscriptionPlans = () => {
             } else if (tab === "dashboard") {
               navigate("/dashboard");
             } else if (tab === "subscription") {
-              navigate(subscription?.active ? "/subscription-management" : "/subscription");
+              navigate("/subscription");
             }
           }}
         />
@@ -117,19 +139,6 @@ const SubscriptionPlans = () => {
             exit={{ opacity: 0, x: 20 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="flex justify-between items-center mb-8">
-              {/* Removed Back button */}
-              {isSubscribed && (
-                <Button
-                  onClick={() => navigate("/subscription-management")}
-                  variant="outline"
-                  className="border-zinc-700 hover:bg-zinc-800"
-                >
-                  Manage Subscription
-                </Button>
-              )}
-            </div>
-
             <div className="text-center mb-12">
               <motion.h1
                 initial={{ opacity: 0, y: -10 }}
@@ -190,25 +199,37 @@ const SubscriptionPlans = () => {
                       </p>
                     </CardContent>
                     <CardFooter>
-                      <Button
-                        onClick={() => handleSubscribe(plan)}
-                        disabled={isLoading !== null || (isSubscribed && currentPlan === plan.id)}
-                        className={`w-full ${
-                          plan.popular
-                            ? "bg-quicktok-orange hover:bg-quicktok-orange/90"
-                            : "bg-zinc-800 hover:bg-zinc-700"
-                        }`}
-                      >
-                        {isLoading === plan.id && (
-                          <div className="spinner mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        {isSubscribed && currentPlan === plan.id
-                          ? "Current Plan"
-                          : "Subscribe"}
-                        {!isLoading && !(isSubscribed && currentPlan === plan.id) && (
-                          <ChevronRight className="ml-1 h-4 w-4" />
-                        )}
-                      </Button>
+                      {isSubscribed && currentPlan === plan.id ? (
+                        <Button
+                          onClick={handleManageSubscription}
+                          disabled={isLoading === "manage"}
+                          className="w-full bg-quicktok-orange hover:bg-quicktok-orange/90"
+                        >
+                          {isLoading === "manage" ? (
+                            <div className="spinner mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            "Manage Subscription"
+                          )}
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => handleSubscribe(plan)}
+                          disabled={isLoading !== null || (isSubscribed && currentPlan === plan.id)}
+                          className={`w-full ${
+                            plan.popular
+                              ? "bg-quicktok-orange hover:bg-quicktok-orange/90"
+                              : "bg-zinc-800 hover:bg-zinc-700"
+                          }`}
+                        >
+                          {isLoading === plan.id && (
+                            <div className="spinner mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          {isSubscribed && currentPlan !== plan.id ? "Upgrade/Downgrade" : "Subscribe"}
+                          {!isLoading && !(isSubscribed && currentPlan === plan.id) && (
+                            <ChevronRight className="ml-1 h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
                     </CardFooter>
                   </Card>
                 </motion.div>

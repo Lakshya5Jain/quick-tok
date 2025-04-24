@@ -1,6 +1,6 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@12.18.0?target=deno";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,6 +18,11 @@ serve(async (req) => {
       apiVersion: '2023-10-16',
     });
 
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     // Get the user and plan from the request
     const { planId, userId } = await req.json();
 
@@ -27,6 +32,19 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Get user's email from Supabase
+    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+    
+    if (userError || !userData?.user?.email) {
+      console.error('Error fetching user email:', userError);
+      return new Response(
+        JSON.stringify({ error: 'Could not fetch user email' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userEmail = userData.user.email;
 
     // Get plan details based on the selected planId
     const planDetails = getPlanDetails(planId);
@@ -40,7 +58,7 @@ serve(async (req) => {
     // Create or retrieve the customer
     let customerId: string;
     const { data: customers } = await stripe.customers.list({
-      email: userId, // We're using the userId as the email for simplicity
+      email: userEmail,
       limit: 1,
     });
 
@@ -48,7 +66,7 @@ serve(async (req) => {
       customerId = customers[0].id;
     } else {
       const customer = await stripe.customers.create({
-        email: userId,
+        email: userEmail,
         metadata: {
           userId: userId,
         },
@@ -62,17 +80,7 @@ serve(async (req) => {
       payment_method_types: ['card'],
       line_items: [
         {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: planDetails.name,
-              description: `${planDetails.credits} credits per month`,
-            },
-            unit_amount: planDetails.price * 100, // Stripe uses cents
-            recurring: {
-              interval: 'month',
-            },
-          },
+          price: getStripePriceId(planId),
           quantity: 1,
         },
       ],
@@ -82,8 +90,16 @@ serve(async (req) => {
       metadata: {
         userId: userId,
         planId: planId,
-        credits: planDetails.credits.toString(),
+        priceId: getStripePriceId(planId),
       },
+      expand: ['line_items'],
+    });
+
+    console.log('Created checkout session:', {
+      id: session.id,
+      metadata: session.metadata,
+      subscription: session.subscription,
+      customer: session.customer,
     });
 
     return new Response(
@@ -109,4 +125,14 @@ function getPlanDetails(planId: string) {
   };
   
   return plans[planId as keyof typeof plans];
+}
+
+// Helper function to get Stripe Price ID based on plan ID
+function getStripePriceId(planId: string) {
+  const priceIds: Record<string, string> = {
+    basic: 'price_1RHHUaQAqWYQiLZoSiYnbIAd',
+    standard: 'price_1RHHV2QAqWYQiLZolJucMxVd',
+    premium: 'price_1RHHVKQAqWYQiLZo3fI6uyhA',
+  };
+  return priceIds[planId];
 }

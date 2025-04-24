@@ -56,7 +56,7 @@ const Dashboard = () => {
             } else if (tab === "dashboard") {
               navigate("/dashboard");
             } else if (tab === "subscription") {
-              navigate(subscription?.active ? "/subscription-management" : "/subscription");
+              navigate("/subscription");
             }
           }}
         />

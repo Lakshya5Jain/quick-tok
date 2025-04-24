@@ -15,7 +15,6 @@ import ResultPage from "./pages/ResultPage";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import SubscriptionCancelled from "./pages/SubscriptionCancelled";
-import SubscriptionManagement from "./pages/SubscriptionManagement";
 import Dashboard from "./pages/Dashboard";
 import VideosPage from "./pages/Videos";
 
@@ -60,11 +59,6 @@ const App = () => (
               <Route path="/subscription-cancelled" element={
                 <RequireAuth>
                   <SubscriptionCancelled />
-                </RequireAuth>
-              } />
-              <Route path="/subscription-management" element={
-                <RequireAuth>
-                  <SubscriptionManagement />
                 </RequireAuth>
               } />
               <Route path="/videos" element={

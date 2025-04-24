@@ -71,7 +71,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
             className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
               activeTab === "subscription" ? "bg-quicktok-orange text-white" : "text-gray-300 hover:text-white"
             }`}
-            onClick={() => navigate(subscription?.active ? "/subscription-management" : "/subscription")}
+            onClick={() => navigate("/subscription")}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
           >

@@ -5,7 +5,13 @@ CREATE OR REPLACE FUNCTION add_credits(
   description TEXT,
   transaction_type TEXT
 ) RETURNS VOID AS $$
+DECLARE
+  v_user_id UUID;
+  v_credits_remaining INTEGER;
 BEGIN
+  -- Make sure we have a valid UUID
+  v_user_id := user_uuid::UUID;
+  
   -- Start a transaction
   BEGIN
     -- Insert the transaction record
@@ -15,7 +21,7 @@ BEGIN
       description,
       transaction_type
     ) VALUES (
-      user_uuid,
+      v_user_id,
       amount,
       description,
       transaction_type
@@ -28,7 +34,7 @@ BEGIN
       credits_used,
       last_reset_date
     ) VALUES (
-      user_uuid,
+      v_user_id,
       amount,
       0,
       NOW()
@@ -37,6 +43,9 @@ BEGIN
     SET 
       credits_remaining = user_credits.credits_remaining + amount,
       updated_at = NOW();
+      
+    -- Log success
+    RAISE NOTICE 'Added % credits for user %', amount, v_user_id;
   EXCEPTION WHEN OTHERS THEN
     RAISE EXCEPTION 'Error adding credits: %', SQLERRM;
   END;
