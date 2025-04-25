@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -13,6 +12,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -59,6 +59,24 @@ const Auth = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+      if (error) throw error;
+      toast.success("Check your email for the password reset link!");
+      setIsForgotPassword(false);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to send reset email";
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-primary flex items-center justify-center p-4">
       <motion.div
@@ -71,10 +89,14 @@ const Auth = () => {
         </div>
         
         <h1 className="text-2xl font-bold text-center mb-6 text-white">
-          {isSignUp ? "Create Account" : "Sign In"}
+          {isForgotPassword
+            ? "Reset Password"
+            : isSignUp
+              ? "Create Account"
+              : "Sign In"}
         </h1>
         
-        <form onSubmit={handleAuth} className="space-y-4">
+        <form onSubmit={isForgotPassword ? handleForgotPassword : handleAuth} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium text-gray-300">
               Email Address
@@ -90,20 +112,22 @@ const Auth = () => {
             />
           </div>
           
-          <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium text-gray-300">
-              Password
-            </label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="******"
-              required
-              className="bg-zinc-800 border-zinc-700 text-white"
-            />
-          </div>
+          {!isForgotPassword && (
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-medium text-gray-300">
+                Password
+              </label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="******"
+                required
+                className="bg-zinc-800 border-zinc-700 text-white"
+              />
+            </div>
+          )}
           
           <Button 
             type="submit" 
@@ -112,24 +136,46 @@ const Auth = () => {
           >
             {isLoading 
               ? "Loading..." 
-              : isSignUp 
-                ? "Create Account" 
-                : "Sign In"
+              : isForgotPassword
+                ? "Send Reset Link"
+                : isSignUp 
+                  ? "Create Account" 
+                  : "Sign In"
             }
           </Button>
         </form>
         
-        <div className="mt-6 text-center">
-          <button
-            type="button"
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="text-quicktok-orange hover:underline text-sm"
-          >
-            {isSignUp 
-              ? "Already have an account? Sign In" 
-              : "Don't have an account? Sign Up"
-            }
-          </button>
+        <div className="mt-6 text-center space-y-2">
+          {!isForgotPassword && (
+            <button
+              type="button"
+              onClick={() => setIsForgotPassword(true)}
+              className="text-quicktok-orange hover:underline text-sm"
+            >
+              Forgot password?
+            </button>
+          )}
+          {!isForgotPassword && (
+            <button
+              type="button"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-quicktok-orange hover:underline text-sm"
+            >
+              {isSignUp 
+                ? "Already have an account? Sign In" 
+                : "Don't have an account? Sign Up"
+              }
+            </button>
+          )}
+          {isForgotPassword && (
+            <button
+              type="button"
+              onClick={() => setIsForgotPassword(false)}
+              className="text-quicktok-orange hover:underline text-sm"
+            >
+              Back to Sign In
+            </button>
+          )}
         </div>
         
         <div className="mt-8 text-center text-xs text-gray-500">

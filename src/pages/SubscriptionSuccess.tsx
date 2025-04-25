@@ -33,9 +33,9 @@ const SubscriptionSuccess = () => {
   }, [countdown, navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black px-4 flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black px-4 flex flex-col items-center justify-center">
       {/* QuickTok logo on top */}
-      <Logo size="md" className="mb-6 mx-auto" />
+      <Logo size="md" className="mb-6" />
       <div className="max-w-xl w-full bg-zinc-900/40 border border-zinc-800 rounded-lg p-8">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
@@ -76,7 +76,7 @@ const SubscriptionSuccess = () => {
           </div>
           
           <p className="mt-6 text-sm text-zinc-500">
-            Auto-redirecting in {countdown} seconds...
+            Redirecting in {countdown} seconds...
           </p>
         </motion.div>
       </div>
