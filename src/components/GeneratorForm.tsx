@@ -83,7 +83,7 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
     "https://cdn.pixabay.com/video/2017/01/14/7340-199627481_tiny.mp4",
     "https://cdn.revid.ai/backgrounds/space/video_lowres_5.mp4",
     "https://cdn.dbolical.com/cache/videos/mods/1/28/27348/encode720p_mp4/gta-v-mod-realistic-motorcycles-preview.mp4",
-    "/lovable-uploads/e1854fe7-b207-42fc-8841-a35599adc678.png"
+    "https://www.quick-tok.com/lovable-uploads/e1854fe7-b207-42fc-8841-a35599adc678.png"
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
