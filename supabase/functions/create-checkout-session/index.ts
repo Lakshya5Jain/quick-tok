@@ -23,12 +23,22 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get the user and plan from the request
-    const { planId, userId } = await req.json();
+    // Get the request body
+    const body = await req.json();
+    const { planId, userId, creditAmount, priceId, isOneTime } = body;
 
-    if (!planId || !userId) {
+    // For subscription plans
+    if (!isOneTime && (!planId || !userId)) {
       return new Response(
         JSON.stringify({ error: 'Missing plan ID or user ID' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // For one-time purchases
+    if (isOneTime && (!userId || !creditAmount)) {
+      return new Response(
+        JSON.stringify({ error: 'Missing credit amount or user ID' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -45,15 +55,6 @@ serve(async (req) => {
     }
 
     const userEmail = userData.user.email;
-
-    // Get plan details based on the selected planId
-    const planDetails = getPlanDetails(planId);
-    if (!planDetails) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid plan ID' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     // Create or retrieve the customer
     let customerId: string;
@@ -74,26 +75,75 @@ serve(async (req) => {
       customerId = customer.id;
     }
 
-    // Create the checkout session
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: getStripePriceId(planId),
-          quantity: 1,
+    let session;
+
+    // Handle one-time credit purchase
+    if (isOneTime) {
+      // Use the provided priceId or default to the one-time credit price ID
+      const effectivePriceId = priceId || 'price_1RIJ3BQAqWYQiLZoyvmOZFCx';
+      
+      // Calculate the quantity - each quantity unit is 1 credit in Stripe
+      // But we sell them in packs of 100, so we need the actual amount
+      const quantity = creditAmount; 
+      
+      console.log(`Creating one-time checkout for ${quantity} credits`);
+      
+      // Create a one-time checkout session for additional credits
+      session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: effectivePriceId,
+            quantity: 1, // Set to 1 since we're using the unit_amount_decimal approach
+            adjustable_quantity: {
+              enabled: true,
+              minimum: 1,
+              maximum: 100,
+            },
+          },
+        ],
+        mode: 'payment',
+        success_url: `${req.headers.get('origin')}/credit-purchase-success?session_id={CHECKOUT_SESSION_ID}&creditAmount=${quantity}`,
+        cancel_url: `${req.headers.get('origin')}/subscription-cancelled`,
+        metadata: {
+          userId: userId,
+          creditAmount: quantity.toString(),
+          isOneTime: 'true',
         },
-      ],
-      mode: 'subscription',
-      success_url: `${req.headers.get('origin')}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get('origin')}/subscription-cancelled`,
-      metadata: {
-        userId: userId,
-        planId: planId,
-        priceId: getStripePriceId(planId),
-      },
-      expand: ['line_items'],
-    });
+        expand: ['line_items'],
+      });
+    } else {
+      // Get plan details based on the selected planId
+      const planDetails = getPlanDetails(planId);
+      if (!planDetails) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid plan ID' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Create subscription checkout session
+      session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: getStripePriceId(planId),
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        success_url: `${req.headers.get('origin')}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${req.headers.get('origin')}/subscription-cancelled`,
+        metadata: {
+          userId: userId,
+          planId: planId,
+          priceId: getStripePriceId(planId),
+        },
+        expand: ['line_items'],
+      });
+    }
 
     console.log('Created checkout session:', {
       id: session.id,
@@ -119,9 +169,8 @@ serve(async (req) => {
 function getPlanDetails(planId: string) {
   const plans = {
     'basic': { id: 'basic', name: 'Basic Plan', price: 10, credits: 1000 },
-    'standard': { id: 'standard', name: 'Standard Plan', price: 20, credits: 2000 },
-    'premium': { id: 'premium', name: 'Premium Plan', price: 30, credits: 3000 },
-    'pro': { id: 'pro', name: 'Pro Plan', price: 50, credits: 5000 }
+    'standard': { id: 'standard', name: 'Standard Plan', price: 20, credits: 2500 },
+    'premium': { id: 'premium', name: 'Premium Plan', price: 50, credits: 10000 },
   };
   
   return plans[planId as keyof typeof plans];

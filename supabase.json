@@ -2,6 +2,12 @@
   "project_id": "oghwtfuquhqwtqekpsyn",
   "functions": {
     "get-user-credits": {
+      "verify_jwt": false
+    },
+    "manual-subscription-add": {
+      "verify_jwt": true
+    },
+    "create-customer-portal-session": {
       "verify_jwt": true
     }
   }

@@ -87,6 +87,8 @@ export const CreditsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return credits >= required;
   };
 
+  console.log("subscription object:", subscription);
+
   return (
     <CreditsContext.Provider
       value={{

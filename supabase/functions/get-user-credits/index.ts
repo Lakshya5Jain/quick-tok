@@ -6,12 +6,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.31.0";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   try {
@@ -49,6 +50,15 @@ serve(async (req) => {
     
     const userId = userData.user.id;
     
+    // Fetch user subscription if any
+    const { data: subscription, error: subError } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('active', true)
+      .maybeSingle();
+    if (subError) console.error('Error fetching subscription:', subError);
+    
     // Get user credits (or null if none)
     const { data: credits, error: creditsError } = await supabase
       .from('user_credits')
@@ -66,9 +76,9 @@ serve(async (req) => {
 
     let finalCredits = credits;
     
-    // If no credits record exists, create one with 1000 initial credits
-    if (!finalCredits) {
-      // First insert the user with 1000 initial credits
+    // If no credits record exists and not a subscribing user, create initial free credits
+    if (!finalCredits && !subscription) {
+      // Insert initial free credits (1000)
       const { data: insertedCredits, error: insertError } = await supabase
         .from('user_credits')
         .insert([{ 
@@ -80,14 +90,14 @@ serve(async (req) => {
         .single();
       
       if (insertError) {
-        console.error('Error inserting initial credits:', insertError);
+        console.error('Error inserting initial free credits:', insertError);
         return new Response(
-          JSON.stringify({ error: 'Error initializing credits' }),
+          JSON.stringify({ error: 'Error initializing free credits' }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
-      // Then record the transaction
+      // Record the free credits transaction
       const { error: transactionError } = await supabase
         .from('credit_transactions')
         .insert([{
@@ -96,21 +106,13 @@ serve(async (req) => {
           description: 'Initial free credits (1000)',
           transaction_type: 'INITIAL'
         }]);
-      
-      if (transactionError) {
-        console.error('Error recording initial transaction:', transactionError);
-      }
+      if (transactionError) console.error('Error recording initial free credits transaction:', transactionError);
       
       finalCredits = insertedCredits;
     }
     
     // Get user subscription if any
-    const { data: subscription, error: subError } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('active', true)
-      .maybeSingle();
+    // subscription already fetched above
     
     // Get recent transactions
     const { data: transactions, error: transError } = await supabase

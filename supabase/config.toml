@@ -67,4 +67,8 @@ verify_jwt = false
 [functions.cancel-subscription]
 verify_jwt = true
 [functions.get-user-credits]
+verify_jwt = false
+[functions.manual-subscription-add]
+verify_jwt = true
+[functions.create-customer-portal-session]
 verify_jwt = true
