@@ -1,8 +1,8 @@
 -- Drop existing functions for clean update
-DROP FUNCTION IF EXISTS use_credits;
+DROP FUNCTION IF EXISTS public.use_credits;
 
 -- Function to use credits without any credit check
-CREATE OR REPLACE FUNCTION use_credits(
+CREATE OR REPLACE FUNCTION public.use_credits(
   user_uuid UUID,
   amount INTEGER,
   description TEXT
@@ -46,5 +46,20 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN
     RAISE EXCEPTION 'Error using credits: %', SQLERRM;
   END;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER; 
+
+-- Ensure the get_user_credits function exists for RPC calls
+CREATE OR REPLACE FUNCTION public.get_user_credits(
+  user_uuid UUID
+) RETURNS INTEGER AS $$
+DECLARE
+  user_credits INTEGER;
+BEGIN
+  SELECT credits_remaining INTO user_credits
+  FROM user_credits
+  WHERE user_id = user_uuid;
+
+  RETURN COALESCE(user_credits, 0);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER; 

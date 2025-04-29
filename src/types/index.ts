@@ -1,4 +1,3 @@
-
 export interface Video {
   id: string;
   finalVideoUrl: string;
@@ -53,6 +52,7 @@ export interface Subscription {
   created_at?: string;
   updated_at?: string;
   user_id?: string;
+  cancel_at_period_end: boolean;
 }
 
 export interface CreditTransaction {

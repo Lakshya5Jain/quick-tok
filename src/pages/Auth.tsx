@@ -31,17 +31,20 @@ const Auth = () => {
     try {
       if (isSignUp) {
         // Sign up
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/create`
+          }
         });
         
         if (error) throw error;
         
-        toast.success("Check your email for the confirmation link!");
+        toast.success("Account created! Check your email for the confirmation link.");
       } else {
         // Sign in
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
@@ -63,10 +66,11 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`
       });
       if (error) throw error;
+      
       toast.success("Check your email for the password reset link!");
       setIsForgotPassword(false);
     } catch (error) {
@@ -125,7 +129,11 @@ const Auth = () => {
                 placeholder="******"
                 required
                 className="bg-zinc-800 border-zinc-700 text-white"
+                minLength={6}
               />
+              {isSignUp && (
+                <p className="text-xs text-gray-400">Password must be at least 6 characters</p>
+              )}
             </div>
           )}
           
@@ -145,27 +153,27 @@ const Auth = () => {
           </Button>
         </form>
         
-        <div className="mt-6 text-center space-y-2">
+        <div className="mt-6 text-center">
           {!isForgotPassword && (
-            <button
-              type="button"
-              onClick={() => setIsForgotPassword(true)}
-              className="text-quicktok-orange hover:underline text-sm"
-            >
-              Forgot password?
-            </button>
-          )}
-          {!isForgotPassword && (
-            <button
-              type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-quicktok-orange hover:underline text-sm"
-            >
-              {isSignUp 
-                ? "Already have an account? Sign In" 
-                : "Don't have an account? Sign Up"
-              }
-            </button>
+            <div className="flex flex-col gap-2 items-center">
+              <button
+                type="button"
+                onClick={() => setIsForgotPassword(true)}
+                className="text-quicktok-orange hover:underline text-sm"
+              >
+                Forgot password?
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="text-quicktok-orange hover:underline text-sm"
+              >
+                {isSignUp 
+                  ? "Already have an account? Sign In" 
+                  : "Don't have an account? Sign Up"
+                }
+              </button>
+            </div>
           )}
           {isForgotPassword && (
             <button

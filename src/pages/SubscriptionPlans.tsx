@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronLeft, ChevronRight, CreditCard, Sparkles } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, CreditCard, Sparkles, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useCredits } from "@/context/CreditsContext";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
+import { Slider } from "@/components/ui/slider";
 
 interface Plan {
   id: string;
@@ -56,11 +57,18 @@ const SubscriptionPlans = () => {
   const { credits, subscription } = useCredits();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState<string | null>(null);
+  const [additionalCredits, setAdditionalCredits] = useState<number>(100);
 
   const handleSubscribe = async (plan: Plan) => {
     if (!user) {
       toast.error("You must be logged in to subscribe");
       navigate("/auth");
+      return;
+    }
+
+    // If already subscribed, redirect to manage subscription instead
+    if (isSubscribed) {
+      handleManageSubscription();
       return;
     }
 
@@ -99,7 +107,10 @@ const SubscriptionPlans = () => {
     setIsLoading("manage");
     try {
       const { data, error } = await supabase.functions.invoke("create-customer-portal-session", {
-        body: { customerId: subscription.stripe_customer_id },
+        body: { 
+          customerId: subscription.stripe_customer_id,
+          userId: user.id
+        },
       });
       if (data?.url) {
         window.location.href = data.url;
@@ -107,7 +118,42 @@ const SubscriptionPlans = () => {
         throw new Error(error?.message || "No portal URL returned");
       }
     } catch (err) {
+      console.error("Error creating customer portal session:", err);
       toast.error("Could not open Stripe portal");
+    } finally {
+      setIsLoading(null);
+    }
+  };
+
+  const handleBuyAdditionalCredits = async () => {
+    if (!user) {
+      toast.error("You must be logged in to buy credits");
+      navigate("/auth");
+      return;
+    }
+    setIsLoading("credits");
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout-session", {
+        body: {
+          creditAmount: additionalCredits,
+          userId: user.id,
+          priceId: "price_1RIKySQAqWYQiLZomhUaietO",
+          isOneTime: true
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No checkout URL returned");
+      }
+    } catch (err) {
+      console.error("Error creating checkout session for credits:", err);
+      toast.error("Could not start checkout process. Please try again.");
     } finally {
       setIsLoading(null);
     }
@@ -115,6 +161,7 @@ const SubscriptionPlans = () => {
 
   const isSubscribed = subscription?.active || false;
   const currentPlan = subscription?.plan_type || null;
+  const isCancelling = !!subscription?.cancel_at_period_end;
 
   return (
     <div className="min-h-screen bg-gradient-primary px-4 pb-16">
@@ -214,7 +261,7 @@ const SubscriptionPlans = () => {
                       ) : (
                         <Button
                           onClick={() => handleSubscribe(plan)}
-                          disabled={isLoading !== null || (isSubscribed && currentPlan === plan.id)}
+                          disabled={isLoading !== null}
                           className={`w-full ${
                             plan.popular
                               ? "bg-quicktok-orange hover:bg-quicktok-orange/90"
@@ -224,19 +271,75 @@ const SubscriptionPlans = () => {
                           {isLoading === plan.id && (
                             <div className="spinner mr-2 h-4 w-4 animate-spin" />
                           )}
-                          {isSubscribed && currentPlan !== plan.id ? "Upgrade/Downgrade" : "Subscribe"}
-                          {!isLoading && !(isSubscribed && currentPlan === plan.id) && (
+                          {isSubscribed ? "Switch Plan" : "Subscribe"}
+                          {!isLoading && (
                             <ChevronRight className="ml-1 h-4 w-4" />
                           )}
                         </Button>
                       )}
                     </CardFooter>
+                    {isSubscribed && currentPlan === plan.id && isCancelling && (
+                      <div className="px-6 pb-4 text-center">
+                        <div className="text-xs text-amber-500">
+                          Your subscription will cancel at the end of the current period
+                        </div>
+                      </div>
+                    )}
                   </Card>
                 </motion.div>
               ))}
             </div>
 
-            <div className="mt-16 bg-zinc-900/50 border border-zinc-800 p-6 rounded-lg">
+            {/* Buy Additional Credits Section - Only show for subscribed users */}
+            {isSubscribed && (
+              <div className="mt-16 bg-zinc-900/50 border border-zinc-800 p-6 rounded-lg">
+                <div className="flex flex-col">
+                  <div className="flex items-start gap-4 mb-6">
+                    <div className="p-3 rounded-full bg-zinc-800">
+                      <Plus className="h-6 w-6 text-quicktok-orange" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Need More Credits?</h3>
+                      <p className="text-zinc-400 mt-1">
+                        Purchase additional credits anytime. Pay $1 for every 100 credits.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-zinc-800/50 p-4 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-zinc-300">Amount:</span>
+                      <span className="text-quicktok-orange font-bold">
+                        {additionalCredits} credits (${((additionalCredits / 100).toFixed(2))})
+                      </span>
+                    </div>
+                    
+                    <Slider
+                      defaultValue={[additionalCredits]}
+                      min={100}
+                      max={10000}
+                      step={100}
+                      className="my-6"
+                      onValueCommit={(value) => setAdditionalCredits(value[0])}
+                    />
+                    
+                    <Button 
+                      className="w-full bg-quicktok-orange hover:bg-quicktok-orange/90 mt-2"
+                      onClick={handleBuyAdditionalCredits}
+                      disabled={isLoading === "credits"}
+                    >
+                      {isLoading === "credits" ? (
+                        <div className="spinner mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        "Buy Additional Credits"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 bg-zinc-900/50 border border-zinc-800 p-6 rounded-lg">
               <div className="flex items-start gap-4">
                 <div className="p-3 rounded-full bg-zinc-800">
                   <Sparkles className="h-6 w-6 text-quicktok-orange" />

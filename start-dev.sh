@@ -1,4 +1,10 @@
 #!/bin/bash
+set -o allexport
+[ -f .env ] && source .env
+set +o allexport
+
+# Stop any running Supabase local instance (so new config and functions are applied)
+supabase stop || true
 
 # Start Docker if not running
 open -a Docker
@@ -11,10 +17,14 @@ sleep 15
 echo "Starting Supabase..."
 supabase start
 
+echo "Applying database migrations..."
+supabase db push
+
 # Deploy functions
 echo "Deploying Edge functions..."
 supabase functions deploy webhook-stripe
 supabase functions deploy create-checkout-session
+supabase functions deploy manual-subscription-add
 supabase functions deploy create-customer-portal-session
 supabase functions deploy get-user-credits
 supabase functions deploy add-monthly-credits

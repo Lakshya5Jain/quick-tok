@@ -18,6 +18,7 @@ import SubscriptionCancelled from "./pages/SubscriptionCancelled";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import VideosPage from "./pages/Videos";
+import CreditPurchaseSuccess from "./pages/CreditPurchaseSuccess";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,11 @@ const App = () => (
               <Route path="/dashboard" element={
                 <RequireAuth>
                   <Dashboard />
+                </RequireAuth>
+              } />
+              <Route path="/credit-purchase-success" element={
+                <RequireAuth>
+                  <CreditPurchaseSuccess />
                 </RequireAuth>
               } />
               <Route path="*" element={<NotFound />} />
