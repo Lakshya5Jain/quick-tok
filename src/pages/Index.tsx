@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { voiceOptions } from "@/data/mockData";
 import { useNavigate } from "react-router-dom";
 import { useCredits } from "@/context/CreditsContext";
+import Footer from "@/components/Footer";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -128,6 +129,9 @@ const Index = () => {
           />
         )}
       </AnimatePresence>
+      <div className="mt-16">
+        <Footer />
+      </div>
     </div>
   );
 };

@@ -58,6 +58,34 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
       ? customScript 
       : "";
 
+  // Character images for voice character media
+  const characterImages = [
+    "https://pbs.twimg.com/media/ElHEwVHXUAEtiwR.jpg",
+    "https://images.jacobinmag.com/wp-content/uploads/2019/08/08095230/Bernie_Sanders_Joe_Rogan_c0-0-1361-794_s1770x1032.jpg",
+    "https://media.newyorker.com/photos/630e85c820c2208e4152741d/3:2/w_2559,h_1706,c_limit/Cassidy-Biden-Month.jpg",
+    "https://i.abcnewsfe.com/a/030dec16-260c-4be0-8fe6-28b41c06bb36/donald-trump-9-gty-gmh-250313_1741885130014_hpMain.jpg",
+    "https://ichef.bbci.co.uk/ace/standard/976/cpsprodpb/3E0B/production/_109238851_lebron.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/4/4a/Alexandria_Ocasio-Cortez_Official_Portrait.jpg",
+    "https://platform.vox.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/23966471/Screen_Shot_2022_08_23_at_4.22.21_PM.png?quality=90&strip=all&crop=11.536561264822,0,76.926877470356,100",
+    "https://www.hollywoodreporter.com/wp-content/uploads/2024/03/Syndey-Sweeney-SNL-screenshot-H-2024.jpg?w=1296&h=730&crop=1",
+    "https://image.cnbcfm.com/api/v1/image/107293744-1693398435735-elon.jpg?v=1738327797",
+    "https://www.uc.edu/news/articles/2019/06/n20837546/jcr:content/image.img.cq5dam.thumbnail.500.500.jpg/1564681743976.jpg"
+  ];
+
+  // Supporting media options (videos and logo)
+  const supportingMediaOptions = [
+    "https://cdn.revid.ai/backgrounds/satisfying/crush_low.mp4",
+    "https://cdn.revid.ai/subway_surfers/LOW_RES/4.mp4",
+    "https://cdn.revid.ai/backgrounds/minecraft/orbit_low.mp4",
+    "https://cdn.revid.ai/backgrounds/fortnite/video_lowres_2.mp4",
+    "https://cdn.pixabay.com/video/2024/12/04/244839_large.mp4",
+    "https://cdn.pixabay.com/video/2023/05/20/163869-828669760_large.mp4",
+    "https://cdn.pixabay.com/video/2017/01/14/7340-199627481_tiny.mp4",
+    "https://cdn.revid.ai/backgrounds/space/video_lowres_5.mp4",
+    "https://cdn.dbolical.com/cache/videos/mods/1/28/27348/encode720p_mp4/gta-v-mod-realistic-motorcycles-preview.mp4",
+    "/lovable-uploads/e1854fe7-b207-42fc-8841-a35599adc678.png"
+  ];
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -151,7 +179,7 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
           {/* Voice Character Media Input */}
           <MediaInput 
             title="Voice Character Media"
-            description="Image shown at the top of your TikTok"
+            description="This image will be transformed into a talking video. For best results, upload or pick a clear photo of a person's face."
             useFile={useVoiceMediaFile}
             onToggleUseFile={setUseVoiceMediaFile}
             url={voiceMedia}
@@ -161,12 +189,14 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
             fileAccept="image/jpeg,image/jpg,image/png"
             selectedFile={voiceMediaFile}
             onMediaAvailable={(isAvailable, mediaUrl) => setPreviewVoiceMedia(mediaUrl)}
+            tabOptions={characterImages}
+            tabLabel="Choose Character"
           />
           
           {/* Supporting Media Input */}
           <MediaInput 
             title="Supporting Media"
-            description="Video/image shown at the bottom of your TikTok"
+            description="Video/image shown at the bottom of your short video."
             useFile={useMediaFile}
             onToggleUseFile={setUseMediaFile}
             url={supportingMedia}
@@ -176,7 +206,8 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
             fileAccept="image/jpeg,image/jpg,image/png,video/mp4"
             selectedFile={supportingMediaFile}
             onMediaAvailable={(isAvailable, mediaUrl) => setPreviewSupportingMedia(mediaUrl)}
-            defaultUrl={defaultSupportingMedia}
+            tabOptions={supportingMediaOptions}
+            tabLabel="Choose Media"
           />
           
           {/* Submit Button */}

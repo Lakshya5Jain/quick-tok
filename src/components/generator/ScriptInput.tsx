@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { ScriptOption } from "@/types";
 import { motion } from "framer-motion";
 
@@ -18,6 +17,24 @@ const ScriptInput: React.FC<ScriptInputProps> = ({
   customScript,
   onCustomScriptChange
 }) => {
+  // Add cycling placeholder logic
+  const examplePlaceholders = [
+    "A funny math joke",
+    "A short presentation on climate change",
+    "Tips for staying productive",
+    "A quick recipe for breakfast",
+    "How to train your dog"
+  ];
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+
+  useEffect(() => {
+    if (topic) return; // Don't cycle if user is typing
+    const interval = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % examplePlaceholders.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [topic]);
+
   return (
     <>
       {scriptOption === ScriptOption.GPT && (
@@ -33,7 +50,7 @@ const ScriptInput: React.FC<ScriptInputProps> = ({
             id="topic"
             value={topic}
             onChange={(e) => onTopicChange(e.target.value)}
-            placeholder="E.g., Benefits of meditation"
+            placeholder={topic ? undefined : `E.g., ${examplePlaceholders[placeholderIndex]}`}
             className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50"
           />
         </motion.div>

@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import Navbar from "@/components/Navbar";
 import { motion, AnimatePresence } from "framer-motion";
+import Footer from "@/components/Footer";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -71,6 +72,9 @@ const Dashboard = () => {
           >
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-white">Dashboard</h1>
+              {user?.email && (
+                <p className="text-zinc-300 mt-1 text-sm">Signed in as <span className="font-semibold">{user.email}</span></p>
+              )}
               <p className="text-zinc-400 mt-2">
                 Manage your credits, subscription, and video usage
               </p>
@@ -92,9 +96,7 @@ const Dashboard = () => {
                     <div className="text-3xl font-bold text-white">{credits?.toLocaleString() || 0}</div>
                   )}
                   <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-4 border-zinc-700 hover:bg-zinc-800 text-zinc-300"
+                    className="mt-4 bg-quicktok-orange hover:bg-quicktok-orange/90 text-white"
                     asChild
                   >
                     <Link to="/subscription">Get More Credits</Link>
@@ -130,9 +132,7 @@ const Dashboard = () => {
                           )}
                         </div>
                         <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-zinc-700 hover:bg-zinc-800 text-zinc-300"
+                          className="bg-quicktok-orange hover:bg-quicktok-orange/90 text-white"
                           asChild
                         >
                           <Link to="/subscription">Change</Link>
@@ -143,11 +143,21 @@ const Dashboard = () => {
                           <span>Renews on</span>
                           <span>{formatDate(subscription.current_period_end)}</span>
                         </div>
-                        <Progress
-                          value={75}
-                          className="h-1 bg-zinc-800"
-                          indicatorClassName="bg-quicktok-orange"
-                        />
+                        {(() => {
+                          const now = new Date();
+                          const periodStart = new Date(subscription.current_period_start);
+                          const periodEnd = new Date(subscription.current_period_end);
+                          const total = periodEnd.getTime() - periodStart.getTime();
+                          const left = periodEnd.getTime() - now.getTime();
+                          const percent = Math.max(0, Math.min(100, (left / total) * 100));
+                          return (
+                            <Progress
+                              value={percent}
+                              className="h-1 bg-zinc-800"
+                              indicatorClassName="bg-quicktok-orange"
+                            />
+                          );
+                        })()}
                       </div>
                     </>
                   ) : (
@@ -233,9 +243,7 @@ const Dashboard = () => {
                 )}
                 <div className="mt-6 text-center">
                   <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-zinc-700 hover:bg-zinc-800 text-zinc-300"
+                    className="bg-quicktok-orange hover:bg-quicktok-orange/90 text-white"
                     onClick={() => refreshCredits()}
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
@@ -246,6 +254,9 @@ const Dashboard = () => {
             </Card>
           </motion.div>
         </AnimatePresence>
+      </div>
+      <div className="mt-16">
+        <Footer />
       </div>
     </div>
   );

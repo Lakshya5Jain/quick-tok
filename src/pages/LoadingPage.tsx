@@ -36,7 +36,7 @@ const LoadingPage: React.FC = () => {
     { id: 0, label: "Generating AI Script", icon: <PencilLine className="text-green-400" /> },
     { id: 1, label: "Bringing your image to life with Lemon Slice", icon: <Sparkles className="text-purple-400" /> },
     { id: 2, label: "Fusing everything together with Creatomate", icon: <Film className="text-orange-400" /> },
-    { id: 3, label: "Your awesome TikTok video is ready!", icon: <Check className="text-green-500" /> }
+    { id: 3, label: "Your awesome video is ready!", icon: <Check className="text-green-500" /> }
   ];
   
   useEffect(() => {
@@ -201,7 +201,6 @@ const LoadingPage: React.FC = () => {
             </motion.div>
 
             <h2 className="text-2xl font-bold text-center mb-2 text-quicktok-orange">Processing Your Video</h2>
-            <p className="text-gray-300 text-center mb-6">{steps[currentStep].label}</p>
             
             {/* Time indicator with improved estimation - only show after we have word count */}
             {wordCount > 0 && (
@@ -210,6 +209,15 @@ const LoadingPage: React.FC = () => {
                 <span>Elapsed: {formatTime(elapsedTime)} | Remaining: ~{formatTime(remainingTime)}</span>
               </div>
             )}
+
+            {/* User message about loading time */}
+            <div className="w-full mb-4">
+              <p className="text-center text-sm text-gray-400">
+                {remainingTime > 0 || progress.progress >= 100
+                  ? "It takes a while to generate these videos, but it's worth it!"
+                  : "Don't worry, your video is still generating. Our servers are just overwhelmed, so it will be a little longer."}
+              </p>
+            </div>
 
             {/* Progress indicator */}
             <div className="w-full mb-2">
@@ -251,10 +259,6 @@ const LoadingPage: React.FC = () => {
                 </motion.div>
               ))}
             </div>
-            
-            <p className="text-xs text-gray-500 mt-4 text-center">
-              Powered by Creatomate and Lemon Slice
-            </p>
           </motion.div>
         </motion.div>
       </div>

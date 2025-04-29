@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -20,6 +19,8 @@ interface MediaInputProps {
   fileAccept: string;
   onMediaAvailable: (isAvailable: boolean, mediaUrl: string | null) => void;
   defaultUrl?: string;
+  tabOptions?: string[];
+  tabLabel?: string;
 }
 
 const MediaInput: React.FC<MediaInputProps> = ({
@@ -34,23 +35,52 @@ const MediaInput: React.FC<MediaInputProps> = ({
   urlPlaceholder,
   fileAccept,
   onMediaAvailable,
-  defaultUrl
+  defaultUrl,
+  tabOptions,
+  tabLabel
 }) => {
-  // When component mounts or when url/file changes, update preview and notify parent
+  const options = tabOptions || [
+    // Default to old character images if not provided
+    "https://pbs.twimg.com/media/ElHEwVHXUAEtiwR.jpg",
+    "https://images.jacobinmag.com/wp-content/uploads/2019/08/08095230/Bernie_Sanders_Joe_Rogan_c0-0-1361-794_s1770x1032.jpg",
+    "https://www.politico.com/dims4/default/ce646c6/2147483647/strip/true/crop/4896x3262+0+0/resize/630x420!/quality/90/?url=https%3A%2F%2Fstatic.politico.com%2F5c%2Fb9%2Ff02c0a8640bc91152fc324227208%2Felection-2024-debate-65361.jpg",
+    "https://i.abcnewsfe.com/a/030dec16-260c-4be0-8fe6-28b41c06bb36/donald-trump-9-gty-gmh-250313_1741885130014_hpMain.jpg",
+    "https://ichef.bbci.co.uk/ace/standard/976/cpsprodpb/3E0B/production/_109238851_lebron.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/4/4a/Alexandria_Ocasio-Cortez_Official_Portrait.jpg",
+    "https://platform.vox.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/23966471/Screen_Shot_2022_08_23_at_4.22.21_PM.png?quality=90&strip=all&crop=11.536561264822,0,76.926877470356,100",
+    "https://www.hollywoodreporter.com/wp-content/uploads/2024/03/Syndey-Sweeney-SNL-screenshot-H-2024.jpg?w=1296&h=730&crop=1",
+    // Add new character images
+    "https://image.cnbcfm.com/api/v1/image/107293744-1693398435735-elon.jpg?v=1738327797",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/330px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg"
+  ];
+  const [tab, setTab] = useState("character");
+  const [selectedOption, setSelectedOption] = useState<string>(() => {
+    const idx = Math.floor(Math.random() * options.length);
+    return options[idx];
+  });
+
   useEffect(() => {
-    if (useFile && selectedFile) {
-      const preview = URL.createObjectURL(selectedFile);
-      onMediaAvailable(true, preview);
-      return () => URL.revokeObjectURL(preview);
-    } else if (!useFile && url) {
-      onMediaAvailable(true, url);
-    } else if (!useFile && defaultUrl && !url) {
-      onMediaAvailable(true, defaultUrl);
-      // Don't update the input value, just use the default for preview
-    } else {
-      onMediaAvailable(false, null);
+    if (tab === "file") {
+      if (selectedFile) {
+        onMediaAvailable(true, URL.createObjectURL(selectedFile));
+      } else {
+        // If no file uploaded, keep using the selected option
+        onMediaAvailable(true, selectedOption);
+      }
+    } else if (tab === "url") {
+      onMediaAvailable(!!url, url);
+    } else if (tab === "character") {
+      onToggleUseFile(false);
+      onFileChange(null);
+      onUrlChange(selectedOption);
+      onMediaAvailable(true, selectedOption);
     }
-  }, [useFile, selectedFile, url, defaultUrl, onMediaAvailable]);
+    return () => {
+      if (tab === "file" && selectedFile) {
+        URL.revokeObjectURL(URL.createObjectURL(selectedFile));
+      }
+    };
+  }, [tab, selectedFile, url, selectedOption, onMediaAvailable]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -105,11 +135,17 @@ const MediaInput: React.FC<MediaInputProps> = ({
       
       <div className="mb-4">
         <Tabs 
-          value={useFile ? "file" : "url"} 
-          onValueChange={(v) => onToggleUseFile(v === "file")}
+          value={tab}
+          onValueChange={setTab}
           className="w-full"
         >
           <TabsList className="w-full bg-zinc-800 border-zinc-700">
+            <TabsTrigger 
+              value="character" 
+              className="flex-1 data-[state=active]:bg-quicktok-orange data-[state=active]:text-white"
+            >
+              {tabLabel || "Choose Character"}
+            </TabsTrigger>
             <TabsTrigger 
               value="url" 
               className="flex-1 data-[state=active]:bg-quicktok-orange data-[state=active]:text-white"
@@ -126,7 +162,7 @@ const MediaInput: React.FC<MediaInputProps> = ({
         </Tabs>
       </div>
 
-      {useFile ? (
+      {tab === "file" ? (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Input
@@ -153,7 +189,7 @@ const MediaInput: React.FC<MediaInputProps> = ({
             </p>
           )}
         </div>
-      ) : (
+      ) : tab === "url" ? (
         <div className="flex items-center gap-2">
           <Input
             type="url"
@@ -173,6 +209,28 @@ const MediaInput: React.FC<MediaInputProps> = ({
               <Trash2 className="h-5 w-5" />
             </Button>
           )}
+        </div>
+      ) : (
+        <div className="flex flex-row gap-3 mt-2 overflow-x-auto">
+          {options.map((img, idx) => (
+            <button
+              key={img}
+              type="button"
+              className={`rounded-lg border-2 p-1 transition-all ${
+                selectedOption === img ? "border-quicktok-orange ring-2 ring-quicktok-orange" : "border-zinc-700"
+              }`}
+              onClick={() => setSelectedOption(img)}
+              aria-label={`Select option ${idx + 1}`}
+            >
+              {img.endsWith('.mp4') ? (
+                <video src={img} className="w-16 h-16 object-cover rounded-md" autoPlay muted loop playsInline />
+              ) : img === '/logo.svg' ? (
+                <img src={img} alt="QuickTok logo" className="w-16 h-16 object-cover rounded-md bg-white border border-zinc-300" />
+              ) : (
+                <img src={img} alt="option" className="w-16 h-16 object-cover rounded-md" />
+              )}
+            </button>
+          ))}
         </div>
       )}
     </div>

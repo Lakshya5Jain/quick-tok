@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import { Slider } from "@/components/ui/slider";
+import Footer from "@/components/Footer";
 
 interface Plan {
   id: string;
@@ -220,11 +221,7 @@ const SubscriptionPlans = () => {
                   className="flex justify-center"
                 >
                   <Card
-                    className={`relative w-96 flex flex-col ${
-                      plan.popular
-                        ? "border-quicktok-orange bg-gradient-to-b from-zinc-900/50 to-black"
-                        : "border-zinc-800 bg-zinc-900/40"
-                    }`}
+                    className={`relative w-96 flex flex-col border-zinc-800 bg-zinc-900/40`}
                   >
                     {plan.popular && (
                       <div className="bg-quicktok-orange text-white text-xs font-bold py-1 px-3 rounded-full absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -262,11 +259,7 @@ const SubscriptionPlans = () => {
                         <Button
                           onClick={() => handleSubscribe(plan)}
                           disabled={isLoading !== null}
-                          className={`w-full ${
-                            plan.popular
-                              ? "bg-quicktok-orange hover:bg-quicktok-orange/90"
-                              : "bg-zinc-800 hover:bg-zinc-700"
-                          }`}
+                          className="w-full bg-zinc-800 hover:bg-zinc-700"
                         >
                           {isLoading === plan.id && (
                             <div className="spinner mr-2 h-4 w-4 animate-spin" />
@@ -368,6 +361,9 @@ const SubscriptionPlans = () => {
             </div>
           </motion.div>
         </AnimatePresence>
+      </div>
+      <div className="mt-16">
+        <Footer />
       </div>
     </div>
   );

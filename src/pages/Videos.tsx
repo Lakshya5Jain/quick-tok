@@ -8,6 +8,7 @@ import { useCredits } from "@/context/CreditsContext";
 import { Video } from "@/types";
 import { motion } from "framer-motion";
 import { VideoIcon } from "lucide-react";
+import Footer from "@/components/Footer";
 
 const VideosPage: React.FC = () => {
   const navigate = useNavigate();
@@ -75,6 +76,7 @@ const VideosPage: React.FC = () => {
           <VideoFeed videos={videos} />
         )}
       </div>
+      <Footer />
     </div>
   );
 };
