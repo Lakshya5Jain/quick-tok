@@ -1,4 +1,7 @@
 #!/bin/bash
+set -o allexport
+[ -f .env ] && source .env
+set +o allexport
 
 # Stop any running Supabase local instance (so new config and functions are applied)
 supabase stop || true
