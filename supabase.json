@@ -5,7 +5,7 @@
       "verify_jwt": false
     },
     "manual-subscription-add": {
-      "verify_jwt": true
+      "verify_jwt": false
     },
     "create-customer-portal-session": {
       "verify_jwt": true

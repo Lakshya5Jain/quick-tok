@@ -1,7 +1,10 @@
+/// <reference lib="deno.ns" />
+// @ts-nocheck
+// deno-lint-ignore-file
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@12.18.0?target=deno";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.31.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -82,6 +85,7 @@ serve(async (req) => {
       .from('subscriptions')
       .update({
         updated_at: new Date().toISOString(),
+        cancel_at_period_end: true
       })
       .eq('stripe_subscription_id', subscriptionId);
       

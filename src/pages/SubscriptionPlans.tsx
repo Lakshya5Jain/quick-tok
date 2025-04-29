@@ -137,7 +137,7 @@ const SubscriptionPlans = () => {
         body: {
           creditAmount: additionalCredits,
           userId: user.id,
-          priceId: "price_1RIJ3BQAqWYQiLZoyvmOZFCx",
+          priceId: "price_1RIKySQAqWYQiLZomhUaietO",
           isOneTime: true
         },
       });
@@ -161,6 +161,7 @@ const SubscriptionPlans = () => {
 
   const isSubscribed = subscription?.active || false;
   const currentPlan = subscription?.plan_type || null;
+  const isCancelling = !!subscription?.cancel_at_period_end;
 
   return (
     <div className="min-h-screen bg-gradient-primary px-4 pb-16">
@@ -277,6 +278,13 @@ const SubscriptionPlans = () => {
                         </Button>
                       )}
                     </CardFooter>
+                    {isSubscribed && currentPlan === plan.id && isCancelling && (
+                      <div className="px-6 pb-4 text-center">
+                        <div className="text-xs text-amber-500">
+                          Your subscription will cancel at the end of the current period
+                        </div>
+                      </div>
+                    )}
                   </Card>
                 </motion.div>
               ))}
@@ -301,16 +309,18 @@ const SubscriptionPlans = () => {
                   <div className="bg-zinc-800/50 p-4 rounded-lg">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-zinc-300">Amount:</span>
-                      <span className="text-quicktok-orange font-bold">{additionalCredits} credits (${(additionalCredits / 100).toFixed(2)})</span>
+                      <span className="text-quicktok-orange font-bold">
+                        {additionalCredits} credits (${((additionalCredits / 100).toFixed(2))})
+                      </span>
                     </div>
                     
                     <Slider
-                      defaultValue={[100]}
+                      defaultValue={[additionalCredits]}
                       min={100}
                       max={10000}
                       step={100}
                       className="my-6"
-                      onValueChange={(value) => setAdditionalCredits(value[0])}
+                      onValueCommit={(value) => setAdditionalCredits(value[0])}
                     />
                     
                     <Button 

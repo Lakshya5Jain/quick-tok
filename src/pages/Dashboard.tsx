@@ -123,6 +123,11 @@ const Dashboard = () => {
                           <div className="text-sm text-zinc-400">
                             {subscription.monthly_credits.toLocaleString()} credits monthly
                           </div>
+                          {subscription.cancel_at_period_end && (
+                            <div className="text-xs text-amber-500 mt-1">
+                              Cancels at period end
+                            </div>
+                          )}
                         </div>
                         <Button
                           variant="outline"

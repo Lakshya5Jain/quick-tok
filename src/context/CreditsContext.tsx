@@ -33,14 +33,15 @@ const CreditsContext = createContext<CreditsContextType>({
 export const useCredits = () => useContext(CreditsContext);
 
 export const CreditsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [credits, setCredits] = useState<number | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionType | null>(null);
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
 
   const fetchCredits = async () => {
-    if (!user) {
+    if (!user || !session) {
       setCredits(null);
       setSubscription(null);
       setTransactions([]);
@@ -50,29 +51,55 @@ export const CreditsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     try {
       setLoading(true);
-      const { data, error } = await supabase.functions.invoke("get-user-credits");
+      console.log("Fetching credits with auth session:", !!session);
+      
+      // Make sure we're using the latest session token
+      const { data, error } = await supabase.functions.invoke("get-user-credits", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
 
       if (error) {
         console.error("Error fetching credits:", error);
         toast.error("Could not load credit information");
+        
+        // If we've tried less than 3 times and got an error, try again after a delay
+        if (retryCount < 3) {
+          setRetryCount(prev => prev + 1);
+          setTimeout(() => fetchCredits(), 2000);
+        }
         return;
       }
+
+      // Reset retry count on success
+      setRetryCount(0);
 
       if (data.credits) {
         setCredits(data.credits.credits_remaining);
         setSubscription(data.subscription);
         setTransactions(data.transactions || []);
+      } else {
+        console.warn("Credits endpoint returned no credits data:", data);
+        // Set defaults if no data
+        setCredits(0);
       }
     } catch (err) {
       console.error("Error fetching credits:", err);
       toast.error("Could not load credit information");
+      
+      // If we've tried less than 3 times and got an error, try again after a delay
+      if (retryCount < 3) {
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => fetchCredits(), 2000);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && session) {
       fetchCredits();
     } else {
       setCredits(null);
@@ -80,7 +107,7 @@ export const CreditsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setTransactions([]);
       setLoading(false);
     }
-  }, [user]);
+  }, [user, session]);
 
   const hasEnoughCredits = (required: number): boolean => {
     if (credits === null) return false;
