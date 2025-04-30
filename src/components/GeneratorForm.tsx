@@ -176,47 +176,6 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
             onCustomScriptChange={setCustomScript}
           />
           
-          {/* Voice Selection */}
-          <VoiceSelector 
-            voiceId={voiceId}
-            onChange={setVoiceId}
-            voiceOptions={voiceOptions}
-          />
-          
-          {/* Voice Character Media Input */}
-          <MediaInput 
-            title="Voice Character Media"
-            description="This image will be transformed into a talking video. For best results, upload or pick a clear photo of a person's face."
-            useFile={useVoiceMediaFile}
-            onToggleUseFile={setUseVoiceMediaFile}
-            url={voiceMedia}
-            onUrlChange={setVoiceMedia}
-            onFileChange={setVoiceMediaFile}
-            urlPlaceholder="Enter URL for voice character image"
-            fileAccept="image/jpeg,image/jpg,image/png"
-            selectedFile={voiceMediaFile}
-            onMediaAvailable={(isAvailable, mediaUrl) => setPreviewVoiceMedia(mediaUrl)}
-            tabOptions={characterImages}
-            tabLabel="Choose Character"
-          />
-          
-          {/* Supporting Media Input */}
-          <MediaInput 
-            title="Supporting Media"
-            description="Video/image shown at the bottom of your short video."
-            useFile={useMediaFile}
-            onToggleUseFile={setUseMediaFile}
-            url={supportingMedia}
-            onUrlChange={setSupportingMedia}
-            onFileChange={setSupportingMediaFile}
-            urlPlaceholder="Enter URL for supporting media"
-            fileAccept="image/jpeg,image/jpg,image/png,video/mp4"
-            selectedFile={supportingMediaFile}
-            onMediaAvailable={(isAvailable, mediaUrl) => setPreviewSupportingMedia(mediaUrl)}
-            tabOptions={supportingMediaOptions}
-            tabLabel="Choose Media"
-          />
-          
           {/* Vibes & Language Selectors (only show for GPT option) */}
           {scriptOption === ScriptOption.GPT && (
             <div className="grid grid-cols-2 gap-4">
@@ -275,6 +234,47 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
               </div>
             </div>
           )}
+          
+          {/* Voice Selection */}
+          <VoiceSelector 
+            voiceId={voiceId}
+            onChange={setVoiceId}
+            voiceOptions={voiceOptions}
+          />
+          
+          {/* Voice Character Media Input */}
+          <MediaInput 
+            title="Voice Character Media"
+            description="This image will be transformed into a talking video. For best results, upload or pick a clear photo of a person's face."
+            useFile={useVoiceMediaFile}
+            onToggleUseFile={setUseVoiceMediaFile}
+            url={voiceMedia}
+            onUrlChange={setVoiceMedia}
+            onFileChange={setVoiceMediaFile}
+            urlPlaceholder="Enter URL for voice character image"
+            fileAccept="image/jpeg,image/jpg,image/png"
+            selectedFile={voiceMediaFile}
+            onMediaAvailable={(isAvailable, mediaUrl) => setPreviewVoiceMedia(mediaUrl)}
+            tabOptions={characterImages}
+            tabLabel="Choose Character"
+          />
+          
+          {/* Supporting Media Input */}
+          <MediaInput 
+            title="Supporting Media"
+            description="Video/image shown at the bottom of your short video."
+            useFile={useMediaFile}
+            onToggleUseFile={setUseMediaFile}
+            url={supportingMedia}
+            onUrlChange={setSupportingMedia}
+            onFileChange={setSupportingMediaFile}
+            urlPlaceholder="Enter URL for supporting media"
+            fileAccept="image/jpeg,image/jpg,image/png,video/mp4"
+            selectedFile={supportingMediaFile}
+            onMediaAvailable={(isAvailable, mediaUrl) => setPreviewSupportingMedia(mediaUrl)}
+            tabOptions={supportingMediaOptions}
+            tabLabel="Choose Media"
+          />
           
           {/* Submit Button */}
           <SubmitButton 

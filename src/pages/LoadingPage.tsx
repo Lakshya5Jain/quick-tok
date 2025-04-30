@@ -125,44 +125,10 @@ const LoadingPage: React.FC = () => {
   const remainingTime = Math.max(0, estimatedTimeInSeconds - elapsedTime);
 
   return (
-    <div className="min-h-screen overflow-hidden relative bg-gradient-to-b from-black via-zinc-900 to-black">
-      {/* Improved lava lamp effect background - using fixed positions and longer transitions */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-black opacity-80"></div>
-        
-        {/* Fewer bubbles with longer, smoother transitions */}
-        {Array.from({ length: 8 }).map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute rounded-full blur-xl"
-            style={{
-              backgroundColor: i % 2 === 0 
-                ? `rgba(255, ${107 + Math.floor(Math.random() * 30)}, ${Math.floor(Math.random() * 60)}, 0.${5 + Math.floor(Math.random() * 3)})` 
-                : `rgba(${220 + Math.floor(Math.random() * 35)}, ${100 + Math.floor(Math.random() * 20)}, 0, 0.${5 + Math.floor(Math.random() * 3)})`,
-              width: 120 + Math.random() * 200,
-              height: 120 + Math.random() * 200,
-              left: `${20 + (i * 8) + Math.random() * 40}%`,
-              bottom: `-${50 + Math.random() * 10}%`,
-            }}
-            initial={{ y: 0 }}
-            animate={{ 
-              y: [0, -500 - Math.random() * 500],
-              x: [0, Math.sin(i) * 40],
-              scale: [1, 1 + Math.random() * 0.2, 1 - Math.random() * 0.1, 1]
-            }}
-            transition={{
-              repeat: Infinity,
-              duration: 20 + Math.random() * 10, // Much longer durations
-              ease: "linear",
-              delay: i * 2, // Staggered start times
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="flex items-center justify-center p-4 min-h-screen relative z-10">
+    <div className="min-h-screen w-full bg-black flex items-center justify-center p-4">
+      <div className="flex items-center justify-center p-4 min-h-screen relative z-10 w-full">
         <motion.div 
-          className="relative max-w-md w-full p-8 bg-zinc-900/70 backdrop-blur-xl rounded-2xl shadow-2xl border border-zinc-800/80"
+          className="relative max-w-md w-full p-8 rounded-2xl shadow-2xl border border-zinc-800/80 bg-zinc-900"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
@@ -174,7 +140,6 @@ const LoadingPage: React.FC = () => {
           >
             <X className="h-4 w-4" />
           </button>
-
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -199,9 +164,7 @@ const LoadingPage: React.FC = () => {
               />
               <div className="absolute inset-0 bg-gradient-to-br from-quicktok-orange to-rose-600 rounded-full" />
             </motion.div>
-
             <h2 className="text-2xl font-bold text-center mb-2 text-quicktok-orange">Processing Your Video</h2>
-            
             {/* Time indicator with improved estimation - only show after we have word count */}
             {wordCount > 0 && (
               <div className="flex items-center justify-center mb-4 text-sm text-gray-400">
@@ -209,7 +172,6 @@ const LoadingPage: React.FC = () => {
                 <span>Elapsed: {formatTime(elapsedTime)} | Remaining: ~{formatTime(remainingTime)}</span>
               </div>
             )}
-
             {/* User message about loading time */}
             <div className="w-full mb-4">
               <p className="text-center text-sm text-gray-400">
@@ -218,15 +180,12 @@ const LoadingPage: React.FC = () => {
                   : "Don't worry, your video is still generating. Our servers are just overwhelmed, so it will be a little longer."}
               </p>
             </div>
-
             {/* Progress indicator */}
             <div className="w-full mb-2">
               <Progress value={progress.progress} className="h-2 bg-zinc-800" />
             </div>
-            
             {/* Progress percentage */}
             <p className="text-quicktok-orange font-medium mb-6">{progress.progress}%</p>
-            
             {/* Status timeline - only show steps */}
             <div className="w-full border-l-2 border-zinc-800 pl-4 space-y-3 mb-6">
               {steps.map((step, index) => (
@@ -262,7 +221,6 @@ const LoadingPage: React.FC = () => {
           </motion.div>
         </motion.div>
       </div>
-
       {/* Cancel confirmation dialog */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent className="bg-zinc-900 border-zinc-800">

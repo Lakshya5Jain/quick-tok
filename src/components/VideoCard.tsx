@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Video } from "@/types";
 import { formatDate } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { Download, Share, Play, Pause, Maximize2, Minimize2 } from "lucide-react";
+import { Download, Share, Play, Pause, Maximize2, Minimize2, Copy } from "lucide-react";
 
 interface VideoCardProps {
   video: Video;
@@ -11,6 +11,7 @@ interface VideoCardProps {
 const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
   const downloadVideo = () => {
@@ -22,15 +23,26 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
     document.body.removeChild(link);
   };
 
-  const shareVideo = () => {
+  const shareVideo = async () => {
     if (navigator.share) {
-      navigator.share({
-        title: 'My Quick-Tok Video',
-        text: 'Check out this video I created with Quick-Tok!',
-        url: video.finalVideoUrl,
-      })
-      .catch((error) => console.log('Error sharing', error));
+      try {
+        await navigator.share({
+          title: 'My Quick-Tok Video',
+          text: 'Check out this video I created with Quick-Tok!',
+          url: video.finalVideoUrl,
+        });
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          setShowShareModal(true);
+        }
+      }
+    } else {
+      setShowShareModal(true);
     }
+  };
+
+  const handleCopyShareUrl = () => {
+    navigator.clipboard.writeText(video.finalVideoUrl);
   };
 
   const togglePlay = () => {
@@ -108,20 +120,18 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           <div className="flex gap-2">
             <button 
               onClick={downloadVideo}
-              className="p-2 rounded-md bg-zinc-800 text-gray-300 hover:bg-zinc-700 transition-colors"
+              className="p-2 rounded-md bg-quicktok-orange hover:bg-quicktok-orange/90 text-white font-semibold shadow-md transition-colors"
               aria-label="Download"
             >
               <Download className="h-4 w-4" />
             </button>
-            {navigator.share && (
-              <button 
-                onClick={shareVideo}
-                className="p-2 rounded-md bg-zinc-800 text-gray-300 hover:bg-zinc-700 transition-colors"
-                aria-label="Share"
-              >
-                <Share className="h-4 w-4" />
-              </button>
-            )}
+            <button 
+              onClick={shareVideo}
+              className="p-2 rounded-md bg-quicktok-orange hover:bg-quicktok-orange/90 text-white font-semibold shadow-md transition-colors"
+              aria-label="Share"
+            >
+              <Share className="h-4 w-4" />
+            </button>
           </div>
         </div>
         <div className="p-4 bg-zinc-800 rounded-lg text-sm text-gray-300 max-h-32 overflow-y-auto">
@@ -131,6 +141,23 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           Created on: {formatDate(video.timestamp)}
         </div>
       </div>
+      {showShareModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 max-w-md w-full shadow-2xl flex flex-col items-center">
+            <h3 className="text-lg font-semibold text-quicktok-orange mb-2">Share this Video</h3>
+            <p className="text-gray-300 text-sm mb-4 text-center">Copy the link below and share it anywhere!</p>
+            <div className="w-full flex items-center bg-zinc-800 rounded px-3 py-2 mb-4">
+              <span className="text-xs text-gray-200 truncate flex-1">{video.finalVideoUrl}</span>
+              <button className="ml-2 text-quicktok-orange hover:text-white" onClick={handleCopyShareUrl}>
+                <Copy className="h-4 w-4 mr-1" /> Copy
+              </button>
+            </div>
+            <button className="w-full bg-quicktok-orange text-white mt-2 rounded-md py-2 font-semibold" onClick={() => setShowShareModal(false)}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };
