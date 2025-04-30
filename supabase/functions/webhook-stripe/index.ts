@@ -42,6 +42,25 @@ async function safelyAddCredits(supabase, user_uuid, amount, description, transa
   }
 }
 
+// NEW HELPER: idempotency check for credit transactions
+async function transactionExists(supabase, user_uuid: string, description: string) {
+  try {
+    const { data, error } = await supabase
+      .from('credit_transactions')
+      .select('id')
+      .eq('user_id', user_uuid)
+      .eq('description', description)
+      .maybeSingle();
+    if (error) {
+      console.error('transactionExists error:', error);
+    }
+    return !!data;
+  } catch (e) {
+    console.error('transactionExists exception:', e);
+    return false;
+  }
+}
+
 // Helper to find userId when metadata is missing
 async function lookupUserId(supabase, stripeSubscriptionId: string, stripeCustomerId: string | null) {
   try {
@@ -122,6 +141,15 @@ async function processCheckoutSessionCompleted(event, stripe, supabase) {
       if (!planDetails) {
         console.error("No plan details found for price ID:", priceId);
         return false;
+      }
+      
+      // Add idempotency: build unique description using session.id
+      const initialTxDescription = `Subscription initial (${planDetails.id}) (${session.id})`;
+      // Skip if we've already processed this checkout session
+      const alreadyCredited = await transactionExists(supabase, userId, initialTxDescription);
+      if (alreadyCredited) {
+        console.log('Credits already granted for this checkout session, skipping');
+        return true;
       }
       
       console.log("Plan details:", planDetails);
@@ -211,7 +239,7 @@ async function processCheckoutSessionCompleted(event, stripe, supabase) {
       console.log(`Successfully processed subscription for user ${userId}, plan ${planDetails.id}`);
       // Grant the subscription credits to the user via RPC
       try {
-        const creditRes = await safelyAddCredits(supabase, userId, planDetails.credits, `Subscription: ${planDetails.id}`, 'SUBSCRIPTION');
+        const creditRes = await safelyAddCredits(supabase, userId, planDetails.credits, initialTxDescription, 'SUBSCRIPTION');
         if (!creditRes.success) {
           console.error('Error adding subscription credits via RPC:', creditRes.error);
         } else {
@@ -381,8 +409,14 @@ serve(async (req) => {
           if (updateError) console.error("Error updating subscription on renewal:", updateError);
           // Only grant credits for real renewal invoices, not subscription_create
           if (invoice.billing_reason !== 'subscription_create') {
-            console.log(`Subscription renewed for user ${userId}, plan ${planDetails.id}`);
-            await safelyAddCredits(supabase, userId, planDetails.credits, `Subscription renewal: ${planDetails.id}`, 'SUBSCRIPTION');
+            const renewalTxDescription = `Subscription renewal (${planDetails.id}) (${invoice.id})`;
+            const alreadyCreditedRenewal = await transactionExists(supabase, userId, renewalTxDescription);
+            if (alreadyCreditedRenewal) {
+              console.log('Credits already granted for this renewal invoice, skipping');
+            } else {
+              console.log(`Subscription renewed for user ${userId}, plan ${planDetails.id}`);
+              await safelyAddCredits(supabase, userId, planDetails.credits, renewalTxDescription, 'SUBSCRIPTION');
+            }
           } else {
             console.log('Initial invoice subscription_create detected – credits were already granted on checkout, skipping.');
           }
