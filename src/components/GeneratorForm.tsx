@@ -10,6 +10,7 @@ import SubmitButton from "./generator/SubmitButton";
 import TikTokPreview from "./generator/TikTokPreview";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { ChevronsUpDown } from "lucide-react";
 
 interface GeneratorFormProps {
   onSubmit: (formData: {
@@ -22,6 +23,8 @@ interface GeneratorFormProps {
     voiceMedia?: string;
     voiceMediaFile?: File;
     highResolution: boolean;
+    vibes: string;
+    language: string;
   }) => void;
   isSubmitting: boolean;
   voiceOptions: VoiceOption[];
@@ -46,6 +49,8 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
   const [voiceMediaFile, setVoiceMediaFile] = useState<File | null>(null);
   const [useVoiceMediaFile, setUseVoiceMediaFile] = useState(false);
   const [highResolution] = useState(true);
+  const [vibes, setVibes] = useState<string>("funny");
+  const [language, setLanguage] = useState<string>("English");
 
   // Preview state
   const [previewVoiceMedia, setPreviewVoiceMedia] = useState<string | null>(null);
@@ -130,6 +135,8 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
       voiceMedia: !useVoiceMediaFile ? voiceMedia : undefined,
       voiceMediaFile: useVoiceMediaFile ? voiceMediaFile || undefined : undefined,
       highResolution,
+      vibes,
+      language,
     });
   };
 
@@ -209,6 +216,65 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
             tabOptions={supportingMediaOptions}
             tabLabel="Choose Media"
           />
+          
+          {/* Vibes & Language Selectors (only show for GPT option) */}
+          {scriptOption === ScriptOption.GPT && (
+            <div className="grid grid-cols-2 gap-4">
+              {/* Video Vibes Selector */}
+              <div className="space-y-2">
+                <label htmlFor="vibes" className="block text-sm font-medium text-gray-200">Vibes</label>
+                <div className="relative">
+                  <select
+                    id="vibes"
+                    value={vibes}
+                    onChange={(e) => setVibes(e.target.value)}
+                    className="w-full appearance-none px-4 py-3 bg-zinc-800 border border-zinc-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50 focus:border-quicktok-orange"
+                  >
+                    <option value="funny">Funny / Meme</option>
+                    <option value="story">Storytime</option>
+                    <option value="educational">Quick Facts</option>
+                    <option value="serious">Serious</option>
+                    <option value="motivational">Hype</option>
+                    <option value="shock">Mind-Blowing</option>
+                    <option value="chill">Aesthetic / Chill</option>
+                    <option value="rant">Hot Take</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-400">
+                    <ChevronsUpDown size={18} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Language Selector */}
+              <div className="space-y-2">
+                <label htmlFor="language" className="block text-sm font-medium text-gray-200">Language</label>
+                <div className="relative">
+                  <select
+                    id="language"
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="w-full appearance-none px-4 py-3 bg-zinc-800 border border-zinc-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50 focus:border-quicktok-orange"
+                  >
+                    <option value="English">English</option>
+                    <option value="Spanish">Spanish</option>
+                    <option value="French">French</option>
+                    <option value="German">German</option>
+                    <option value="Italian">Italian</option>
+                    <option value="Portuguese">Portuguese</option>
+                    <option value="Mandarin Chinese">Mandarin Chinese</option>
+                    <option value="Japanese">Japanese</option>
+                    <option value="Korean">Korean</option>
+                    <option value="Hindi">Hindi</option>
+                    <option value="Arabic">Arabic</option>
+                    <option value="Russian">Russian</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-400">
+                    <ChevronsUpDown size={18} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* Submit Button */}
           <SubmitButton 

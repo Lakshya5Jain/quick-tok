@@ -1,3 +1,5 @@
+// @ts-nocheck
+// deno-lint-ignore-file
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
@@ -14,15 +16,28 @@ serve(async (req) => {
   }
 
   try {
-    const { topic } = await req.json();
+    const { topic, vibes, language } = await req.json();
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
-    if (!topic) {
+    if (!topic || !vibes || !language) {
       return new Response(
-        JSON.stringify({ error: "Topic is required" }),
+        JSON.stringify({ error: "Topic, vibes and language are required" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Map vibes keys to prompt snippets
+    const snippetMap: Record<string,string> = {
+      funny:       "Make it playful, super funny and edgy, use light sarcasm and punch-line timing.",
+      story:       "Tell it like a first-person story with a hook and payoff.",
+      educational: "Deliver surprising facts clearly, like a mini-lesson.",
+      serious:     "Use a calm, sober tone, no slang.",
+      motivational:"Speak directly to the viewer, energy high, call to action. Be motivational and inspiring.",
+      shock:       "Open with a jaw-drop statistic or twist.",
+      chill:       "Slow pace, soothing wording, café-lofi vibe.",
+      rant:        "Opinionated, strong language and swears words, rhetorical questions."
+    };
+    const snippet = snippetMap[vibes] || "";
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -34,18 +49,16 @@ serve(async (req) => {
         model: "gpt-4o-mini",
         messages: [
           {
-            role: "system", 
-            content: "You are a helpful AI that writes scripts suitable for text-to-speech applications."
+            role: "system",
+            content: `You write viral TikTok / Reels voice-over lines.\n* Hard limit: 100 words (≈140 tokens).\n* Form: 1–3 sentences max—feel free to drop to a single punch-line if it hits.\n* Insert natural commas/periods so TTS pauses sound human.`
           },
           {
-            role: "user", 
-            content: `Write a concise and clear script about the following topic: '${topic}'. 
-                      The script should be suitable for text-to-speech, avoiding informal expressions, 
-                      emojis, and overly complex sentences. Use punctuation to indicate natural pauses.`
+            role: "user",
+            content: `${snippet}\nLanguage: ${language}\nTopic: ${topic}`
           }
         ],
-        max_tokens: 300,
-        temperature: 0.7,
+        max_tokens: 140,
+        temperature: 0.65,
       }),
     });
 

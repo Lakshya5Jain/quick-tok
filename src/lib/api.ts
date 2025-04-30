@@ -128,11 +128,12 @@ export async function uploadFile(file: File): Promise<string> {
   }
 }
 
-export async function generateScript(topic: string): Promise<string> {
+export async function generateScript(topic: string, vibes: string, language: string): Promise<string> {
   try {
     console.log("Generating script for topic:", topic);
+    console.log("With vibes:", vibes, "and language:", language);
     const { data, error } = await supabase.functions.invoke('generate-script', {
-      body: { topic }
+      body: { topic, vibes, language }
     });
 
     if (error) {
@@ -158,6 +159,8 @@ export async function generateVideo(formData: {
   voiceMedia?: string;
   voiceMediaFile?: File;
   highResolution?: boolean;
+  vibes: string;
+  language: string;
 }): Promise<string> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -168,7 +171,7 @@ export async function generateVideo(formData: {
     // Estimate script and cost based on word count (120 words = 60s = 100 credits)
     let scriptText: string;
     if (formData.scriptOption === ScriptOption.GPT && formData.topic) {
-      scriptText = await generateScript(formData.topic);
+      scriptText = await generateScript(formData.topic, formData.vibes, formData.language);
     } else if (formData.scriptOption === ScriptOption.CUSTOM && formData.customScript) {
       scriptText = formData.customScript;
     } else {
@@ -229,6 +232,8 @@ async function processVideoGeneration(processId: string, formData: {
   voiceMediaFile?: File;
   highResolution?: boolean;
   scriptText: string;
+  vibes: string;
+  language: string;
 }) {
   try {
     const filesToCleanup: string[] = [];
