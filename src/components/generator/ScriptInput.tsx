@@ -26,6 +26,22 @@ const ScriptInput: React.FC<ScriptInputProps> = ({
     "How to train your dog"
   ];
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  // Maximum words allowed in custom script
+  const MAX_WORDS = 1000;
+  // Track current word count for custom script
+  const [wordCount, setWordCount] = useState<number>(0);
+
+  // Utility to count words reliably
+  const countWords = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return 0;
+    return trimmed.split(/\s+/).length;
+  };
+
+  // Keep wordCount in sync with external customScript value (e.g., when resetting form)
+  useEffect(() => {
+    setWordCount(countWords(customScript));
+  }, [customScript]);
 
   useEffect(() => {
     if (topic) return; // Don't cycle if user is typing
@@ -64,14 +80,31 @@ const ScriptInput: React.FC<ScriptInputProps> = ({
           exit={{ opacity: 0, height: 0 }}
         >
           <label htmlFor="customScript" className="block text-sm font-medium text-gray-200">Your Script</label>
-          <textarea
-            id="customScript"
-            value={customScript}
-            onChange={(e) => onCustomScriptChange(e.target.value)}
-            rows={4}
-            placeholder="Enter your script here..."
-            className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50"
-          />
+          <div className="relative">
+            <textarea
+              id="customScript"
+              value={customScript}
+              onChange={(e) => {
+                const text = e.target.value;
+                const count = countWords(text);
+                if (count <= MAX_WORDS) {
+                  onCustomScriptChange(text);
+                  setWordCount(count);
+                } else {
+                  // If limit exceeded, keep only first MAX_WORDS words
+                  const truncated = text.trim().split(/\s+/).slice(0, MAX_WORDS).join(" ");
+                  onCustomScriptChange(truncated);
+                  setWordCount(MAX_WORDS);
+                }
+              }}
+              rows={6}
+              placeholder="Enter your script here..."
+              className="w-full px-4 py-2 pb-8 bg-zinc-800 border border-zinc-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-quicktok-orange/50 resize-y"
+            />
+            <span className="absolute right-3 bottom-2 text-xs text-gray-400 select-none">
+              {wordCount}/{MAX_WORDS}
+            </span>
+          </div>
         </motion.div>
       )}
     </>

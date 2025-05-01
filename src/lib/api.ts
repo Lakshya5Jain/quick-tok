@@ -321,6 +321,12 @@ async function processVideoGeneration(processId: string, formData: {
       return;
     }
     
+    // Poll AI video status up to 1800 times (~150 minutes at 5s interval)
+    const maxAttempts = 1800;
+    
+    let aiVideoUrl: string | null = null;
+    let attempts = 0;
+    
     const { data: startData, error: startError } = await supabase.functions.invoke('generate-ai-video', {
       body: {
         script: formData.scriptText,
@@ -343,10 +349,6 @@ async function processVideoGeneration(processId: string, formData: {
     
     const jobId = startData.jobId;
     console.log("AI video generation started with job ID:", jobId);
-    
-    let aiVideoUrl: string | null = null;
-    let attempts = 0;
-    const maxAttempts = 60;
     
     while (!aiVideoUrl && attempts < maxAttempts) {
       await delay(5000);
@@ -425,7 +427,10 @@ async function processVideoGeneration(processId: string, formData: {
     let finalVideoUrl: string | null = null;
     attempts = 0;
     
-    while (!finalVideoUrl && attempts < maxAttempts) {
+    // Poll final video status up to 1800 times (~150 minutes at 5s interval)
+    const maxFinalAttempts = 1800;
+    
+    while (!finalVideoUrl && attempts < maxFinalAttempts) {
       await delay(5000);
       attempts++;
       

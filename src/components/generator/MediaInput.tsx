@@ -60,6 +60,14 @@ const MediaInput: React.FC<MediaInputProps> = ({
   });
 
   useEffect(() => {
+    // Ensure parent knows which input type is active
+    if (tab === "file") {
+      onToggleUseFile(true);
+    } else {
+      // For both URL and preset character options we don't rely on a user-uploaded file
+      onToggleUseFile(false);
+    }
+
     if (tab === "file") {
       if (selectedFile) {
         onMediaAvailable(true, URL.createObjectURL(selectedFile));
@@ -70,7 +78,6 @@ const MediaInput: React.FC<MediaInputProps> = ({
     } else if (tab === "url") {
       onMediaAvailable(!!url, url);
     } else if (tab === "character") {
-      onToggleUseFile(false);
       onFileChange(null);
       onUrlChange(selectedOption);
       onMediaAvailable(true, selectedOption);
@@ -80,7 +87,7 @@ const MediaInput: React.FC<MediaInputProps> = ({
         URL.revokeObjectURL(URL.createObjectURL(selectedFile));
       }
     };
-  }, [tab, selectedFile, url, selectedOption, onMediaAvailable]);
+  }, [tab, selectedFile, url, selectedOption, onMediaAvailable, onToggleUseFile]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;

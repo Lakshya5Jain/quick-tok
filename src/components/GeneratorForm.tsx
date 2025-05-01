@@ -100,9 +100,17 @@ const GeneratorForm: React.FC<GeneratorFormProps> = ({
       return;
     }
     
-    if (scriptOption === ScriptOption.CUSTOM && !customScript.trim()) {
-      toast.error("Please enter your custom script");
-      return;
+    if (scriptOption === ScriptOption.CUSTOM) {
+      const trimmed = customScript.trim();
+      if (!trimmed) {
+        toast.error("Please enter your custom script");
+        return;
+      }
+      const wordCount = trimmed.split(/\s+/).length;
+      if (wordCount > 1000) {
+        toast.error("Custom script exceeds the maximum limit of 1000 words");
+        return;
+      }
     }
 
     if (useMediaFile && !supportingMediaFile) {
