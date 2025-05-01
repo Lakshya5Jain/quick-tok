@@ -13,9 +13,9 @@ const corsHeaders = {
 // Helper to map Stripe Price ID to plan details
 function getPlanDetailsByPriceId(priceId: string) {
   const plans: Record<string, { id: string; name: string; credits: number }> = {
-    'price_1RHHUaQAqWYQiLZoSiYnbIAd': { id: 'basic', name: 'Basic', credits: 1000 },
-    'price_1RHHV2QAqWYQiLZolJucMxVd': { id: 'standard', name: 'Standard', credits: 2500 },
-    'price_1RHHVKQAqWYQiLZo3fI6uyhA': { id: 'premium', name: 'Premium', credits: 10000 },
+    'price_1RJnw5GKsooHfCUlLYwgfF0r': { id: 'basic', name: 'Basic', credits: 1000 },
+    'price_1RJnw1GKsooHfCUls8fY6o5S': { id: 'standard', name: 'Standard', credits: 2500 },
+    'price_1RJnvyGKsooHfCUl9B84uw3B': { id: 'premium', name: 'Premium', credits: 10000 },
   };
   return plans[priceId];
 }
@@ -114,11 +114,11 @@ async function processCheckoutSessionCompleted(event, stripe, supabase) {
             data: [
               {
                 price: {
-                  id: session.metadata?.planId === 'basic' 
-                    ? 'price_1RHHUaQAqWYQiLZoSiYnbIAd' 
-                    : session.metadata?.planId === 'premium' 
-                    ? 'price_1RHHVKQAqWYQiLZo3fI6uyhA' 
-                    : 'price_1RHHV2QAqWYQiLZolJucMxVd' // default to standard
+                  id: session.metadata?.planId === 'basic'
+                    ? 'price_1RJnw5GKsooHfCUlLYwgfF0r'
+                    : session.metadata?.planId === 'premium'
+                      ? 'price_1RJnvyGKsooHfCUl9B84uw3B'
+                      : 'price_1RJnw1GKsooHfCUls8fY6o5S'
                 }
               }
             ]
