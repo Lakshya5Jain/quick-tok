@@ -391,36 +391,47 @@ serve(async (req) => {
           userId = await lookupUserId(supabase, subObj.id as string, subObj.customer as string);
         }
         if (userId) {
-          const priceId = subObj.items.data[0]?.price?.id;
-          const planDetails = getPlanDetailsByPriceId(priceId);
-          const subscriptionData = {
-            plan_type: planDetails.id,
-            monthly_credits: planDetails.credits,
-            current_period_start: new Date(subObj.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subObj.current_period_end * 1000).toISOString(),
-            cancel_at_period_end: subObj.cancel_at_period_end || false,
-            updated_at: new Date().toISOString(),
-          };
-          console.log("Updating subscription on renewal:", subscriptionData);
-          const { error: updateError } = await supabase
-            .from('subscriptions')
-            .update(subscriptionData)
-            .eq('stripe_subscription_id', subObj.id);
-          if (updateError) console.error("Error updating subscription on renewal:", updateError);
-          // Only grant credits for real renewal invoices, not subscription_create
-          if (invoice.billing_reason !== 'subscription_create') {
-            const renewalTxDescription = `Subscription renewal (${planDetails.id}) (${invoice.id})`;
-            const alreadyCreditedRenewal = await transactionExists(supabase, userId, renewalTxDescription);
-            if (alreadyCreditedRenewal) {
-              console.log('Credits already granted for this renewal invoice, skipping');
-            } else {
-              console.log(`Subscription renewed for user ${userId}, plan ${planDetails.id}`);
-              await safelyAddCredits(supabase, userId, planDetails.credits, renewalTxDescription, 'SUBSCRIPTION');
-            }
+          // Safely determine price ID
+          const priceId = subObj.plan?.id || subObj.items?.data?.[0]?.price?.id;
+          if (!priceId) {
+            console.error('invoice.payment_succeeded: could not determine price ID');
+            handled = true;
           } else {
-            console.log('Initial invoice subscription_create detected – credits were already granted on checkout, skipping.');
+            const planDetails = getPlanDetailsByPriceId(priceId);
+            if (!planDetails) {
+              console.error('invoice.payment_succeeded: no plan details for price ID', priceId);
+              handled = true;
+            } else {
+              const subscriptionData = {
+                plan_type: planDetails.id,
+                monthly_credits: planDetails.credits,
+                current_period_start: new Date(subObj.current_period_start * 1000).toISOString(),
+                current_period_end: new Date(subObj.current_period_end * 1000).toISOString(),
+                cancel_at_period_end: subObj.cancel_at_period_end || false,
+                updated_at: new Date().toISOString(),
+              };
+              console.log("Updating subscription on renewal:", subscriptionData);
+              const { error: updateError } = await supabase
+                .from('subscriptions')
+                .update(subscriptionData)
+                .eq('stripe_subscription_id', subObj.id);
+              if (updateError) console.error("Error updating subscription on renewal:", updateError);
+              // Only grant credits for real renewal invoices, not subscription_create
+              if (invoice.billing_reason !== 'subscription_create') {
+                const renewalTxDescription = `Subscription renewal (${planDetails.id}) (${invoice.id})`;
+                const alreadyCreditedRenewal = await transactionExists(supabase, userId, renewalTxDescription);
+                if (alreadyCreditedRenewal) {
+                  console.log('Credits already granted for this renewal invoice, skipping');
+                } else {
+                  console.log(`Subscription renewed for user ${userId}, plan ${planDetails.id}`);
+                  await safelyAddCredits(supabase, userId, planDetails.credits, renewalTxDescription, 'SUBSCRIPTION');
+                }
+              } else {
+                console.log('Initial invoice subscription_create detected – credits were already granted on checkout, skipping.');
+              }
+              handled = true;
+            }
           }
-          handled = true;
         }
       }
     } else if (event.type === 'customer.subscription.updated') {
