@@ -113,9 +113,9 @@ function getPlanDetails(planId: string) {
 // Helper function to get Stripe Price ID based on plan ID
 function getStripePriceId(planId: string) {
   const priceIds: Record<string, string> = {
-    basic: 'price_1RHHUaQAqWYQiLZoSiYnbIAd',
-    standard: 'price_1RHHV2QAqWYQiLZolJucMxVd',
-    premium: 'price_1RHHVKQAqWYQiLZo3fI6uyhA',
+    basic: 'price_1RJnw5GKsooHfCUlLYwgfF0r',
+    standard: 'price_1RJnw1GKsooHfCUls8fY6o5S',
+    premium: 'price_1RJnvyGKsooHfCUl9B84uw3B',
   };
   return priceIds[planId];
 }
