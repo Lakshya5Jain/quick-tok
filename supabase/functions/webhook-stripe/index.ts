@@ -426,6 +426,25 @@ serve(async (req) => {
     } else if (event.type === 'customer.subscription.updated') {
       console.log("Processing customer.subscription.updated event");
       const subObj = event.data.object;
+      // Safely determine the new price ID from the subscription
+      const priceId = subObj.plan?.id || subObj.items?.data?.[0]?.price?.id;
+      if (!priceId) {
+        console.error("subscription.updated: could not determine price ID");
+        handled = true;
+        return new Response(
+          JSON.stringify({ success: true, handled }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      const planDetails = getPlanDetailsByPriceId(priceId);
+      if (!planDetails) {
+        console.error("subscription.updated: no plan details found for price ID", priceId);
+        handled = true;
+        return new Response(
+          JSON.stringify({ success: true, handled }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
       let userId = subObj.metadata?.userId;
       if (!userId) {
         console.log('subscription.updated: metadata missing userId, performing DB lookup');
@@ -433,8 +452,6 @@ serve(async (req) => {
       }
       if (userId) {
         // Update plan details and billing cycle dates
-        const priceId = subObj.items.data[0]?.price?.id;
-        const planDetails = getPlanDetailsByPriceId(priceId);
         const updateData = {
           plan_type: planDetails.id,
           monthly_credits: planDetails.credits,
