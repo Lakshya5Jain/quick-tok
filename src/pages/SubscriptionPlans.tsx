@@ -138,7 +138,7 @@ const SubscriptionPlans = () => {
         body: {
           creditAmount: additionalCredits,
           userId: user.id,
-          priceId: "price_1RIKySQAqWYQiLZomhUaietO",
+          priceId: "price_1RJnvuGKsooHfCUlvH8u0D7T",
           isOneTime: true
         },
       });
