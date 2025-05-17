@@ -8,6 +8,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// ADD: Define the amount of free credits that every new user receives
+const INITIAL_CREDIT_AMOUNT = 100; // change this value if you ever want to adjust the welcome credits
+console.log('DEBUG Initial credit amount in function:', INITIAL_CREDIT_AMOUNT);
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -44,7 +48,6 @@ serve(async (req) => {
 
     // Extract the token from the Authorization header
     const token = authHeader.replace('Bearer ', '');
-    
     // Get the user from the token
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
     
@@ -78,7 +81,7 @@ serve(async (req) => {
       console.error('Error checking if user has credits:', creditsCheckError);
     }
     
-    // If user doesn't have credits yet, create an initial record with 1000 credits
+    // If user doesn't have credits yet, create an initial record with 100 credits
     if (!existingCredits) {
       console.log('Creating initial credits for user:', userId);
       
@@ -88,7 +91,7 @@ serve(async (req) => {
           .from('user_credits')
           .insert({
             user_id: userId,
-            credits_remaining: 1000,
+            credits_remaining: INITIAL_CREDIT_AMOUNT,
             credits_used: 0,
             last_reset_date: new Date().toISOString()
           })
@@ -100,7 +103,7 @@ serve(async (req) => {
           // Return a success response anyway to prevent blocking the UI
           return new Response(
             JSON.stringify({
-              credits: { credits_remaining: 1000, user_id: userId },
+              credits: { credits_remaining: INITIAL_CREDIT_AMOUNT, user_id: userId },
               subscription: null,
               transactions: []
             }),
@@ -113,7 +116,7 @@ serve(async (req) => {
           .from('credit_transactions')
           .insert({
             user_id: userId,
-            amount: 1000,
+            amount: INITIAL_CREDIT_AMOUNT,
             description: 'Initial free credits',
             transaction_type: 'INITIAL'
           });
@@ -124,7 +127,7 @@ serve(async (req) => {
         // Return a default response to prevent UI blocking
         return new Response(
           JSON.stringify({
-            credits: { credits_remaining: 1000, user_id: userId },
+            credits: { credits_remaining: INITIAL_CREDIT_AMOUNT, user_id: userId },
             subscription: null,
             transactions: []
           }),
@@ -145,7 +148,7 @@ serve(async (req) => {
       // Return a fallback
       return new Response(
         JSON.stringify({
-          credits: existingCredits || { credits_remaining: 1000, user_id: userId },
+          credits: existingCredits || { credits_remaining: INITIAL_CREDIT_AMOUNT, user_id: userId },
           subscription: null,
           transactions: []
         }),

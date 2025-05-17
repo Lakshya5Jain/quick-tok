@@ -21,10 +21,10 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Add 1000 credits to the specific user
+    // Add 100 credits to the specific user
     const { error: addCreditsError } = await supabase.rpc('add_credits', {
       user_uuid: 'e7ae31ff-2451-4039-9309-0e718afea3dd',
-      amount: 1000,
+      amount: 100,
       description: 'Admin credit addition',
       transaction_type: 'ADMIN'
     });
@@ -38,7 +38,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: 'Added 1000 credits successfully' }),
+      JSON.stringify({ success: true, message: 'Added 100 credits successfully' }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

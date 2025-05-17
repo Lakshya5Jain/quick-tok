@@ -230,11 +230,9 @@ const SubscriptionPlans = () => {
                     )}
                     <CardHeader>
                       <CardTitle className="text-white">{plan.name}</CardTitle>
-                      <CardDescription>
-                        <div className="text-2xl font-bold text-white mt-2">
-                          ${plan.price}
-                          <span className="text-sm text-zinc-400 font-normal">/month</span>
-                        </div>
+                      <CardDescription className="text-2xl font-bold text-white mt-2">
+                        ${plan.price}
+                        <span className="text-sm text-zinc-400 font-normal">/month</span>
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="flex-grow text-center">
@@ -340,7 +338,7 @@ const SubscriptionPlans = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-white">Free Credits</h3>
                   <p className="text-zinc-400 mt-1">
-                    Every account starts with 1000 free credits, and we'll add 100 more credits to your account every month, even without a subscription!
+                    Every account starts with 100 free credits, and we'll add 100 more credits to your account every month, even without a subscription!
                   </p>
                 </div>
               </div>

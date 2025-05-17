@@ -89,7 +89,7 @@ const HomePage: React.FC = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            Create engaging TikTok-style videos with AI-generated scripts, realistic voices, and customizable visuals. Start now with 1000 free credits!
+            Create engaging TikTok-style videos with AI-generated scripts, realistic voices, and customizable visuals. Start now with 100 free credits!
           </motion.p>
           
           <motion.button
@@ -100,7 +100,7 @@ const HomePage: React.FC = () => {
             transition={{ duration: 0.5, delay: 0.4 }}
             whileHover={{ y: -5 }}
           >
-            {user ? "Get Started Now" : "Sign Up Now - Free 1000 Credits!"}
+            {user ? "Get Started Now" : "Sign Up Now - Free 100 Credits!"}
           </motion.button>
         </div>
       </section>
@@ -163,7 +163,7 @@ const HomePage: React.FC = () => {
               className="bg-quicktok-orange hover:bg-quicktok-orange/90 text-white font-bold py-3 px-8 rounded-lg transition-all transform hover:scale-105"
               whileHover={{ y: -5 }}
             >
-              {user ? "Create Your First Video" : "Get Started with 1000 Free Credits"}
+              {user ? "Create Your First Video" : "Get Started with 100 Free Credits"}
             </motion.button>
           </div>
         </div>

@@ -31,6 +31,8 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         
         if (error) {
           console.error("Error getting session:", error);
+          // Clear invalid session tokens by signing out
+          await supabase.auth.signOut();
           return;
         }
         

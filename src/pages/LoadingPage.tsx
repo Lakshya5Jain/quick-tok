@@ -62,15 +62,15 @@ const LoadingPage: React.FC = () => {
           setWordCount(words);
         }
         
-        // Determine current step based on status
-        if (progressData.status.includes("Generating script")) {
-          setCurrentStep(0);
-        } else if (progressData.status.includes("Generating AI video")) {
-          setCurrentStep(1);
-        } else if (progressData.status.includes("Creating final")) {
-          setCurrentStep(2);
-        } else if (progressData.status.includes("Complete")) {
+        // Determine current step based on progress percentage
+        if (progressData.progress >= 100) {
           setCurrentStep(3);
+        } else if (progressData.progress >= 75) {
+          setCurrentStep(2);
+        } else if (progressData.progress >= 50) {
+          setCurrentStep(1);
+        } else {
+          setCurrentStep(0);
         }
         
         if (progressData.progress >= 100) {

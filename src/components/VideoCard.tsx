@@ -82,7 +82,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           className="w-full h-full object-contain"
           src={video.finalVideoUrl}
           playsInline
-          preload="auto"
+          preload="metadata"
           controls={false}
           onClick={togglePlay}
         />

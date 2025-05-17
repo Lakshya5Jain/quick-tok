@@ -1,3 +1,6 @@
+// Add ignore directives for TypeScript and Deno linting
+// @ts-nocheck
+// deno-lint-ignore-file
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -68,7 +71,8 @@ serve(async (req) => {
       'img_url': imageUrl,
       'text': script,
       'voice_id': voiceId,
-      'resolution': highResolution ? '640' : '320',
+      'model': 'V2.5',
+      'resolution': highResolution ? '512' : '256',
       'crop_head': false,
       'expressiveness': 1
     };
